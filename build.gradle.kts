@@ -24,6 +24,10 @@ java {
     toolchain { languageVersion = JavaLanguageVersion.of(21) }
 }
 
+// The catalogue ships from where it is reviewed. Copying it under src/main/resources would make a
+// second copy that can drift from the one the other repositories read.
+sourceSets.main { resources.srcDir("catalog").include("**/*.json") }
+
 tasks.test { useJUnitPlatform() }
 
 tasks.withType<JavaCompile> {
