@@ -33,13 +33,33 @@ tasks.processResources { from("catalog") { include("*.json") } }
 
 tasks.test { useJUnitPlatform() }
 
-/*
-One jar, always at the same path. The Dockerfile copies it by name, and a glob over build/libs
-picks up whatever earlier versions are still lying there. The plain jar is a library artifact
-nothing here consumes.
-*/
+/* The plain jar is a library artifact nothing here consumes. */
 tasks.bootJar { archiveFileName = "app.jar" }
 tasks.jar { enabled = false }
+
+/*
+The image comes from Paketo buildpacks rather than a Dockerfile of ours. What that buys is the
+parts a hand-written Dockerfile gets wrong quietly: the JVM's heap is sized from the container's
+real limit by the memory calculator instead of a guessed percentage, the layers split so a code
+change does not re-push the dependencies, and an SBOM comes with it.
+
+One invocation produces one architecture. CI runs this on a native runner per architecture and
+joins the two with a manifest list, because a cross-build here means running the whole builder
+under emulation.
+*/
+tasks.bootBuildImage {
+    imageName = "${project.findProperty("imageName") ?: "junhyung.cloud/library/mcp-server"}:${project.version}"
+    environment = mapOf("BP_JVM_VERSION" to "25")
+
+    /* Credentials come from the environment so nothing has to be passed on a command line. */
+    docker {
+        publishRegistry {
+            url = System.getenv("REGISTRY_URL") ?: "https://junhyung.cloud"
+            username = System.getenv("REGISTRY_USERNAME") ?: ""
+            password = System.getenv("REGISTRY_PASSWORD") ?: ""
+        }
+    }
+}
 
 tasks.withType<JavaCompile> {
     options.compilerArgs.addAll(listOf("-Xlint:all,-processing,-serial", "-Werror"))

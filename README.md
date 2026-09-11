@@ -37,8 +37,22 @@ against it, and a bot's `argsHash` is checked against it at handshake.
 ## Running it
 
 ```
-BOT_LINK_PORT=8765 MCP_PORT=3000 ./gradlew bootRun
+MCP_AUTH_TOKEN=... BOT_LINK_PORT=8765 MCP_PORT=3000 ./gradlew bootRun
 ```
+
+Leaving `MCP_AUTH_TOKEN` unset leaves `/mcp` open and says so in the log. That is the right
+default for a laptop and the wrong one anywhere a pod can reach it, so the chart sets one.
+`/actuator` is never behind the token: a probe cannot carry one.
+
+The image comes from Paketo buildpacks, not a Dockerfile:
+
+```
+./gradlew bootBuildImage
+```
+
+The JVM's heap is then sized from the container's real limit rather than a percentage someone
+guessed, and an SBOM comes with it. One invocation builds one architecture; CI runs it on a
+native runner per architecture and joins the two into a manifest list.
 
 Agents connect to `/mcp`; bots dial in on `:8765`. All 64 tools are in `tools/list` before any
 bot has linked, because an MCP client reads that list once when its session opens.

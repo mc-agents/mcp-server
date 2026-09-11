@@ -1,11 +1,15 @@
 package kr.junhyung.mcagents;
 
 import kr.junhyung.mcagents.bot.BotLinkServer;
+import kr.junhyung.mcagents.http.BearerTokenFilter;
 import kr.junhyung.mcagents.bot.BotRegistry;
 import kr.junhyung.mcagents.catalog.Catalog;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import tools.jackson.databind.DeserializationFeature;
@@ -22,6 +26,8 @@ import tools.jackson.databind.json.JsonMapper;
  */
 @Configuration
 public class Wiring {
+
+    private static final Logger log = LoggerFactory.getLogger(Wiring.class);
 
     @Bean
     public Catalog catalog() {
@@ -51,6 +57,26 @@ public class Wiring {
     @Bean(destroyMethod = "shutdownNow")
     public ScheduledExecutorService timers() {
         return Executors.newScheduledThreadPool(2, Thread.ofPlatform().name("mcagents-timer-", 0).factory());
+    }
+
+    /**
+     * Nothing but the MCP endpoint is behind the token. A readiness probe cannot carry one, and
+     * there is nothing behind a probe worth reaching.
+     */
+    @Bean
+    public FilterRegistrationBean<BearerTokenFilter> mcpAuth(
+            @Value("${mcagents.auth.token:}") String token) {
+        FilterRegistrationBean<BearerTokenFilter> registration = new FilterRegistrationBean<>();
+
+        if (token.isBlank()) {
+            log.warn("MCP_AUTH_TOKEN is not set, so /mcp is open to anything that can reach it");
+            registration.setEnabled(false);
+            return registration;
+        }
+
+        registration.setFilter(new BearerTokenFilter(token));
+        registration.addUrlPatterns("/mcp", "/mcp/*");
+        return registration;
     }
 
     @Bean

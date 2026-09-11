@@ -10,7 +10,7 @@ set -euo pipefail
 
 VERSION_FILE=VERSION
 # The catalogue ships: a bot checks its argument hashes against the copy this server holds.
-RELEASE_PATHS=(src/main/ catalog/ build.gradle.kts Dockerfile VERSION)
+RELEASE_PATHS=(src/main/ catalog/ build.gradle.kts VERSION)
 
 declared=$(tr -d '[:space:]' < "$VERSION_FILE")
 
