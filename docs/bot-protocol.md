@@ -42,6 +42,10 @@ Every JSON frame is a flat object with a `t` discriminator.
 | `result` | `id`, `ok`, `text`, `data?`, `blobs[]?`, `error?`, `elapsedMs` |
 | `event` | `seq`, `kind`, `source`, `text`, `segments[]?`, `data?`, `ts`, `firstTs`, `repeats`, `closed` |
 | `status` | `state`, `ts`, and whatever it knows: `address`, `username`, `mcVersion`, `serverBrand`, `gameMode`, `dimension`, `position`, `health`, `food`, `reason`, `lastError` |
+
+`status.lastError` is a **string**, not a `Failure`. The class-and-code machinery decides what a
+failed *call* does to a session; a status is a report, and a bot that has just been kicked has a
+sentence about it and no call to attach a class to.
 | `log` | `level`, `message`, `fields?` |
 | `pong` | `nonce`, `ts`, `busy` |
 

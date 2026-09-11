@@ -1,0 +1,118 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ghcr.io/mc-agents/mcp-server
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The version check diffs against the commit this one replaced, which a shallow
+          # clone does not have.
+          fetch-depth: 0
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v4
+
+      # A force push leaves nothing to compare against: the commit it names is gone from the
+      # repository, and the first push to a branch names the all-zero sha. Only the shape check
+      # runs in either case.
+      - name: version is consistent and was raised
+        env:
+          FORCED: ${{ github.event.forced }}
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          EMPTY_SHA: '0000000000000000000000000000000000000000'
+        run: |
+          if [ "$FORCED" = true ] || [ -z "$BASE" ] || [ "$BASE" = "$EMPTY_SHA" ]; then
+            ./hack/check-version.sh
+          else
+            ./hack/check-version.sh "$BASE"
+          fi
+
+      - run: ./gradlew build
+
+      # What this proves is that every tool in the catalogue reaches something that answers. The
+      # fake bot never touches Minecraft, so no server is needed and the world is never the
+      # reason a tool fails; a tool that says "not wired up yet" fails the job.
+      - name: every tool answers
+        run: |
+          BOT_LINK_PORT=18765 MCP_PORT=13000 ./gradlew bootRun &
+          for _ in $(seq 1 60); do
+            curl -sf http://127.0.0.1:13000/actuator/health/liveness > /dev/null && break
+            sleep 2
+          done
+          python3 dev/bot.py 18765 ci mineflayer &
+          sleep 3
+          ./dev/call.sh join-server '{"name":"ci","host":"127.0.0.1","port":25565}'
+          python3 dev/sweep.py
+
+  publish:
+    needs: check
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # GITHUB_TOKEN pushes to ghcr.io under this org, so no registry secret has to exist.
+      packages: write
+      # Lets cosign fetch a short-lived certificate from Fulcio, so no key lives in the repo.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - id: tag
+        run: |
+          version=$(tr -d '[:space:]' < VERSION)
+          stamp=$(date -u +%Y%m%d%H%M%S)
+          sha=$(git rev-parse --short=8 HEAD)
+          case "$version" in *-*) sep=. ;; *) sep=- ;; esac
+          echo "value=${version}${sep}${stamp}.g${sha}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: sigstore/cosign-installer@v3
+
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: mode=max
+          sbom: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.tag.outputs.value }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true
+
+      - name: sign image
+        run: cosign sign --yes "${{ env.IMAGE }}@${{ steps.build.outputs.digest }}"
+
+      - run: |
+          {
+            echo "published \`${{ env.IMAGE }}:${{ steps.tag.outputs.value }}\`"
+            echo ""
+            echo "verify:"
+            echo '```'
+            echo "cosign verify ${{ env.IMAGE }}:${{ steps.tag.outputs.value }} \\"
+            echo "  --certificate-identity-regexp '^https://github.com/${{ github.repository }}/' \\"
+            echo "  --certificate-oidc-issuer https://token.actions.githubusercontent.com"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

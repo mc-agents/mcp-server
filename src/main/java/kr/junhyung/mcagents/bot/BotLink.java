@@ -20,6 +20,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -86,7 +87,16 @@ public final class BotLink implements AutoCloseable {
                 throw new ProtocolViolation(ProtocolViolation.Code.BLOB_BEFORE_HELLO,
                         "the first frame on a link must be hello, not a blob");
             }
-            if (!(mapper.readValue(json.payload(), Messages.FromBot.class) instanceof Messages.Hello frame)) {
+
+            Messages.FromBot message;
+            try {
+                message = mapper.readValue(json.payload(), Messages.FromBot.class);
+            } catch (JacksonException e) {
+                throw new ProtocolViolation(ProtocolViolation.Code.MALFORMED_JSON,
+                        "the first message could not be read: " + e.getOriginalMessage());
+            }
+
+            if (!(message instanceof Messages.Hello frame)) {
                 throw new ProtocolViolation(ProtocolViolation.Code.HELLO_EXPECTED,
                         "the first message on a link must be hello");
             }
@@ -145,6 +155,14 @@ public final class BotLink implements AutoCloseable {
             fault(e.code().name(), e.getMessage());
         } catch (IOException e) {
             // A closed link is how this ends; the caller finds out through the failing calls.
+        } catch (JacksonException e) {
+            /*
+            Jackson 3 throws unchecked, so a bot sending a message this server cannot read used to
+            leave the exception on the reader thread: the link closed without a word, the bot
+            reconnected, and it did the same thing again. It is a breach of the contract like any
+            other, and the bot is told which one.
+            */
+            fault(ProtocolViolation.Code.MALFORMED_JSON.name(), e.getOriginalMessage());
         } finally {
             close();
         }

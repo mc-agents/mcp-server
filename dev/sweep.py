@@ -81,5 +81,9 @@ for tool in CATALOG["tools"]:
         print("ok   %-22s %s" % (tool["name"], text))
 
 print("\nok %d | error %d | unwired %d" % (len(ok), len(failed), len(unwired)))
+
+# An error is usually the world saying no -- an empty inventory, no container underfoot. A tool
+# that is not wired up is the server saying nothing, and that is the only thing worth failing on.
 if unwired:
     print("unwired:", unwired)
+    raise SystemExit(1)

@@ -173,7 +173,12 @@ public final class Messages {
             Double health,
             Double food,
             String reason,
-            Failure lastError) implements FromBot {}
+            /*
+            Words, not a Failure. The class-and-code machinery decides what a failed *call* does to
+            a session; a status is a report, and a bot that has just been kicked has a sentence
+            about it and no call to attach a class to.
+            */
+            String lastError) implements FromBot {}
 
     public record Log(String level, String message, Map<String, Object> fields) implements FromBot {}
 }

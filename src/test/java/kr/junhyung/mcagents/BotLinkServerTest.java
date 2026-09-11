@@ -19,6 +19,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -226,6 +227,31 @@ class BotLinkServerTest {
             TimeUnit.MILLISECONDS.sleep(20);
         }
         assertEquals(0, bots.size());
+    }
+
+    /*
+    Jackson 3 throws unchecked, so a message the server cannot read used to leave the exception on
+    the reader thread: the link closed silently, the bot reconnected, and sent the same thing
+    again. It is a breach like any other, and the bot has to be told which one.
+    */
+    @Test
+    void aMessageTheServerCannotReadIsAViolationRatherThanADeadThread() throws Exception {
+        Socket bot = dial();
+        send(bot, hello("alice", "mineflayer", List.of()));
+        assertInstanceOf(Messages.HelloOk.class, read(bot));
+        awaitSession("alice");
+
+        // position is an object; a bot sending a string there disagrees with the contract.
+        FrameCodec.write(bot.getOutputStream(), new Frame.Json(
+                ("{\"t\":\"status\",\"state\":\"ready\",\"ts\":1,"
+                        + "\"position\":\"somewhere near spawn\"}").getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals("MALFORMED_JSON", assertInstanceOf(Messages.Fault.class, read(bot)).code());
+
+        for (int attempt = 0; attempt < 100 && bots.size() > 0; attempt++) {
+            TimeUnit.MILLISECONDS.sleep(20);
+        }
+        assertEquals(0, bots.size(), "a link that broke the contract does not stay in the registry");
     }
 
     @Test

@@ -110,9 +110,7 @@ public class LocalTools {
         }
         append(body, "Reason", last.reason());
 
-        if (last.lastError() != null) {
-            append(body, "Last error", "%s (%s)".formatted(last.lastError().message(), last.lastError().code()));
-        }
+        append(body, "Last error", last.lastError());
         append(body, "Last seen", Instant.ofEpochMilli(last.ts()).toString());
 
         return ToolDispatcher.text(body.toString());

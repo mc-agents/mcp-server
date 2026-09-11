@@ -158,7 +158,7 @@ public final class BotSession {
 
         if ("disconnected".equals(update.state()) || "faulted".equals(update.state())) {
             String reason = update.reason() != null ? update.reason()
-                    : update.lastError() != null ? update.lastError().message()
+                    : update.lastError() != null ? update.lastError()
                     : "the bot disconnected";
             abandonWaiters(reason);
         }
