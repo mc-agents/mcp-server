@@ -209,6 +209,11 @@ argsHash = "sha256:" + hex(sha256(canonical(wireSchema)))
 themselves rather than escaped. `catalogHash` is the same function applied to the whole `tools`
 array, and it is what says the catalogue has not been edited without being rehashed.
 
+`catalogVersion` is semantic and describes the **arguments**, not the tool list. Its major moves
+when an existing tool's `wireSchema` changes, because every bot compiled against the old one now
+has a hash that disagrees. Adding a tool moves the minor: a bot that has never heard of it reports
+nothing about it, which is already how a bot ships one tool at a time.
+
 That last row is why a bot can ship one tool at a time. A `bot-fabric` that cannot fish yet says
 nothing about `fish`, and the other 63 tools work from the first day. Being unable and being
 unwritten look the same on purpose.
