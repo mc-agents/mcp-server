@@ -138,7 +138,48 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:595baee5a15b3623b1c2d95714822b9a80e926c44ddf020b58911a1e2ab5ab68"
+      "wireSchemaHash": "sha256:595baee5a15b3623b1c2d95714822b9a80e926c44ddf020b58911a1e2ab5ab68",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "blockType": {
+            "type": "string"
+          },
+          "maxDistance": {
+            "type": "number"
+          },
+          "positions": {
+            "description": "Nearest first, as the search returned them",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "integer"
+                },
+                "y": {
+                  "type": "integer"
+                },
+                "z": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "x",
+                "y",
+                "z"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "blockType",
+          "maxDistance",
+          "positions"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "get-block-info",
@@ -204,7 +245,79 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:745bc34ffa94b53097b81ff9cabd6d41db733664935cd5c7d7a9a090cc329c65"
+      "wireSchemaHash": "sha256:745bc34ffa94b53097b81ff9cabd6d41db733664935cd5c7d7a9a090cc329c65",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "description": "Where the caller asked about",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "block": {
+            "description": "Null when the position is outside the loaded chunks",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "integer"
+              },
+              "position": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "integer"
+                  },
+                  "y": {
+                    "type": "integer"
+                  },
+                  "z": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y",
+                  "z"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "name",
+              "position",
+              "type"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "block",
+          "position"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "place-block",
@@ -361,7 +474,78 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:745bc34ffa94b53097b81ff9cabd6d41db733664935cd5c7d7a9a090cc329c65"
+      "wireSchemaHash": "sha256:745bc34ffa94b53097b81ff9cabd6d41db733664935cd5c7d7a9a090cc329c65",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "block": {
+            "type": "string"
+          },
+          "position": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "present": {
+            "description": "False when the block carries no block entity at all",
+            "type": "boolean"
+          },
+          "signFaces": {
+            "description": "Only faces with something written on them",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "face": {
+                  "type": "string"
+                },
+                "lines": {
+                  "description": "Four lines, blanks included",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "face",
+                "lines"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "raw": {
+            "description": "The block entity as JSON, for anything that is not a sign",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "block",
+          "position",
+          "present",
+          "raw",
+          "signFaces"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "read-chat",
@@ -490,7 +674,54 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:ff3fc389c507c53b6579cb9f27e960030ff0819170a6554d70c117b705d10fc6"
+      "wireSchemaHash": "sha256:ff3fc389c507c53b6579cb9f27e960030ff0819170a6554d70c117b705d10fc6",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "type": "string"
+          },
+          "craftable": {
+            "type": "boolean"
+          },
+          "hasRecipe": {
+            "description": "False when nothing in the game produces the item",
+            "type": "boolean"
+          },
+          "missing": {
+            "description": "For the recipe that needs the least",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "count",
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "needsTable": {
+            "description": "That recipe needs a crafting table and none is in reach",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "craftable",
+          "hasRecipe",
+          "item",
+          "missing",
+          "needsTable"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "craft-item",
@@ -599,7 +830,106 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:43b6fd98f5f3aaa4d775078049aff85984616425cadbc9b90cd94485753d8645"
+      "wireSchemaHash": "sha256:43b6fd98f5f3aaa4d775078049aff85984616425cadbc9b90cd94485753d8645",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "type": "string"
+          },
+          "tableInReach": {
+            "type": "boolean"
+          },
+          "stoppedAt": {
+            "description": "Always null here; only the unrestricted scan can run out of room",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "recipes": {
+            "description": "The recipe that needs the least first",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "count",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                },
+                "ingredients": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "count": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "count",
+                      "name"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "missing": {
+                  "description": "What the inventory is short of; empty means craftable",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "count": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "count",
+                      "name"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "requiresTable": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "ingredients",
+                "missing",
+                "requiresTable",
+                "result"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "item",
+          "recipes",
+          "stoppedAt",
+          "tableInReach"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "list-recipes",
@@ -644,7 +974,109 @@
           "outputItem"
         ]
       },
-      "wireSchemaHash": "sha256:dc77930f7b1a488a0667b66505a337c9b37cfab9c77f5b778fca9c2e095ca2c9"
+      "wireSchemaHash": "sha256:dc77930f7b1a488a0667b66505a337c9b37cfab9c77f5b778fca9c2e095ca2c9",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "description": "The item the caller asked about, or null for everything craftable now",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tableInReach": {
+            "type": "boolean"
+          },
+          "stoppedAt": {
+            "description": "The cap the scan stopped at, or null when it listed everything",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "recipes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "count",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                },
+                "ingredients": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "count": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "count",
+                      "name"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "missing": {
+                  "description": "What the inventory is short of; empty means craftable",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "count": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "count",
+                      "name"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "requiresTable": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "ingredients",
+                "missing",
+                "requiresTable",
+                "result"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "item",
+          "recipes",
+          "stoppedAt",
+          "tableInReach"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "read-effects",
@@ -782,7 +1214,74 @@
           "type"
         ]
       },
-      "wireSchemaHash": "sha256:26ac3d114b08ee660fb9aff857be0901d07188f88a9146ab7698ec834ffad466"
+      "wireSchemaHash": "sha256:26ac3d114b08ee660fb9aff857be0901d07188f88a9146ab7698ec834ffad466",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "description": "The filter the caller gave, or null for anything",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maxDistance": {
+            "type": "number"
+          },
+          "entities": {
+            "description": "Nearest first",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "description": "Username, else entity name, else its type",
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "position": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "integer"
+                    },
+                    "y": {
+                      "type": "integer"
+                    },
+                    "z": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y",
+                    "z"
+                  ],
+                  "additionalProperties": false
+                },
+                "distance": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "distance",
+                "label",
+                "position",
+                "type"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "entities",
+          "maxDistance",
+          "query"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "read-displays",
@@ -840,7 +1339,66 @@
           "maxDistance"
         ]
       },
-      "wireSchemaHash": "sha256:f852935069287c4a188aa21bd3d79243af86478fbe59147664267f7f0850bc3a"
+      "wireSchemaHash": "sha256:f852935069287c4a188aa21bd3d79243af86478fbe59147664267f7f0850bc3a",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "maxDistance": {
+            "type": "number"
+          },
+          "displays": {
+            "description": "Nearest first",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "description": "Font segments already joined by the bot",
+                  "type": "string"
+                },
+                "entity": {
+                  "type": "string"
+                },
+                "position": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "integer"
+                    },
+                    "y": {
+                      "type": "integer"
+                    },
+                    "z": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y",
+                    "z"
+                  ],
+                  "additionalProperties": false
+                },
+                "distance": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "distance",
+                "entity",
+                "position",
+                "text"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "displays",
+          "maxDistance"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "get-player-state",
@@ -872,7 +1430,89 @@
         "additionalProperties": false,
         "required": []
       },
-      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "health": {
+            "type": "number"
+          },
+          "food": {
+            "type": "number"
+          },
+          "saturation": {
+            "type": "number"
+          },
+          "experience": {
+            "type": "object",
+            "properties": {
+              "level": {
+                "type": "integer"
+              },
+              "progress": {
+                "type": "number"
+              },
+              "points": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "level",
+              "points",
+              "progress"
+            ],
+            "additionalProperties": false
+          },
+          "gameMode": {
+            "type": "string"
+          },
+          "dimension": {
+            "type": "string"
+          },
+          "position": {
+            "description": "Null while the bot has no entity yet",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "oxygen": {
+            "description": "Null when the server has not said, which means full",
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "dimension",
+          "experience",
+          "food",
+          "gameMode",
+          "health",
+          "oxygen",
+          "position",
+          "saturation"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "read-action-bar",
@@ -935,7 +1575,45 @@
         "additionalProperties": false,
         "required": []
       },
-      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "bars": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "description": "Empty when the server set none",
+                  "type": "string"
+                },
+                "progress": {
+                  "description": "0 to 1",
+                  "type": "number"
+                },
+                "color": {
+                  "type": "string"
+                },
+                "dividers": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "color",
+                "dividers",
+                "progress",
+                "title"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "bars"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "read-dialog",
@@ -998,7 +1676,48 @@
         "additionalProperties": false,
         "required": []
       },
-      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "players": {
+            "description": "Sorted by name",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "gameMode": {
+                  "type": "string"
+                },
+                "ping": {
+                  "description": "Null when the server has not said",
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "self": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "gameMode",
+                "name",
+                "ping",
+                "self"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "players"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "read-scoreboard",
@@ -1051,7 +1770,57 @@
           "slot"
         ]
       },
-      "wireSchemaHash": "sha256:4b9afb2a0d85aab5b6badbfafb4bce7f787b286b8488b81728ed3490668336ef"
+      "wireSchemaHash": "sha256:4b9afb2a0d85aab5b6badbfafb4bce7f787b286b8488b81728ed3490668336ef",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "type": "string"
+          },
+          "board": {
+            "description": "Null when nothing is displayed in that slot",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "entries": {
+                "description": "Highest score first",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "score": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "score"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "entries",
+              "title"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "board",
+          "slot"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "read-title",
@@ -1323,7 +2092,45 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:03d628f9c594f99d125da58edc5215819cf61b5d2aad8102f42aab19de171135"
+      "wireSchemaHash": "sha256:03d628f9c594f99d125da58edc5215819cf61b5d2aad8102f42aab19de171135",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "description": "What the caller asked for",
+            "type": "string"
+          },
+          "item": {
+            "description": "Null when nothing in the inventory matches",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              },
+              "slot": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "count",
+              "name",
+              "slot"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "item",
+          "query"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "give-item",
@@ -1429,7 +2236,39 @@
         "additionalProperties": false,
         "required": []
       },
-      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer"
+                },
+                "slot": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "count",
+                "name",
+                "slot"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "fly-to",
@@ -1527,7 +2366,36 @@
         "additionalProperties": false,
         "required": []
       },
-      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "position"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "jump",
@@ -2107,7 +2975,48 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:ca452b75e5a513d21b17f2e4c6ded23de8c48074fd58d5d0ae9688794bf7f58c"
+      "wireSchemaHash": "sha256:ca452b75e5a513d21b17f2e4c6ded23de8c48074fd58d5d0ae9688794bf7f58c",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "description": "The partial command that was completed",
+            "type": "string"
+          },
+          "total": {
+            "description": "How many the server offered, before the limit was applied",
+            "type": "integer"
+          },
+          "completions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "tooltip": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "tooltip"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "completions",
+          "text",
+          "total"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "detect-gamemode",
@@ -2164,7 +3073,45 @@
         "additionalProperties": false,
         "required": []
       },
-      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "timeOfDay": {
+            "description": "Ticks into the day, 0 being sunrise",
+            "type": "integer"
+          },
+          "day": {
+            "type": "integer"
+          },
+          "moonPhase": {
+            "type": "integer"
+          },
+          "isDay": {
+            "type": "boolean"
+          },
+          "weather": {
+            "type": "string",
+            "enum": [
+              "clear",
+              "rain",
+              "thunder"
+            ]
+          },
+          "doDaylightCycle": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "day",
+          "doDaylightCycle",
+          "isDay",
+          "moonPhase",
+          "timeOfDay",
+          "weather"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "run-command",
@@ -2716,7 +3663,88 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:745bc34ffa94b53097b81ff9cabd6d41db733664935cd5c7d7a9a090cc329c65"
+      "wireSchemaHash": "sha256:745bc34ffa94b53097b81ff9cabd6d41db733664935cd5c7d7a9a090cc329c65",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "description": "Plain text, with colour codes and glyphs already taken out",
+            "type": "string"
+          },
+          "type": {
+            "description": "Registry id on a modern server, a number on an older one",
+            "type": [
+              "integer",
+              "string"
+            ]
+          },
+          "slotCount": {
+            "type": "integer"
+          },
+          "containerSlots": {
+            "description": "First and last slot of the container half",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "inventorySlots": {
+            "description": "First and last slot of the player's own inventory",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "filled": {
+            "description": "Only the slots that hold something, in slot order",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "slot": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer"
+                },
+                "label": {
+                  "description": "The custom name the server gave it, if any",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "lore": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "count",
+                "label",
+                "lore",
+                "name",
+                "slot"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "containerSlots",
+          "filled",
+          "inventorySlots",
+          "slotCount",
+          "title",
+          "type"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "smelt-item",
@@ -2918,7 +3946,88 @@
         "additionalProperties": false,
         "required": []
       },
-      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "description": "Plain text, with colour codes and glyphs already taken out",
+            "type": "string"
+          },
+          "type": {
+            "description": "Registry id on a modern server, a number on an older one",
+            "type": [
+              "integer",
+              "string"
+            ]
+          },
+          "slotCount": {
+            "type": "integer"
+          },
+          "containerSlots": {
+            "description": "First and last slot of the container half",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "inventorySlots": {
+            "description": "First and last slot of the player's own inventory",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "filled": {
+            "description": "Only the slots that hold something, in slot order",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "slot": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer"
+                },
+                "label": {
+                  "description": "The custom name the server gave it, if any",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "lore": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "count",
+                "label",
+                "lore",
+                "name",
+                "slot"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "containerSlots",
+          "filled",
+          "inventorySlots",
+          "slotCount",
+          "title",
+          "type"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "wait-for-window",
@@ -2978,7 +4087,113 @@
           "titlePattern"
         ]
       },
-      "wireSchemaHash": "sha256:428ee1e8b841a668c9948643525fa7ee1d9ed9324124c854aa98d850dda994a0"
+      "wireSchemaHash": "sha256:428ee1e8b841a668c9948643525fa7ee1d9ed9324124c854aa98d850dda994a0",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "titlePattern": {
+            "description": "The pattern the caller waited on, or null for any window",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "timeoutMs": {
+            "type": "integer"
+          },
+          "window": {
+            "description": "Null when nothing matching opened in time",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "title": {
+                "description": "Plain text, with colour codes and glyphs already taken out",
+                "type": "string"
+              },
+              "type": {
+                "description": "Registry id on a modern server, a number on an older one",
+                "type": [
+                  "integer",
+                  "string"
+                ]
+              },
+              "slotCount": {
+                "type": "integer"
+              },
+              "containerSlots": {
+                "description": "First and last slot of the container half",
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              },
+              "inventorySlots": {
+                "description": "First and last slot of the player's own inventory",
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              },
+              "filled": {
+                "description": "Only the slots that hold something, in slot order",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "slot": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "label": {
+                      "description": "The custom name the server gave it, if any",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "lore": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "count",
+                    "label",
+                    "lore",
+                    "name",
+                    "slot"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "containerSlots",
+              "filled",
+              "inventorySlots",
+              "slotCount",
+              "title",
+              "type"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "timeoutMs",
+          "titlePattern",
+          "window"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "activate-block",
@@ -3281,5 +4496,5 @@
       "wireSchemaHash": "sha256:d8193940ea106b05e271343588f518859a11ea31541fbe61184f12436c11b12f"
     }
   ],
-  "catalogHash": "sha256:bbba8cd9571432d9ffb013fc87d5bdcbad67f0a69b0dcce7c653a9034b847776"
+  "catalogHash": "sha256:9d35129d85e1f0ba7b9e9c79293b572c3ca4edf0bc2888ebf3c122e573a2ed03"
 }

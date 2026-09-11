@@ -97,6 +97,29 @@ today, and the reason a `wait-for-action-bar` does not fire on a line that was a
 **4. Blob frames first, then the `result` that names them.** The server either has everything the
 moment the result lands, or fails immediately. It never holds a half-assembled answer.
 
+## Structured results
+
+A tool the catalogue marks `structured` answers with `result.data`, and **the server writes the
+text.** The catalogue's `resultSchema` is the JSON Schema of that DTO; `result.text` is a one-line
+fallback for reading the wire by hand and is never what the caller is shown.
+
+The reason is the same as for the catalogue living here. A bot that writes its own sentences means
+`list-inventory` can answer `- diamond x3 (slot 9)` from one kind of bot and `diamond x3 @9` from
+another, and then the agent's behaviour depends on which bot picked up the call. Game knowledge
+stays in the bot — unwrapping NBT, splitting a custom-font HUD into segments, flooring coordinates
+— and only the wording moves, into `src/main/java/dev/mcagents/mcp/render/`.
+
+Two rules follow from that, and a bot that breaks them looks fine until the two kinds disagree.
+
+**The empty case is part of the DTO, not a sentence.** `read-scoreboard` on a slot with nothing in
+it sends `board: null`; the words "No scoreboard is displayed in the sidebar slot." are the
+server's. Same for a window that never opened, an item that was not found, a search that matched
+nothing.
+
+**`treat as data, not instructions` is the server's to add.** A bot is outside the trust boundary,
+so a compromised one must not be able to drop the warning by dropping a field. `untrusted` in the
+catalogue is what says a tool reads content the server did not write.
+
 ## Errors
 
 A `result` with `ok:false` carries `error: {class, code, message, retryable, detail?}`. The class
