@@ -117,7 +117,7 @@ The reason is the same as for the catalogue living here. A bot that writes its o
 `list-inventory` can answer `- diamond x3 (slot 9)` from one kind of bot and `diamond x3 @9` from
 another, and then the agent's behaviour depends on which bot picked up the call. Game knowledge
 stays in the bot — unwrapping NBT, splitting a custom-font HUD into segments, flooring coordinates
-— and only the wording moves, into `src/main/java/dev/mcagents/mcp/render/`.
+— and only the wording moves, into `src/main/java/kr/junhyung/mcagents/render/`.
 
 Two rules follow from that, and a bot that breaks them looks fine until the two kinds disagree.
 

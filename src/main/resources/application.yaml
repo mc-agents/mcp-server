@@ -43,4 +43,4 @@ mcagents:
 
 logging:
   level:
-    dev.mcagents: ${MCP_LOG_LEVEL:INFO}
+    kr.junhyung.mcagents: ${MCP_LOG_LEVEL:INFO}
