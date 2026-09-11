@@ -1,0 +1,254 @@
+{
+  "tool": "get-recipe",
+  "note": "live capture against Paper 26.1.2, called with {\"itemName\": \"stick\"}",
+  "data": {
+    "item": "stick",
+    "tableInReach": false,
+    "stoppedAt": null,
+    "recipes": [
+      {
+        "result": {
+          "name": "stick",
+          "count": 4
+        },
+        "ingredients": [
+          {
+            "name": "oak_planks",
+            "count": 2
+          }
+        ],
+        "missing": [],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "stick",
+          "count": 4
+        },
+        "ingredients": [
+          {
+            "name": "cherry_planks",
+            "count": 2
+          }
+        ],
+        "missing": [
+          {
+            "name": "cherry_planks",
+            "count": 2
+          }
+        ],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "stick",
+          "count": 4
+        },
+        "ingredients": [
+          {
+            "name": "bamboo_planks",
+            "count": 2
+          }
+        ],
+        "missing": [
+          {
+            "name": "bamboo_planks",
+            "count": 2
+          }
+        ],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "stick",
+          "count": 4
+        },
+        "ingredients": [
+          {
+            "name": "mangrove_planks",
+            "count": 2
+          }
+        ],
+        "missing": [
+          {
+            "name": "mangrove_planks",
+            "count": 2
+          }
+        ],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "stick",
+          "count": 4
+        },
+        "ingredients": [
+          {
+            "name": "warped_planks",
+            "count": 2
+          }
+        ],
+        "missing": [
+          {
+            "name": "warped_planks",
+            "count": 2
+          }
+        ],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "stick",
+          "count": 4
+        },
+        "ingredients": [
+          {
+            "name": "crimson_planks",
+            "count": 2
+          }
+        ],
+        "missing": [
+          {
+            "name": "crimson_planks",
+            "count": 2
+          }
+        ],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "stick",
+          "count": 4
+        },
+        "ingredients": [
+          {
+            "name": "pale_oak_planks",
+            "count": 2
+          }
+        ],
+        "missing": [
+          {
+            "name": "pale_oak_planks",
+            "count": 2
+          }
+        ],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "stick",
+          "count": 4
+        },
+        "ingredients": [
+          {
+            "name": "dark_oak_planks",
+            "count": 2
+          }
+        ],
+        "missing": [
+          {
+            "name": "dark_oak_planks",
+            "count": 2
+          }
+        ],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "stick",
+          "count": 4
+        },
+        "ingredients": [
+          {
+            "name": "acacia_planks",
+            "count": 2
+          }
+        ],
+        "missing": [
+          {
+            "name": "acacia_planks",
+            "count": 2
+          }
+        ],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "stick",
+          "count": 4
+        },
+        "ingredients": [
+          {
+            "name": "jungle_planks",
+            "count": 2
+          }
+        ],
+        "missing": [
+          {
+            "name": "jungle_planks",
+            "count": 2
+          }
+        ],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "stick",
+          "count": 4
+        },
+        "ingredients": [
+          {
+            "name": "birch_planks",
+            "count": 2
+          }
+        ],
+        "missing": [
+          {
+            "name": "birch_planks",
+            "count": 2
+          }
+        ],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "stick",
+          "count": 4
+        },
+        "ingredients": [
+          {
+            "name": "spruce_planks",
+            "count": 2
+          }
+        ],
+        "missing": [
+          {
+            "name": "spruce_planks",
+            "count": 2
+          }
+        ],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "stick",
+          "count": 1
+        },
+        "ingredients": [
+          {
+            "name": "bamboo",
+            "count": 2
+          }
+        ],
+        "missing": [
+          {
+            "name": "bamboo",
+            "count": 2
+          }
+        ],
+        "requiresTable": false
+      }
+    ]
+  },
+  "text": "Recipes for stick:\n- stick x4 <- oak_planks x2 [craftable]\n- stick x4 <- cherry_planks x2 [missing cherry_planks x2]\n- stick x4 <- bamboo_planks x2 [missing bamboo_planks x2]\n- stick x4 <- mangrove_planks x2 [missing mangrove_planks x2]\n- stick x4 <- warped_planks x2 [missing warped_planks x2]\n- stick x4 <- crimson_planks x2 [missing crimson_planks x2]\n- stick x4 <- pale_oak_planks x2 [missing pale_oak_planks x2]\n- stick x4 <- dark_oak_planks x2 [missing dark_oak_planks x2]\n- stick x4 <- acacia_planks x2 [missing acacia_planks x2]\n- stick x4 <- jungle_planks x2 [missing jungle_planks x2]\n- stick x4 <- birch_planks x2 [missing birch_planks x2]\n- stick x4 <- spruce_planks x2 [missing spruce_planks x2]\n- stick x1 <- bamboo x2 [missing bamboo x2]"
+}

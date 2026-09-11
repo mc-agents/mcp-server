@@ -1,0 +1,10 @@
+{
+  "tool": "wait-for-window",
+  "note": "no pattern, so nothing at all opened",
+  "data": {
+    "titlePattern": null,
+    "timeoutMs": 10000,
+    "window": null
+  },
+  "text": "No window opened within 10000ms."
+}

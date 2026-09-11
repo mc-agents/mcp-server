@@ -1,0 +1,13 @@
+{
+  "tool": "get-block-info",
+  "note": "live capture against Paper 26.1.2, called with {\"x\": 9000000, \"y\": 300, \"z\": 9000000}",
+  "data": {
+    "position": {
+      "x": 9000000,
+      "y": 300,
+      "z": 9000000
+    },
+    "block": null
+  },
+  "text": "(9000000, 300, 9000000) is outside the loaded chunks."
+}

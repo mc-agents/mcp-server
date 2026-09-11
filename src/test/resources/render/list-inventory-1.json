@@ -1,0 +1,34 @@
+{
+  "tool": "list-inventory",
+  "note": "live capture against Paper 26.1.2, called with {}",
+  "data": {
+    "items": [
+      {
+        "name": "oak_planks",
+        "count": 24,
+        "slot": 36
+      },
+      {
+        "name": "stick",
+        "count": 16,
+        "slot": 37
+      },
+      {
+        "name": "diamond",
+        "count": 6,
+        "slot": 38
+      },
+      {
+        "name": "chest",
+        "count": 4,
+        "slot": 39
+      },
+      {
+        "name": "oak_sign",
+        "count": 2,
+        "slot": 40
+      }
+    ]
+  },
+  "text": "5 item stack(s):\n- oak_planks x24 (slot 36)\n- stick x16 (slot 37)\n- diamond x6 (slot 38)\n- chest x4 (slot 39)\n- oak_sign x2 (slot 40)"
+}

@@ -1,0 +1,16 @@
+{
+  "tool": "read-block-entity",
+  "note": "live capture against Paper 26.1.2, called with {\"x\": -6, \"y\": -60, \"z\": 5}",
+  "data": {
+    "block": "air",
+    "position": {
+      "x": -6,
+      "y": -60,
+      "z": 5
+    },
+    "present": false,
+    "signFaces": [],
+    "raw": null
+  },
+  "text": "air at (-6, -60, 5) carries no block entity data."
+}

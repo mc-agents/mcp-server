@@ -1,0 +1,21 @@
+{
+  "tool": "can-craft",
+  "note": "missing both ingredients and a table",
+  "data": {
+    "item": "beacon",
+    "craftable": false,
+    "hasRecipe": true,
+    "missing": [
+      {
+        "name": "nether_star",
+        "count": 1
+      },
+      {
+        "name": "glass",
+        "count": 5
+      }
+    ],
+    "needsTable": true
+  },
+  "text": "No. beacon still needs: nether_star x1, glass x5, a crafting table in reach."
+}

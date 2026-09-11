@@ -1,0 +1,68 @@
+{
+  "tool": "list-recipes",
+  "note": "live capture against Paper 26.1.2, called with {}",
+  "data": {
+    "item": null,
+    "tableInReach": false,
+    "stoppedAt": null,
+    "recipes": [
+      {
+        "result": {
+          "name": "crafting_table",
+          "count": 1
+        },
+        "ingredients": [
+          {
+            "name": "oak_planks",
+            "count": 4
+          }
+        ],
+        "missing": [],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "oak_button",
+          "count": 1
+        },
+        "ingredients": [
+          {
+            "name": "oak_planks",
+            "count": 1
+          }
+        ],
+        "missing": [],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "oak_pressure_plate",
+          "count": 1
+        },
+        "ingredients": [
+          {
+            "name": "oak_planks",
+            "count": 2
+          }
+        ],
+        "missing": [],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "stick",
+          "count": 4
+        },
+        "ingredients": [
+          {
+            "name": "oak_planks",
+            "count": 2
+          }
+        ],
+        "missing": [],
+        "requiresTable": false
+      }
+    ]
+  },
+  "text": "Craftable right now (no crafting table in reach):\n- crafting_table x1 <- oak_planks x4 [craftable]\n- oak_button x1 <- oak_planks x1 [craftable]\n- oak_pressure_plate x1 <- oak_planks x2 [craftable]\n- stick x4 <- oak_planks x2 [craftable]"
+}

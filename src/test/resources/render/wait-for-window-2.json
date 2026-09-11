@@ -1,0 +1,10 @@
+{
+  "tool": "wait-for-window",
+  "note": "live capture against Paper 26.1.2, called with {\"titlePattern\": \"Nothing Like This\", \"timeoutMs\": 500}",
+  "data": {
+    "titlePattern": "Nothing Like This",
+    "timeoutMs": 500,
+    "window": null
+  },
+  "text": "No window titled /Nothing Like This/ opened within 500ms."
+}

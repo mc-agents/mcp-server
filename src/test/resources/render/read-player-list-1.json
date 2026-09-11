@@ -1,0 +1,15 @@
+{
+  "tool": "read-player-list",
+  "note": "live capture against Paper 26.1.2, called with {}",
+  "data": {
+    "players": [
+      {
+        "name": "mcp_probe",
+        "gameMode": "creative",
+        "ping": 0,
+        "self": true
+      }
+    ]
+  },
+  "text": "1 players online\n  mcp_probe (this bot): creative, 0ms"
+}

@@ -1,0 +1,21 @@
+{
+  "tool": "get-block-info",
+  "note": "live capture against Paper 26.1.2, called with {\"x\": -4, \"y\": -61, \"z\": 7}",
+  "data": {
+    "position": {
+      "x": -4,
+      "y": -61,
+      "z": 7
+    },
+    "block": {
+      "name": "grass_block",
+      "type": 8,
+      "position": {
+        "x": -4,
+        "y": -61,
+        "z": 7
+      }
+    }
+  },
+  "text": "grass_block (type 8) at (-4, -61, 7)."
+}

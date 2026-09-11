@@ -1,0 +1,10 @@
+{
+  "tool": "find-blocks",
+  "note": "live capture against Paper 26.1.2, called with {\"blockType\": \"diamond_ore\", \"maxDistance\": 8, \"count\": 3}",
+  "data": {
+    "blockType": "diamond_ore",
+    "maxDistance": 8,
+    "positions": []
+  },
+  "text": "No diamond_ore within 8 blocks."
+}

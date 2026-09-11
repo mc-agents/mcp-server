@@ -1,0 +1,12 @@
+{
+  "tool": "get-position",
+  "note": "live capture against Paper 26.1.2, called with {}",
+  "data": {
+    "position": {
+      "x": -4,
+      "y": -60,
+      "z": 7
+    }
+  },
+  "text": "Position: (-4, -60, 7)"
+}

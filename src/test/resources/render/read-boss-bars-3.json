@@ -1,0 +1,21 @@
+{
+  "tool": "read-boss-bars",
+  "note": "an untitled bar, and one whose progress rounds",
+  "data": {
+    "bars": [
+      {
+        "title": "",
+        "progress": 1,
+        "color": "white",
+        "dividers": 0
+      },
+      {
+        "title": "Wither",
+        "progress": 0.735,
+        "color": "purple",
+        "dividers": 10
+      }
+    ]
+  },
+  "text": "boss bar \"(untitled)\" (100%, white, 0 segments)\nboss bar \"Wither\" (74%, purple, 10 segments)"
+}

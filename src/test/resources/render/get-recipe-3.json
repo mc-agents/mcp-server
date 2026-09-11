@@ -1,0 +1,11 @@
+{
+  "tool": "get-recipe",
+  "note": "an item nothing produces",
+  "data": {
+    "item": "bedrock",
+    "tableInReach": false,
+    "stoppedAt": null,
+    "recipes": []
+  },
+  "text": "No recipe produces bedrock."
+}

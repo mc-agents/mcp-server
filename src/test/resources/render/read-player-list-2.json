@@ -1,0 +1,8 @@
+{
+  "tool": "read-player-list",
+  "note": "an empty tab list",
+  "data": {
+    "players": []
+  },
+  "text": "The tab list is empty."
+}

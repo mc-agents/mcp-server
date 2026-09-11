@@ -1,0 +1,13 @@
+{
+  "tool": "get-world-state",
+  "note": "a frozen thunderstorm at night, with a clock that needs padding",
+  "data": {
+    "timeOfDay": 18100,
+    "day": 42,
+    "moonPhase": 3,
+    "isDay": false,
+    "weather": "thunder",
+    "doDaylightCycle": false
+  },
+  "text": "time: 00:06 (tick 18100 of the day, night)\nday: 42, moon phase 3\nweather: thunder\ndaylight cycle: frozen"
+}

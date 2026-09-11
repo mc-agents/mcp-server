@@ -1,0 +1,9 @@
+{
+  "tool": "find-item",
+  "note": "live capture against Paper 26.1.2, called with {\"nameOrType\": \"netherite_hoe\"}",
+  "data": {
+    "query": "netherite_hoe",
+    "item": null
+  },
+  "text": "No inventory item matches \"netherite_hoe\"."
+}

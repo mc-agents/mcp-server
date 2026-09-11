@@ -1,0 +1,16 @@
+{
+  "tool": "read-block-entity",
+  "note": "live capture against Paper 26.1.2, called with {\"x\": -2, \"y\": -60, \"z\": 9}",
+  "data": {
+    "block": "chest",
+    "position": {
+      "x": -2,
+      "y": -60,
+      "z": 9
+    },
+    "present": false,
+    "signFaces": [],
+    "raw": null
+  },
+  "text": "chest at (-2, -60, 9) carries no block entity data."
+}

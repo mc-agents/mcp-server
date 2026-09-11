@@ -1,0 +1,15 @@
+{
+  "tool": "read-boss-bars",
+  "note": "live capture against Paper 26.1.2, called with {}",
+  "data": {
+    "bars": [
+      {
+        "title": "Probe Bar",
+        "progress": 0.7300000190734863,
+        "color": "purple",
+        "dividers": 10
+      }
+    ]
+  },
+  "text": "boss bar \"Probe Bar\" (73%, purple, 10 segments)"
+}

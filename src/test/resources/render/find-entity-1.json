@@ -1,0 +1,21 @@
+{
+  "tool": "find-entity",
+  "note": "live capture against Paper 26.1.2, called with {\"maxDistance\": 32, \"count\": 5}",
+  "data": {
+    "query": null,
+    "maxDistance": 32,
+    "entities": [
+      {
+        "label": "text_display",
+        "type": "other",
+        "position": {
+          "x": -4,
+          "y": -58,
+          "z": 7
+        },
+        "distance": 2
+      }
+    ]
+  },
+  "text": "Found 1 entity/entities:\n- text_display (other) at (-4, -58, 7), 2.0 blocks away"
+}

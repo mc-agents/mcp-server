@@ -1,0 +1,36 @@
+{
+  "tool": "find-blocks",
+  "note": "live capture against Paper 26.1.2, called with {\"blockType\": \"dirt\", \"maxDistance\": 8, \"count\": 5}",
+  "data": {
+    "blockType": "dirt",
+    "maxDistance": 8,
+    "positions": [
+      {
+        "x": -4,
+        "y": -62,
+        "z": 7
+      },
+      {
+        "x": -5,
+        "y": -62,
+        "z": 7
+      },
+      {
+        "x": -4,
+        "y": -62,
+        "z": 6
+      },
+      {
+        "x": -4,
+        "y": -62,
+        "z": 8
+      },
+      {
+        "x": -3,
+        "y": -62,
+        "z": 7
+      }
+    ]
+  },
+  "text": "Found 5 dirt within 8 blocks:\n1. (-4, -62, 7)\n2. (-5, -62, 7)\n3. (-4, -62, 6)\n4. (-4, -62, 8)\n5. (-3, -62, 7)"
+}

@@ -1,0 +1,12 @@
+{
+  "tool": "read-scoreboard",
+  "note": "a sidebar with no title and nothing on it",
+  "data": {
+    "slot": "sidebar",
+    "board": {
+      "title": "",
+      "entries": []
+    }
+  },
+  "text": "scoreboard \"(untitled)\" (sidebar, 0 entries)\nno entries are on it"
+}

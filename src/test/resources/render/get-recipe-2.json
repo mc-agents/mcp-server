@@ -1,0 +1,31 @@
+{
+  "tool": "get-recipe",
+  "note": "live capture against Paper 26.1.2, called with {\"itemName\": \"diamond\"}",
+  "data": {
+    "item": "diamond",
+    "tableInReach": false,
+    "stoppedAt": null,
+    "recipes": [
+      {
+        "result": {
+          "name": "diamond",
+          "count": 9
+        },
+        "ingredients": [
+          {
+            "name": "diamond_block",
+            "count": 1
+          }
+        ],
+        "missing": [
+          {
+            "name": "diamond_block",
+            "count": 1
+          }
+        ],
+        "requiresTable": false
+      }
+    ]
+  },
+  "text": "Recipes for diamond:\n- diamond x9 <- diamond_block x1 [missing diamond_block x1]"
+}

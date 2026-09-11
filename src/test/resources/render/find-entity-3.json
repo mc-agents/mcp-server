@@ -1,0 +1,10 @@
+{
+  "tool": "find-entity",
+  "note": "a search for players that found none",
+  "data": {
+    "query": "player",
+    "maxDistance": 16,
+    "entities": []
+  },
+  "text": "No player within 16 blocks."
+}

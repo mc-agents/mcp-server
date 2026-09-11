@@ -1,0 +1,21 @@
+{
+  "tool": "read-player-list",
+  "note": "a player the server has not described, and one that is not the bot",
+  "data": {
+    "players": [
+      {
+        "name": "ghost",
+        "gameMode": "unknown",
+        "ping": null,
+        "self": false
+      },
+      {
+        "name": "HyperBot",
+        "gameMode": "survival",
+        "ping": 12,
+        "self": true
+      }
+    ]
+  },
+  "text": "2 players online\n  ghost: unknown, unknown\n  HyperBot (this bot): survival, 12ms"
+}

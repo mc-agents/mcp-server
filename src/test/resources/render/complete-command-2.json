@@ -1,0 +1,10 @@
+{
+  "tool": "complete-command",
+  "note": "a command the server knows nothing about",
+  "data": {
+    "text": "/nope ",
+    "total": 0,
+    "completions": []
+  },
+  "text": "The server offered nothing for \"/nope \"."
+}

@@ -1,0 +1,16 @@
+{
+  "tool": "read-block-entity",
+  "note": "live capture against Paper 26.1.2, called with {\"x\": -4, \"y\": -61, \"z\": 7}",
+  "data": {
+    "block": "grass_block",
+    "position": {
+      "x": -4,
+      "y": -61,
+      "z": 7
+    },
+    "present": false,
+    "signFaces": [],
+    "raw": null
+  },
+  "text": "grass_block at (-4, -61, 7) carries no block entity data."
+}

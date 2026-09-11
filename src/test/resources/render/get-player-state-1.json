@@ -1,0 +1,23 @@
+{
+  "tool": "get-player-state",
+  "note": "live capture against Paper 26.1.2, called with {}",
+  "data": {
+    "health": 20,
+    "food": 20,
+    "saturation": 20,
+    "experience": {
+      "level": 0,
+      "progress": 0,
+      "points": 0
+    },
+    "gameMode": "creative",
+    "dimension": "overworld",
+    "position": {
+      "x": -4,
+      "y": -60,
+      "z": 7
+    },
+    "oxygen": null
+  },
+  "text": "health: 20 / 20\nfood: 20 / 20 (saturation 20)\nhealth bar: 100%\nexperience: level 0, 0% to the next level, 0 points\ngameMode: creative / dimension: overworld\nposition: (-4, -60, 7)\noxygen: full / 20"
+}

@@ -1,0 +1,9 @@
+{
+  "tool": "read-scoreboard",
+  "note": "live capture against Paper 26.1.2, called with {\"slot\": \"belowName\"}",
+  "data": {
+    "slot": "belowName",
+    "board": null
+  },
+  "text": "No scoreboard is displayed in the belowName slot."
+}

@@ -1,0 +1,26 @@
+{
+  "tool": "list-recipes",
+  "note": "a table in reach and more recipes than fit",
+  "data": {
+    "item": null,
+    "tableInReach": true,
+    "stoppedAt": 100,
+    "recipes": [
+      {
+        "result": {
+          "name": "chest",
+          "count": 1
+        },
+        "ingredients": [
+          {
+            "name": "oak_planks",
+            "count": 8
+          }
+        ],
+        "missing": [],
+        "requiresTable": true
+      }
+    ]
+  },
+  "text": "Craftable right now (a crafting table is in reach):\n- chest x1 <- oak_planks x8 [craftable, needs a crafting table]\n(stopped at 100 entries)"
+}

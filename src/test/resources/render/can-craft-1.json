@@ -1,0 +1,12 @@
+{
+  "tool": "can-craft",
+  "note": "live capture against Paper 26.1.2, called with {\"itemName\": \"stick\"}",
+  "data": {
+    "item": "stick",
+    "craftable": true,
+    "hasRecipe": true,
+    "missing": [],
+    "needsTable": false
+  },
+  "text": "Yes, stick can be crafted now."
+}

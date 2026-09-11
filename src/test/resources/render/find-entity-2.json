@@ -1,0 +1,10 @@
+{
+  "tool": "find-entity",
+  "note": "live capture against Paper 26.1.2, called with {\"type\": \"zombie\", \"maxDistance\": 8}",
+  "data": {
+    "query": "zombie",
+    "maxDistance": 8,
+    "entities": []
+  },
+  "text": "No zombie within 8 blocks."
+}

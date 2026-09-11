@@ -1,0 +1,21 @@
+{
+  "tool": "get-block-info",
+  "note": "a block whose position the server floored differently",
+  "data": {
+    "position": {
+      "x": -4,
+      "y": -61,
+      "z": 7
+    },
+    "block": {
+      "name": "stone",
+      "type": 1,
+      "position": {
+        "x": -4,
+        "y": -61,
+        "z": 7
+      }
+    }
+  },
+  "text": "stone (type 1) at (-4, -61, 7)."
+}

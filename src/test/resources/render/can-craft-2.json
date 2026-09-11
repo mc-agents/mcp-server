@@ -1,0 +1,12 @@
+{
+  "tool": "can-craft",
+  "note": "live capture against Paper 26.1.2, called with {\"itemName\": \"beacon\"}",
+  "data": {
+    "item": "beacon",
+    "craftable": false,
+    "hasRecipe": false,
+    "missing": [],
+    "needsTable": false
+  },
+  "text": "No recipe produces beacon."
+}

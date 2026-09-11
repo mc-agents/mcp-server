@@ -1,0 +1,25 @@
+{
+  "tool": "read-scoreboard",
+  "note": "live capture against Paper 26.1.2, called with {}",
+  "data": {
+    "slot": "sidebar",
+    "board": {
+      "title": "Probe Stats",
+      "entries": [
+        {
+          "name": "Coins",
+          "score": 1200
+        },
+        {
+          "name": "Level",
+          "score": 42
+        },
+        {
+          "name": "Deaths",
+          "score": 3
+        }
+      ]
+    }
+  },
+  "text": "scoreboard \"Probe Stats\" (sidebar, 3 entries)\n  Coins: 1200\n  Level: 42\n  Deaths: 3"
+}

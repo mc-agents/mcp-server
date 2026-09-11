@@ -1,0 +1,11 @@
+{
+  "tool": "list-recipes",
+  "note": "an inventory that reaches nothing",
+  "data": {
+    "item": null,
+    "tableInReach": false,
+    "stoppedAt": null,
+    "recipes": []
+  },
+  "text": "Nothing in the inventory is enough for any recipe."
+}

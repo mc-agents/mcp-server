@@ -1,0 +1,13 @@
+{
+  "tool": "get-world-state",
+  "note": "live capture against Paper 26.1.2, called with {}",
+  "data": {
+    "timeOfDay": 10883,
+    "day": 0,
+    "moonPhase": 0,
+    "isDay": true,
+    "weather": "clear",
+    "doDaylightCycle": true
+  },
+  "text": "time: 16:52 (tick 10883 of the day, day)\nday: 0, moon phase 0\nweather: clear\ndaylight cycle: running"
+}

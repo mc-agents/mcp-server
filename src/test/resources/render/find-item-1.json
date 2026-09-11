@@ -1,0 +1,13 @@
+{
+  "tool": "find-item",
+  "note": "live capture against Paper 26.1.2, called with {\"nameOrType\": \"diamond\"}",
+  "data": {
+    "query": "diamond",
+    "item": {
+      "name": "diamond",
+      "count": 6,
+      "slot": 38
+    }
+  },
+  "text": "Found diamond x6 in slot 38."
+}

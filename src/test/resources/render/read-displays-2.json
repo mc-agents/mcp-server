@@ -1,0 +1,9 @@
+{
+  "tool": "read-displays",
+  "note": "nothing on display",
+  "data": {
+    "maxDistance": 24,
+    "displays": []
+  },
+  "text": "No text is being displayed within 24 blocks."
+}

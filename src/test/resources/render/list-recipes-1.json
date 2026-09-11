@@ -1,0 +1,58 @@
+{
+  "tool": "list-recipes",
+  "note": "live capture against Paper 26.1.2, called with {\"outputItem\": \"torch\"}",
+  "data": {
+    "item": "torch",
+    "tableInReach": false,
+    "stoppedAt": null,
+    "recipes": [
+      {
+        "result": {
+          "name": "torch",
+          "count": 4
+        },
+        "ingredients": [
+          {
+            "name": "charcoal",
+            "count": 1
+          },
+          {
+            "name": "stick",
+            "count": 1
+          }
+        ],
+        "missing": [
+          {
+            "name": "charcoal",
+            "count": 1
+          }
+        ],
+        "requiresTable": false
+      },
+      {
+        "result": {
+          "name": "torch",
+          "count": 4
+        },
+        "ingredients": [
+          {
+            "name": "coal",
+            "count": 1
+          },
+          {
+            "name": "stick",
+            "count": 1
+          }
+        ],
+        "missing": [
+          {
+            "name": "coal",
+            "count": 1
+          }
+        ],
+        "requiresTable": false
+      }
+    ]
+  },
+  "text": "Recipes for torch:\n- torch x4 <- charcoal x1, stick x1 [missing charcoal x1]\n- torch x4 <- coal x1, stick x1 [missing coal x1]"
+}

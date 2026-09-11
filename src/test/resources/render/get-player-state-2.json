@@ -1,0 +1,19 @@
+{
+  "tool": "get-player-state",
+  "note": "half a heart gone, drowning, and between worlds",
+  "data": {
+    "health": 19.5,
+    "food": 17,
+    "saturation": 2.5,
+    "experience": {
+      "level": 7,
+      "progress": 0.42,
+      "points": 130
+    },
+    "gameMode": "survival",
+    "dimension": "the_nether",
+    "position": null,
+    "oxygen": 11
+  },
+  "text": "health: 19.5 / 20\nfood: 17 / 20 (saturation 2.5)\nhealth bar: 98%\nexperience: level 7, 42% to the next level, 130 points\ngameMode: survival / dimension: the_nether\nposition: unknown\noxygen: 11 / 20"
+}

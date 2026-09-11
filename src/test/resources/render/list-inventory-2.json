@@ -1,0 +1,8 @@
+{
+  "tool": "list-inventory",
+  "note": "an empty inventory",
+  "data": {
+    "items": []
+  },
+  "text": "Inventory is empty."
+}
