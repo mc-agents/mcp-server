@@ -1,0 +1,23 @@
+{{ include "mc-agents-mcp-server.fullname" . }} is up.
+
+Agents reach MCP at:
+
+  http://{{ include "mc-agents-mcp-server.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.mcpPort }}/mcp
+
+Bots dial in at:
+
+  {{ include "mc-agents-mcp-server.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.botLinkPort }}
+
+which is what a MinecraftBot's spec.server should say.
+
+{{ if .Values.auth.enabled -}}
+The token is in the Secret {{ include "mc-agents-mcp-server.secretName" . }}:
+
+  kubectl -n {{ .Release.Namespace }} get secret {{ include "mc-agents-mcp-server.secretName" . }} \
+    -o jsonpath='{.data.{{ .Values.auth.secretKey }}}' | base64 -d
+{{- else -}}
+auth.enabled is false, so anything that can reach the MCP port can drive every bot.
+{{- end }}
+
+tools/list answers with all 64 tools before any bot has linked. Bots come from the operator:
+https://github.com/mc-agents/operator

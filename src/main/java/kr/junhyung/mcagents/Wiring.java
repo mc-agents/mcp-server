@@ -1,6 +1,7 @@
 package kr.junhyung.mcagents;
 
 import kr.junhyung.mcagents.bot.BotLinkServer;
+import jakarta.servlet.Filter;
 import kr.junhyung.mcagents.http.BearerTokenFilter;
 import kr.junhyung.mcagents.bot.BotRegistry;
 import kr.junhyung.mcagents.catalog.Catalog;
@@ -64,12 +65,18 @@ public class Wiring {
      * there is nothing behind a probe worth reaching.
      */
     @Bean
-    public FilterRegistrationBean<BearerTokenFilter> mcpAuth(
+    public FilterRegistrationBean<Filter> mcpAuth(
             @Value("${mcagents.auth.token:}") String token) {
-        FilterRegistrationBean<BearerTokenFilter> registration = new FilterRegistrationBean<>();
+        FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>();
 
         if (token.isBlank()) {
             log.warn("MCP_AUTH_TOKEN is not set, so /mcp is open to anything that can reach it");
+            /*
+            Disabled, but still carrying a filter: Spring asks every registration to describe
+            itself while the context starts, and a description is built from the filter. Leaving
+            it null takes the whole application down before the warning above means anything.
+            */
+            registration.setFilter((request, response, chain) -> chain.doFilter(request, response));
             registration.setEnabled(false);
             return registration;
         }

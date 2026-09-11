@@ -1,0 +1,85 @@
+# A bot exists on the pod it dialled, and any agent may address any bot by name, so a second
+# replica would answer about bots it cannot reach. Sticky sessions pin the caller, which is the
+# wrong half. Scaling out means moving the bot link off this pod; scaling bots is the operator's.
+replicaCount: 1
+
+image:
+  registry: junhyung.cloud/library
+  repository: mcp-server
+  # Empty falls back to Chart.appVersion. A promotion swaps only this value.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# junhyung.cloud/library allows anonymous pull, so nothing is needed by default.
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+  # This server does not call the Kubernetes API, so there is no reason to mount a token.
+  automountToken: false
+
+# A shared bearer token on /mcp. /actuator is never behind it: a probe cannot carry one.
+auth:
+  enabled: true
+  # The token itself. Use existingSecret anywhere the values file is not the secret store.
+  token: ""
+  # Name of a Secret that already holds it. When set, the chart creates none.
+  existingSecret: ""
+  secretKey: token
+
+service:
+  type: ClusterIP
+  mcpPort: 3000
+  # Bots dial this. It is a separate port so a NetworkPolicy can open one and not the other.
+  botLinkPort: 8765
+  annotations: {}
+
+# Bots reach the link port and agents reach the MCP port. Nothing else needs either.
+networkPolicy:
+  enabled: false
+  # Pods allowed to dial the bot link port. Empty means every pod in this namespace.
+  botSelector: {}
+  # Pods allowed to call /mcp. Empty means every pod in this namespace.
+  agentSelector: {}
+
+# How many bots may be linked at once. A bot that is turned away says this number.
+maxBots: 16
+
+logLevel: INFO
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    memory: 1Gi
+
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: false
+    labels: {}
+    interval: 30s
+    scrapeTimeout: 10s

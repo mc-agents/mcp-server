@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mc-agents-mcp-server.fullname" . }}
+  labels:
+    {{- include "mc-agents-mcp-server.labels" . | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "mc-agents-mcp-server.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: mcp
+      port: {{ .Values.service.mcpPort }}
+      targetPort: mcp
+    - name: bot-link
+      port: {{ .Values.service.botLinkPort }}
+      targetPort: bot-link

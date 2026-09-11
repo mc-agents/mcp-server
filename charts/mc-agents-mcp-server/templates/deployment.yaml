@@ -1,0 +1,108 @@
+{{- include "mc-agents-mcp-server.validate" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mc-agents-mcp-server.fullname" . }}
+  labels:
+    {{- include "mc-agents-mcp-server.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  # A bot's link is to one pod. Rolling a second pod up first would leave the old one holding
+  # every bot while the new one answers "no bots are connected".
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "mc-agents-mcp-server.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mc-agents-mcp-server.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- if .Values.auth.enabled }}
+        # Restarts the pod when the token changes. Without it the old token keeps working until
+        # something else happens to roll the deployment, and the new one is refused.
+        checksum/auth: {{ include "mc-agents-mcp-server.secretName" . | sha256sum }}-{{ .Values.auth.token | sha256sum }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "mc-agents-mcp-server.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
+      # A Service named mcp-server in this namespace would otherwise inject MCP_SERVER_PORT and
+      # MCP_PORT and silently override what is set here.
+      enableServiceLinks: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: mcp-server
+          image: {{ include "mc-agents-mcp-server.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: mcp
+              containerPort: 3000
+            - name: bot-link
+              containerPort: 8765
+          env:
+            - name: MCP_PORT
+              value: "3000"
+            - name: BOT_LINK_PORT
+              value: "8765"
+            - name: MCP_MAX_BOTS
+              value: {{ .Values.maxBots | quote }}
+            - name: MCP_LOG_LEVEL
+              value: {{ .Values.logLevel | quote }}
+            {{- if .Values.auth.enabled }}
+            - name: MCP_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mc-agents-mcp-server.secretName" . }}
+                  key: {{ .Values.auth.secretKey }}
+            {{- end }}
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: mcp
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: mcp
+          # Ready means the bot link is accepting. A bot that dials a pod which is not ready gets
+          # nothing, and the operator would report Waiting without saying why.
+          readinessProbe:
+            tcpSocket:
+              port: bot-link
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        # The root filesystem is read-only; the JVM still wants somewhere to put its scratch files.
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
