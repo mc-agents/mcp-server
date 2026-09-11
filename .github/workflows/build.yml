@@ -64,6 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       value: ${{ steps.tag.outputs.value }}
+      version: ${{ steps.tag.outputs.version }}
     steps:
       - uses: actions/checkout@v5
       - id: tag
@@ -73,6 +74,8 @@ jobs:
           sha=$(git rev-parse --short=8 HEAD)
           case "$version" in *-*) sep=. ;; *) sep=- ;; esac
           echo "value=${version}${sep}${stamp}.g${sha}" >> "$GITHUB_OUTPUT"
+          # The chart's appVersion falls back to this one, so it has to exist in the registry.
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
 
   # Paketo builds one architecture per invocation, and cross-building runs the whole builder under
   # emulation. A native runner each is both faster and simpler; the manifest list joins them after.
@@ -127,8 +130,9 @@ jobs:
       - id: manifest
         env:
           TAG: ${{ needs.tag.outputs.value }}
+          VERSION: ${{ needs.tag.outputs.version }}
         run: |
-          for name in "$TAG" latest; do
+          for name in "$TAG" "$VERSION" latest; do
             docker buildx imagetools create --tag "$IMAGE:$name" \
               "$IMAGE:$TAG-amd64" "$IMAGE:$TAG-arm64"
           done
