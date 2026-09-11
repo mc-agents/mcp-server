@@ -81,12 +81,12 @@ says which half went wrong through its error code, because the fixes are in diff
 
 | `error.code` | Means | Look at |
 | --- | --- | --- |
-| `LOGIN_REFUSED` | The server rejected the login: whitelist, ban, full, wrong version | The target server |
-| `LOGIN_TIMEOUT` | No answer to the login at all | The address, and whether the server is up |
-| `SPAWN_TIMEOUT` | Logged in, never spawned. Usually a plugin holding the player | The world and its plugins |
+| `JOIN_FAILED_DIAL` | The address did not accept a connection at all | The address, and whether the server is up |
+| `JOIN_FAILED_LOGIN` | The server rejected the login: whitelist, ban, full, wrong version | The target server |
+| `JOIN_FAILED_SPAWN` | Logged in, never spawned. Usually a plugin holding the player | The world and its plugins |
 
-Any code beginning `SPAWN` is read as the third row and everything else as a login problem, so a
-bot may add codes without the server having to learn them.
+The server reads any other code as a login problem, which is where a join fails most of the time,
+so a bot may add codes without the server having to learn them first.
 
 A bot that has not sent `hello` within 5s is dropped. A frame before `hello`, or a second `hello`,
 is a violation.

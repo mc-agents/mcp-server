@@ -96,14 +96,18 @@ class NormaliserTest {
         assertTrue(thrown.getMessage().contains("not given"), thrown.getMessage());
     }
 
-    /** A timeout the caller asked for is the deadline; everything else falls back to the catalogue. */
+    /**
+     * The deadline sits above the tool's own wait, so the tool answers before the deadline does.
+     * Equal timers race, and the deadline's message is the less useful of the two: "did not finish
+     * within 10000ms" where the tool had "no window opened" ready to send.
+     */
     @Test
-    void theDeadlineFollowsTheCallersTimeoutWhenThereIsOne() {
+    void theDeadlineLeavesTheToolRoomToAnswerFirst() {
         ToolSpec walk = catalog.require("move-to-position");
         Map<String, Object> far = wire("move-to-position", Map.of("x", 0, "y", 64, "z", 0, "timeoutMs", 5_000));
         Map<String, Object> plain = wire("move-to-position", Map.of("x", 0, "y", 64, "z", 0));
 
-        assertEquals(5_000, Normaliser.deadlineOf(walk, far));
-        assertEquals(60_000, Normaliser.deadlineOf(walk, plain));
+        assertTrue(Normaliser.deadlineOf(walk, far) > 5_000);
+        assertEquals(61_000, Normaliser.deadlineOf(walk, plain));
     }
 }

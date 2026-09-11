@@ -172,11 +172,14 @@ public class Orchestration {
     /**
      * Which half of the join failed. The bot answered, so it is running and linked; what is left to
      * distinguish is a server that would not take it from a world that would not put it anywhere.
+     *
+     * <p>An unknown code reads as a login problem, which is where a join fails most of the time,
+     * so a bot may add codes without this having to learn them first.
      */
     private static JoinStage stageOf(Messages.Result failed) {
         String code = failed.error() == null || failed.error().code() == null ? "" : failed.error().code();
 
-        return code.startsWith("SPAWN") ? JoinStage.SPAWN : JoinStage.LOGIN;
+        return "JOIN_FAILED_SPAWN".equals(code) ? JoinStage.SPAWN : JoinStage.LOGIN;
     }
 
     /**

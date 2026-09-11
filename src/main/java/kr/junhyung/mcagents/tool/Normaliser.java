@@ -14,6 +14,9 @@ import java.util.Map;
  */
 final class Normaliser {
 
+    /** Room for a tool to finish answering after its own wait expires. */
+    private static final int TOOL_TIMEOUT_MARGIN_MS = 1_000;
+
     private Normaliser() {}
 
     static Map<String, Object> normalise(ToolSpec spec, Map<String, Object> arguments) {
@@ -43,10 +46,21 @@ final class Normaliser {
         return wire;
     }
 
+    /**
+     * How long the server gives the bot.
+     *
+     * <p>A tool that takes a {@code timeoutMs} waits that long itself, so the deadline has to sit
+     * above it. Setting them equal makes the two timers race, and the bot's deadline usually wins:
+     * wait-for-window answered "did not finish within 10000ms" where it had a far better sentence
+     * ready about no window having opened. The margin lets the tool's own answer arrive first.
+     */
     static int deadlineOf(ToolSpec spec, Map<String, Object> wire) {
         Object given = wire.get("timeoutMs");
-        int asked = given instanceof Number number ? number.intValue() : spec.defaultDeadlineMs();
-        return Math.clamp(asked, 1_000, 600_000);
+
+        if (given instanceof Number number) {
+            return Math.clamp(number.intValue() + TOOL_TIMEOUT_MARGIN_MS, 1_000, 600_000);
+        }
+        return Math.clamp(spec.defaultDeadlineMs(), 1_000, 600_000);
     }
 
     private static Object coerce(Object value, Map<String, Object> rules) {

@@ -10,7 +10,7 @@ CATALOG = json.loads((REPO / "catalog/catalog.json").read_text())
 SAMPLES = {
     "blockType": "minecraft:stone", "itemName": "minecraft:diamond", "outputItem": "minecraft:torch",
     "nameOrType": "diamond", "message": "hello", "command": "/help", "target": "lobby",
-    "host": "127.0.0.1", "name": "bob", "type": "minecraft:cow", "entity": "minecraft:cow",
+    "host": "127.0.0.1", "port": 25577, "name": "bob", "type": "minecraft:cow", "entity": "minecraft:cow",
     "text": "hi", "pattern": "never-matches-this", "titlePattern": "chest", "slot": 0,
     "x": 0, "y": 64, "z": 0, "direction": "forward", "id": "test", "key": "test",
     "buttonId": "ok", "windowTitle": "Chest", "recipeIndex": 0, "timeoutMs": 1500,
