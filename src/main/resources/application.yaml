@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: mcp-server
+  ai:
+    mcp:
+      server:
+        name: mc-agents
+        version: ${mcagents.version:0.1.0}
+        protocol: STREAMABLE
+        # Tools are registered from the catalogue at startup, not discovered from annotations.
+        # tools/list has to be complete before any bot has linked, so it cannot depend on them.
+        capabilities:
+          tool: true
+          resource: false
+          prompt: false
+
+server:
+  port: ${MCP_PORT:3000}
+  address: ${MCP_BIND_HOST:0.0.0.0}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+mcagents:
+  bot-link:
+    # Bots dial in here. The server never has to know a pod address.
+    port: ${BOT_LINK_PORT:8765}
+  auth:
+    token: ${MCP_AUTH_TOKEN:}
+
+logging:
+  level:
+    dev.mcagents: ${MCP_LOG_LEVEL:INFO}
