@@ -1,20 +1,15 @@
-ARG JDK_IMAGE=eclipse-temurin:25-jdk-noble
 ARG JRE_IMAGE=eclipse-temurin:25-jre-noble
 
-FROM ${JDK_IMAGE} AS build
+# The jar is the build's, not this file's. A Gradle build inside a multi-architecture image build
+# runs once per architecture under emulation, for a jar that is the same bytes either way, and it
+# turned a two-minute publish into one that had not finished in twelve.
+#
+#   ./gradlew bootJar && docker build .
+#
+FROM ${JRE_IMAGE}
 WORKDIR /app
-# The wrapper and the dependency declarations first, so a source-only change reuses the download.
-COPY gradlew ./
-COPY gradle ./gradle
-COPY build.gradle.kts settings.gradle.kts gradle.properties VERSION ./
-RUN ./gradlew --no-daemon dependencies > /dev/null 2>&1 || true
-COPY catalog ./catalog
-COPY src ./src
-RUN ./gradlew --no-daemon bootJar
-
-FROM ${JRE_IMAGE} AS runtime
-WORKDIR /app
-COPY --from=build /app/build/libs/*.jar app.jar
+ARG JAR=build/libs/app.jar
+COPY ${JAR} app.jar
 RUN useradd --system --uid 10001 mcagents
 USER 10001
 # 3000 takes MCP over HTTP; 8765 is where bots dial in.

@@ -33,6 +33,14 @@ tasks.processResources { from("catalog") { include("*.json") } }
 
 tasks.test { useJUnitPlatform() }
 
+/*
+One jar, always at the same path. The Dockerfile copies it by name, and a glob over build/libs
+picks up whatever earlier versions are still lying there. The plain jar is a library artifact
+nothing here consumes.
+*/
+tasks.bootJar { archiveFileName = "app.jar" }
+tasks.jar { enabled = false }
+
 tasks.withType<JavaCompile> {
     options.compilerArgs.addAll(listOf("-Xlint:all,-processing,-serial", "-Werror"))
 }
