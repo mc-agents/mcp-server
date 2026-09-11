@@ -269,11 +269,24 @@ public class LocalTools {
             return ToolDispatcher.text("No bots are connected. Call join-server to add one.");
         }
         String body = all.stream()
-                .map(bot -> "  %s (%s): %s".formatted(bot.name(), bot.kind(),
-                        bot.status() == null ? "linked, not in a world" : bot.status().state()))
+                .map(bot -> "  %s (%s): %s".formatted(bot.name(), bot.kind(), describe(bot)))
                 .reduce((a, b) -> a + "\n" + b).orElse("");
 
         return ToolDispatcher.text("%d bot(s):\n%s".formatted(all.size(), body));
+    }
+
+    /** "idle" is the protocol's word; "linked, not in a world" is what it means to a reader. */
+    private static String describe(BotSession bot) {
+        Messages.Status status = bot.status();
+
+        if (status == null || "idle".equals(status.state())) {
+            return "linked, not in a world";
+        }
+        if ("ready".equals(status.state())) {
+            return "on " + status.address();
+        }
+        return status.reason() == null ? status.state()
+                : "%s (%s)".formatted(status.state(), status.reason());
     }
 
     private static String describe(FeedEntry line, boolean withSource) {

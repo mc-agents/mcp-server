@@ -16,6 +16,12 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("io.micrometer:micrometer-registry-prometheus")
+    /*
+    join-server creates a MinecraftBot when none is running under that name, which is the one
+    thing here that talks to Kubernetes. Absent a cluster the client simply reports there is
+    none, and join-server says a bot has to be started by hand.
+    */
+    implementation("io.fabric8:kubernetes-client:7.3.1")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

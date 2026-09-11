@@ -1,6 +1,9 @@
 package kr.junhyung.mcagents;
 
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import kr.junhyung.mcagents.bot.BotLinkServer;
+import kr.junhyung.mcagents.bot.BotProvisioner;
 import jakarta.servlet.Filter;
 import kr.junhyung.mcagents.http.BearerTokenFilter;
 import kr.junhyung.mcagents.bot.BotRegistry;
@@ -84,6 +87,65 @@ public class Wiring {
         registration.setFilter(new BearerTokenFilter(token));
         registration.addUrlPatterns("/mcp", "/mcp/*");
         return registration;
+    }
+
+    /**
+     * How join-server asks for a bot that is not running.
+     *
+     * <p>Built once at startup so the answer to "is there a cluster" is settled before any agent
+     * asks, and a laptop pays nothing for a client it will never use. A cluster that refuses the
+     * connection here is the same as no cluster: the tool says a bot has to be started by hand,
+     * which is true either way.
+     */
+    @Bean(destroyMethod = "")
+    public BotProvisioner botProvisioner(
+            @Value("${mcagents.bots.provision:auto}") String provision,
+            @Value("${mcagents.bots.namespace:}") String namespace,
+            @Value("${mcagents.bots.mcp-host:}") String mcpHost,
+            @Value("${mcagents.bot-link.port:8765}") int port) {
+        if (!wanted(provision)) {
+            log.info("not running in a cluster, so join-server uses bots that dial in");
+            return new BotProvisioner(null, null, null, port);
+        }
+
+        try {
+            KubernetesClient client = new KubernetesClientBuilder().build();
+            String where = namespace.isBlank() ? client.getNamespace() : namespace;
+
+            if (where == null) {
+                log.info("no Kubernetes namespace is in scope, so join-server cannot start a bot");
+                return new BotProvisioner(null, null, null, port);
+            }
+
+            client.getKubernetesVersion();
+            log.info("bots can be started in namespace {}", where);
+
+            return new BotProvisioner(client, where, mcpHost.isBlank() ? defaultHost(where) : mcpHost, port);
+        } catch (RuntimeException e) {
+            log.info("no cluster to start bots in ({}), so join-server uses bots that dial in", e.getMessage());
+            return new BotProvisioner(null, null, null, port);
+        }
+    }
+
+    /**
+     * Whether to go looking for a cluster at all.
+     *
+     * <p>"auto" means only from inside one. A kubeconfig on a laptop points at whatever the
+     * developer last used, and quietly creating bot pods there -- or blocking startup while
+     * reaching for it -- is not something a default should do. "always" is for running this
+     * server locally against a cluster on purpose.
+     */
+    private static boolean wanted(String provision) {
+        return switch (provision) {
+            case "always" -> true;
+            case "never" -> false;
+            default -> System.getenv("KUBERNETES_SERVICE_HOST") != null;
+        };
+    }
+
+    /** The Service the chart creates. A bot needs a name it can resolve, not this pod's address. */
+    private static String defaultHost(String namespace) {
+        return "mc-agents-mcp-server.%s.svc".formatted(namespace);
     }
 
     @Bean

@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import kr.junhyung.mcagents.bot.BotProvisioner;
 import kr.junhyung.mcagents.bot.BotRegistry;
 import kr.junhyung.mcagents.bot.BotSession;
 import kr.junhyung.mcagents.bot.JoinFailure;
@@ -35,10 +36,17 @@ public class Orchestration {
     /** How long the bot is given to say it has left, once it has been told to. */
     private static final int LEAVE_TIMEOUT_MS = 10_000;
 
-    private final BotRegistry bots;
+    /** How long a bot that had to be started is given to appear and introduce itself. */
+    private static final int START_TIMEOUT_MS = 180_000;
 
-    public Orchestration(BotRegistry bots) {
+    private static final int START_POLL_MS = 500;
+
+    private final BotRegistry bots;
+    private final BotProvisioner provisioner;
+
+    public Orchestration(BotRegistry bots, BotProvisioner provisioner) {
         this.bots = bots;
+        this.provisioner = provisioner;
     }
 
     public McpSchema.CallToolResult call(ToolSpec spec, Map<String, Object> arguments) {
@@ -62,7 +70,7 @@ public class Orchestration {
         String version = ToolDispatcher.stringArg(arguments, "version");
         String where = "%s:%d".formatted(host, port);
 
-        BotSession bot = linked(name);
+        BotSession bot = linkedOrStarted(name, arguments);
         Messages.Status current = bot.status();
 
         if (current != null && READY.equals(current.state())) {
@@ -105,6 +113,16 @@ public class Orchestration {
             return ToolDispatcher.failure(
                     "bot \"%s\" was told to leave %s and could not: %s"
                             .formatted(bot.name(), before.address(), left.text()));
+        }
+
+        /*
+        A bot this server asked the operator for is given back; one somebody declared by hand, or
+        started on a laptop, is not this call's to end. It goes idle and waits for the next join.
+        */
+        if (provisioner.available() && provisioner.release(bot.name())) {
+            return ToolDispatcher.text(
+                    "Bot \"%s\" left %s, and the bot it was running on was given back."
+                            .formatted(bot.name(), before.address()));
         }
         return ToolDispatcher.text(
                 "Bot \"%s\" left %s and is linked and idle.".formatted(bot.name(), before.address()));
@@ -183,19 +201,74 @@ public class Orchestration {
     }
 
     /**
-     * A bot has to be running before it can be sent anywhere. Saying that plainly is the whole
-     * value of the LINK stage: the fix is in the operator or the image, not on the game server.
+     * The bot to send somewhere, started first if it is not running.
+     *
+     * <p>A bot already linked is used as it is, whoever started it. Otherwise the operator is
+     * asked for one and this waits for it to dial in, which is a pod start rather than a client
+     * boot: the image is already pulled and the process is a second or two.
+     *
+     * <p>With no cluster there is nothing to ask, and saying that is the whole value of the LINK
+     * stage. The fix is then in whoever should have started the bot, not on the game server.
      */
-    private BotSession linked(String name) {
+    private BotSession linkedOrStarted(String name, Map<String, Object> arguments) {
         BotRegistry.requireValidName(name);
 
         try {
             return bots.resolve(name);
         } catch (IllegalArgumentException absent) {
-            throw new JoinFailure(JoinStage.LINK,
-                    "no bot named \"%s\" has linked. A bot process dials in on its own, so one has to be running: the operator creates them from a MinecraftBot resource, which is not wired up yet. list-bots shows what has linked."
-                            .formatted(name));
+            // Not linked. Fall through and start one.
         }
+
+        if (!provisioner.available()) {
+            throw new JoinFailure(JoinStage.LINK,
+                    "no bot named \"%s\" has linked, and there is no cluster to start one in. Run a bot with BOT_NAME=%s and MCP_SERVER_HOST pointing here; list-bots shows what has linked."
+                            .formatted(name, name));
+        }
+
+        String kind = orDefault(ToolDispatcher.stringArg(arguments, "kind"), "mineflayer");
+        String mcVersion = orDefault(ToolDispatcher.stringArg(arguments, "minecraftVersion"), "26.1.2");
+
+        provisioner.request(name, kind, mcVersion, ToolDispatcher.stringArg(arguments, "owner"));
+
+        return awaitLink(name, kind);
+    }
+
+    /**
+     * Wait for a bot that was just asked for to dial in.
+     *
+     * <p>Polling the registry rather than watching the pod: the link is the thing that matters and
+     * it is the thing the server can see. A pod that is Running but has not linked is not usable,
+     * and an operator status that says Running would be a more encouraging lie.
+     */
+    private BotSession awaitLink(String name, String kind) {
+        long deadline = System.currentTimeMillis() + START_TIMEOUT_MS;
+
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                return bots.resolve(name);
+            } catch (IllegalArgumentException notYet) {
+                String failed = provisioner.failure(name);
+
+                if (failed != null) {
+                    throw new JoinFailure(JoinStage.LINK,
+                            "the bot named \"%s\" could not be started: %s".formatted(name, failed));
+                }
+                try {
+                    TimeUnit.MILLISECONDS.sleep(START_POLL_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new JoinFailure(JoinStage.LINK, "the wait was interrupted");
+                }
+            }
+        }
+
+        throw new JoinFailure(JoinStage.LINK,
+                "a %s bot named \"%s\" was asked for but never dialled in within %dms. Look at the MinecraftBot: \"kubectl describe minecraftbot %s\" says whether the pod started and what stopped it."
+                        .formatted(kind, name, START_TIMEOUT_MS, name));
+    }
+
+    private static String orDefault(String value, String fallback) {
+        return value == null ? fallback : value;
     }
 
     private Messages.Result await(BotSession bot, CompletableFuture<Messages.Result> answer, int timeoutMs) {

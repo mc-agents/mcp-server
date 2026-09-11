@@ -6,6 +6,7 @@ import kr.junhyung.mcagents.protocol.Messages;
 import kr.junhyung.mcagents.protocol.ProtocolViolation;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -158,6 +159,12 @@ public class BotLinkServer implements SmartLifecycle {
             log.warn("a bot was turned away: {}", e.getMessage());
             if (link != null) {
                 link.fault(e.code, e.getMessage());
+            }
+        } catch (SocketTimeoutException e) {
+            log.warn("a bot connected and never introduced itself within {}ms", HELLO_TIMEOUT_MS);
+            if (link != null) {
+                link.fault(ProtocolViolation.Code.HELLO_EXPECTED.name(),
+                        "no hello arrived within %dms of connecting".formatted(HELLO_TIMEOUT_MS));
             }
         } catch (IOException e) {
             log.debug("a bot link ended: {}", e.toString());

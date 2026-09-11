@@ -66,6 +66,20 @@ Every JSON frame is a flat object with a `t` discriminator.
 | `event` | `seq`, `kind`, `source`, `text`, `segments[]?`, `data?`, `ts`, `firstTs`, `repeats`, `closed` |
 | `status` | `state`, `ts`, and whatever it knows: `address`, `username`, `mcVersion`, `serverBrand`, `gameMode`, `dimension`, `position`, `health`, `food`, `reason`, `lastError` |
 
+`status.state` is one of five:
+
+| state | Means |
+| --- | --- |
+| `idle` | Linked, and in no world. What a bot reports after `hello` and after a `disconnect` |
+| `connecting` | A `connect` is in progress |
+| `ready` | In a world and answering tools |
+| `disconnected` | Was in a world and is not now: kicked, dropped, or the server went away. `reason` says which |
+| `faulted` | The bot itself is broken. The link is up but nothing can be run on it |
+
+`idle` and `disconnected` are separate on purpose. A bot that has never joined anything is not
+"disconnected", and `list-bots` reporting one as the other sends you looking for a kick that never
+happened.
+
 `status.lastError` is a **string**, not a `Failure`. The class-and-code machinery decides what a
 failed *call* does to a session; a status is a report, and a bot that has just been kicked has a
 sentence about it and no call to attach a class to.

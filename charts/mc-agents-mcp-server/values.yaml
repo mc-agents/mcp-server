@@ -20,8 +20,16 @@ serviceAccount:
   create: true
   name: ""
   annotations: {}
-  # This server does not call the Kubernetes API, so there is no reason to mount a token.
-  automountToken: false
+  # Needed only to create MinecraftBots. With bots.provision off, nothing here calls the API.
+  automountToken: true
+
+# join-server starts a bot when none is running under the name it was given, by creating a
+# MinecraftBot for the operator to act on. Turning this off leaves join-server able to use bots
+# that dial in and nothing else, and takes the Role away with it.
+bots:
+  provision: true
+  # What a bot is told to dial. Empty derives this release's own Service.
+  mcpHost: ""
 
 # A shared bearer token on /mcp. /actuator is never behind it: a probe cannot carry one.
 auth:

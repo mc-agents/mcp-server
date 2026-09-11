@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "2.0.0",
+  "catalogVersion": "2.1.0",
   "protocol": 1,
   "tools": [
     {
@@ -3390,7 +3390,7 @@
     {
       "name": "join-server",
       "group": "sessions",
-      "description": "Send a bot into a Minecraft server and wait until it has spawned. The bot is a process that is already running and linked, so this costs a second or two rather than the time a client takes to boot; list-bots shows which bots are available. A failure says how far it got, because a bot that never started and a server that refused the login have different fixes.",
+      "description": "Send a bot into a Minecraft server and wait until it has spawned. A bot already running under this name is used as it is; otherwise one is started, which in a cluster means the operator creates it and takes a few seconds longer. A failure says how far it got, because a bot that never started and a server that refused the login have different fixes.",
       "route": "orchestrate",
       "kinds": [
         "mineflayer",
@@ -3430,6 +3430,19 @@
           "owner": {
             "description": "Free-form label recording who asked for this bot. Defaults to the authenticated caller.",
             "type": "string"
+          },
+          "kind": {
+            "description": "Which kind of bot to start when none by this name is running. \"fabric\" is a real Minecraft client: it can take a screenshot and press a dialog button, and costs several times the memory for it. (default: mineflayer)",
+            "type": "string",
+            "enum": [
+              "mineflayer",
+              "fabric"
+            ]
+          },
+          "minecraftVersion": {
+            "description": "Minecraft version for a bot that has to be started. A fabric client is built against one version; a mineflayer bot negotiates at runtime and ignores this. (default: 26.1.2)",
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"
           }
         },
         "required": [
@@ -4546,5 +4559,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:e8d74dd4fed77e5b3c310450f9cfeb3620d9e049019e90b2d7f09ca28424df9a"
+  "catalogHash": "sha256:22375543b225b144e5fc3e76e24a08be0d25e345c398d024996700238f85b1ce"
 }

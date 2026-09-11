@@ -60,6 +60,10 @@ spec:
               value: "8765"
             - name: MCP_MAX_BOTS
               value: {{ .Values.maxBots | quote }}
+            - name: MCP_BOTS_PROVISION
+              value: {{ ternary "auto" "never" .Values.bots.provision | quote }}
+            - name: MCP_BOTS_MCP_HOST
+              value: {{ default (printf "%s.%s.svc" (include "mc-agents-mcp-server.fullname" .) .Release.Namespace) .Values.bots.mcpHost | quote }}
             - name: MCP_LOG_LEVEL
               value: {{ .Values.logLevel | quote }}
             {{- if .Values.auth.enabled }}

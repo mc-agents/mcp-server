@@ -40,6 +40,13 @@ mcagents:
     port: ${BOT_LINK_PORT:8765}
   bots:
     max: ${MCP_MAX_BOTS:16}
+    # auto looks for a cluster only from inside one. always uses whatever kubeconfig is around,
+    # which is for running this server locally against a cluster on purpose. never does not look.
+    provision: ${MCP_BOTS_PROVISION:auto}
+    # Where join-server creates a MinecraftBot. Empty uses the pod's own namespace.
+    namespace: ${MCP_BOTS_NAMESPACE:}
+    # What the bot is told to dial. Empty derives the chart's Service name in that namespace.
+    mcp-host: ${MCP_BOTS_MCP_HOST:}
   auth:
     token: ${MCP_AUTH_TOKEN:}
 
