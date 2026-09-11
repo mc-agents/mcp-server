@@ -29,6 +29,14 @@ everything, and a second way to say it is a second thing that can disagree.
 | `HEALTH_PORT` | where `/healthz` and `/readyz` are served | `8080` |
 | `RECONNECT_MIN_MS`, `RECONNECT_MAX_MS` | backoff bounds for redialling | `500`, `15000` |
 
+A `fabric` bot needs three more, because it runs a real client:
+
+| variable | meaning | default |
+| --- | --- | --- |
+| `MC_ASSETS_DIR` | where the client jar, its libraries and its assets are. An init container fills it; the bot fills it itself if it finds it empty | `/mc` |
+| `BOT_WORK_DIR` | writable scratch: the game directory, mods, logs. The root filesystem is read-only | `/data` |
+| `BOT_SCREEN` | the virtual display's geometry | `1280x720x24` |
+
 **`/readyz` must not go green until `hello` has been accepted.** Pod readiness is the only thing
 outside this protocol that knows whether a bot is linked, and the operator's `LINK` column is
 exactly that probe.
