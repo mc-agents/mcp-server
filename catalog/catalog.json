@@ -3199,22 +3199,14 @@
             "minLength": 1,
             "maxLength": 256,
             "description": "Command with or without the leading slash"
-          },
-          "collectMs": {
-            "description": "How long to collect the reply before returning (default: 1000)",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 10000,
-            "default": 1000
           }
         },
         "required": [
-          "collectMs",
           "command"
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:638c596cec20a332ff5d0d561d0c2a1c34c353d6dc451bf5f008f45bcf584a28"
+      "wireSchemaHash": "sha256:878128a98ab0f67dffb8ea8fedd3b7cf732ef549f4a814fed57c7348906b55d7"
     },
     {
       "name": "switch-server",
@@ -4554,5 +4546,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:7c846f197b4c55177a3413fd4189f4c73009bc6ea44923521da85d5518a38f23"
+  "catalogHash": "sha256:e8d74dd4fed77e5b3c310450f9cfeb3620d9e049019e90b2d7f09ca28424df9a"
 }

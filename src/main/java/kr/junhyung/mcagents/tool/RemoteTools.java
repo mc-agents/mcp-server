@@ -98,7 +98,13 @@ public class RemoteTools {
             return answer;
         }
 
-        int collectMs = intOf(Normaliser.normalise(spec, arguments).get("collectMs"), 1_000);
+        /*
+        collectMs never crosses the wire: the buffer being read is the server's, so the bot has
+        nothing to do with it. That also means the Normaliser never sees it, and the bounds the
+        catalogue advertises have to be applied here.
+        */
+        int collectMs = Math.clamp(intOf(arguments == null ? null : arguments.get("collectMs"), 1_000),
+                0, 10_000);
 
         sleep(collectMs);
 
