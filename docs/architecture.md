@@ -101,14 +101,19 @@ agent ──MCP/HTTP──▶ mcp-server (레플리카 1, 봇 RPC 리스너 :876
 
 | 단계 | 상태 |
 | --- | --- |
-| 1. `mcp-server` | **끝. 도구 64개가 전부 답합니다.** 카탈로그·프로토콜 문서·봇 리스너·도구 계층·SLP·렌더러·CI |
-| 2. `bot-mineflayer` | **끝.** 도구 44개, `mcp-server` 와 붙여 Paper 26.1.2 에서 확인 |
-| 3. `operator` | 스캐폴딩만. `join-server` 가 봇 프로세스를 만들지 못하므로 지금은 손으로 띄웁니다 |
-| 4. `bot-fabric` | 스크린샷과 다이얼로그 버튼이 됩니다. CI 에 Paper 스모크 잡 포함 |
+| 1. `mcp-server` | **끝.** 도구 64개, 인증, Helm 차트, buildpack 이미지, CI |
+| 2. `bot-mineflayer` | **끝.** 도구 44개, Paper 26.1.2 에서 확인 |
+| 3. `operator` | **끝.** k3d 에서 `join-server` 가 봇을 만들고 풀 스케일이 동작합니다 |
+| 4. `bot-fabric` | 스크린샷과 다이얼로그 버튼이 됩니다. `mc-assets` 이미지도 여기서 나옵니다 |
 
 **1차 마일스톤은 통과했습니다.** `mcp-server` + `bot-mineflayer` 를 붙여 Paper 26.1.2 에
 접속시키고 64개를 전부 호출했습니다. 답하지 못하는 도구는 없고, 실패는 전부 세계의 상태
 (빈 인벤토리, 발밑에 컨테이너 없음)이거나 종류가 맞지 않는 거절입니다.
+
+**2차 마일스톤도 통과했습니다.** 전용 k3d 클러스터(`mc-agents`)에 operator 와 mcp-server 와
+Paper 를 올리고, MCP 로 `join-server` 를 부르면 클러스터가 봇 파드를 만들어 게임에 접속시킵니다.
+호출부터 봇이 세계에 서기까지 **6.2초**입니다. `leave-server` 는 자기가 만든 봇을 파드째
+회수하고, `MinecraftBotPool` 을 3→6→2 로 조절하면 mcp-server 가 그대로 따라갑니다.
 
 계획과 달라진 것들입니다.
 
@@ -122,7 +127,18 @@ agent ──MCP/HTTP──▶ mcp-server (레플리카 1, 봇 RPC 리스너 :876
   같은 기계를 씁니다.
 - **`leave-server` 는 프로세스를 죽이지 않습니다.** 봇은 링크된 채로 idle 로 돌아갑니다.
   프로세스가 비싼 쪽이므로, 그것을 끝내는 것은 operator 의 결정입니다.
-- **봇 포트에 인증이 없습니다.** README 의 알려진 한계에 적혀 있습니다.
+- **봇 포트에 인증이 없습니다.** README 의 알려진 한계에 적혀 있습니다. MCP 포트에는
+  공유 베어러 토큰이 붙었고, `/actuator` 는 프로브가 자격을 들 수 없으므로 예외입니다.
+- **레지스트리는 `junhyung.cloud/library` 입니다.** ghcr 은 새 패키지를 비공개로 만들어
+  `read:packages` 없이는 받을 수 없었습니다. push 는 Harbor 로봇 계정(저장소 시크릿
+  `REGISTRY_USERNAME`·`REGISTRY_PASSWORD`), pull 은 익명으로 됩니다.
+- **mcp-server 이미지는 Dockerfile 이 아니라 Paketo buildpack 으로 굽습니다.** 힙을 컨테이너의
+  실제 상한에서 계산하고 레이어를 나눠 줍니다. 한 번에 한 아키텍처만 나오므로 CI 가
+  아키텍처별 네이티브 러너에서 굽고 매니페스트 리스트로 합칩니다.
+- **`status.state` 는 다섯 가지입니다.** `idle` 이 늘었습니다. 링크만 되고 세계에 없는 봇을
+  `disconnected` 라 부르면 있지도 않은 킥을 찾게 됩니다.
+- **`join-server` 가 봇을 만듭니다.** 이름에 해당하는 봇이 없으면 `MinecraftBot` 을 만들고
+  링크를 기다립니다. 클러스터 밖에서는 만들 수 없다고 정직하게 말합니다.
 
 ## 순서
 
@@ -169,6 +185,11 @@ agent ──MCP/HTTP──▶ mcp-server (레플리카 1, 봇 RPC 리스너 :876
 - **접속 스로틀 대응**: Paper 가 같은 주소에서 4초 이내 재연결을 거부합니다. 파드가 각자 IP 라 k8s 에서는 문제가 없지만, 생성을 벌리는 것이 안전합니다
 
 **완료 조건**: `kubectl scale` 로 봇 수를 늘렸다 줄이면 MCP 서버가 새 봇을 인식하고 사라진 봇을 정리한다.
+→ **통과.** 3→6→2 로 조절했고 mcp-server 의 `list-bots` 가 그대로 따라갔습니다. 붙여 보고
+나서야 드러난 것 셋입니다. 세 저장소가 파드 환경변수 이름을 각자 다르게 쓰고 있었고(파드가
+자기 루프백으로 다이얼합니다), 봇 이미지의 `USER` 가 이름이라 `runAsNonRoot` 아래에서
+컨테이너가 시작되지 못했으며, operator 가 넣는 `MC_ASSETS_DIR` 을 fabric 봇은 `MC_CACHE` 로
+읽고 있었습니다. 전부 "한쪽에 적힌 계약, 다른 쪽에 있는 구현, 아무도 대조하지 않음" 입니다.
 
 ### 4. `bot-fabric` — 진짜 클라이언트
 
