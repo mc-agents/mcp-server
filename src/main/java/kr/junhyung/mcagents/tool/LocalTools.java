@@ -5,7 +5,10 @@ import kr.junhyung.mcagents.bot.BotSession;
 import kr.junhyung.mcagents.bot.FeedEntry;
 import kr.junhyung.mcagents.bot.WaitOutcome;
 import kr.junhyung.mcagents.catalog.ToolSpec;
+import kr.junhyung.mcagents.probe.ServerListPing;
+import kr.junhyung.mcagents.protocol.Messages;
 import io.modelcontextprotocol.spec.McpSchema;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +27,11 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class LocalTools {
+
+    /** How long one attempt in wait-for-server may take, and how long it waits before the next. */
+    private static final int POLL_TIMEOUT_MS = 2_000;
+
+    private static final int POLL_INTERVAL_MS = 1_000;
 
     /** Which feed each reading tool draws from. */
     private static final Map<String, String> FEED_OF = Map.ofEntries(
@@ -54,10 +62,140 @@ public class LocalTools {
         }
         return switch (spec.name()) {
             case "list-bots" -> listBots();
-            case "get-bot-status", "detect-gamemode" -> ToolDispatcher.failure(
-                    "%s is not wired up yet".formatted(spec.name()));
+            case "get-bot-status" -> status(arguments);
+            case "detect-gamemode" -> gameMode(arguments);
+            case "ping-server" -> ping(arguments);
+            case "wait-for-server" -> waitForServer(spec, arguments);
             default -> ToolDispatcher.failure("%s is not wired up yet".formatted(spec.name()));
         };
+    }
+
+    /**
+     * Everything the server last heard, whether or not the bot is still there.
+     *
+     * <p>This is the tool every other failure message points at, so it answers from the cached
+     * status rather than asking the bot: a bot that has stopped answering is precisely when the
+     * question gets asked, and a call that hangs would be the least useful possible reply.
+     */
+    private McpSchema.CallToolResult status(Map<String, Object> arguments) {
+        BotSession bot = bots.resolve(ToolDispatcher.stringArg(arguments, "bot"));
+        Messages.Status last = bot.status();
+
+        if (last == null) {
+            return ToolDispatcher.text(
+                    "Bot \"%s\" (kind: %s) is linked but has not joined a world. Call join-server to send it to one."
+                            .formatted(bot.name(), bot.kind()));
+        }
+
+        StringBuilder body = new StringBuilder("Bot \"%s\" (kind: %s) is %s."
+                .formatted(bot.name(), bot.kind(), last.state()));
+
+        append(body, "Server", last.address());
+        append(body, "Username", last.username());
+        append(body, "Minecraft", last.mcVersion());
+        append(body, "Brand", last.serverBrand());
+        append(body, "Game mode", last.gameMode());
+        append(body, "Dimension", last.dimension());
+
+        if (last.position() != null) {
+            append(body, "Position", "(%.0f, %.0f, %.0f)"
+                    .formatted(last.position().x(), last.position().y(), last.position().z()));
+        }
+        if (last.health() != null) {
+            append(body, "Health", "%.1f of 20".formatted(last.health()));
+        }
+        if (last.food() != null) {
+            append(body, "Food", "%.1f of 20".formatted(last.food()));
+        }
+        append(body, "Reason", last.reason());
+
+        if (last.lastError() != null) {
+            append(body, "Last error", "%s (%s)".formatted(last.lastError().message(), last.lastError().code()));
+        }
+        append(body, "Last seen", Instant.ofEpochMilli(last.ts()).toString());
+
+        return ToolDispatcher.text(body.toString());
+    }
+
+    private McpSchema.CallToolResult gameMode(Map<String, Object> arguments) {
+        BotSession bot = bots.resolve(ToolDispatcher.stringArg(arguments, "bot"));
+        Messages.Status last = bot.status();
+
+        if (last == null || last.gameMode() == null) {
+            return ToolDispatcher.failure(
+                    "bot \"%s\" has not been told a game mode. It is %s; get-bot-status says more."
+                            .formatted(bot.name(), last == null ? "not in a world" : last.state()));
+        }
+        return ToolDispatcher.text("Bot \"%s\" is in %s mode.".formatted(bot.name(), last.gameMode()));
+    }
+
+    private McpSchema.CallToolResult ping(Map<String, Object> arguments) {
+        String host = ToolDispatcher.stringArg(arguments, "host");
+        int port = intArg(arguments, "port", 25_565);
+        int timeoutMs = intArg(arguments, "timeoutMs", 5_000);
+
+        try {
+            ServerListPing.Pong pong = ServerListPing.ping(host, port, timeoutMs);
+
+            return ToolDispatcher.text(Trust.mark("""
+                    %s:%d answered in %dms.
+                      Version: %s (protocol %d)
+                      Players: %d of %d
+                      MOTD: %s"""
+                    .formatted(host, port, pong.latencyMs(), pong.version(), pong.protocol(),
+                            pong.online(), pong.max(), pong.motd())));
+        } catch (IOException e) {
+            return ToolDispatcher.failure(
+                    "%s:%d did not answer a server list ping within %dms (%s). The server may be down, still starting, or unreachable from here."
+                            .formatted(host, port, timeoutMs, e.getMessage()));
+        }
+    }
+
+    /**
+     * Block until a server is up, so a redeploy and the join that follows it do not race.
+     *
+     * <p>Polling is the whole implementation on purpose. A server that is starting refuses
+     * connections outright, and there is nothing to subscribe to; the interval is short enough that
+     * the wait is not what makes the development loop slow.
+     */
+    private McpSchema.CallToolResult waitForServer(ToolSpec spec, Map<String, Object> arguments) {
+        String host = ToolDispatcher.stringArg(arguments, "host");
+        int port = intArg(arguments, "port", 25_565);
+        int timeoutMs = intArg(arguments, "timeoutMs", spec.defaultDeadlineMs());
+
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        int attempts = 0;
+        String lastFailure = "it was never reachable";
+
+        while (System.currentTimeMillis() < deadline) {
+            attempts++;
+            try {
+                ServerListPing.Pong pong = ServerListPing.ping(host, port, POLL_TIMEOUT_MS);
+
+                return ToolDispatcher.text(
+                        "%s:%d is up after %d attempt(s): %s, %d of %d players online."
+                                .formatted(host, port, attempts, pong.version(), pong.online(), pong.max()));
+            } catch (IOException e) {
+                lastFailure = e.getMessage();
+            }
+
+            try {
+                TimeUnit.MILLISECONDS.sleep(POLL_INTERVAL_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return ToolDispatcher.failure("the wait was interrupted");
+            }
+        }
+
+        return ToolDispatcher.failure(
+                "%s:%d did not come up within %dms. %d attempt(s), the last saying: %s."
+                        .formatted(host, port, timeoutMs, attempts, lastFailure));
+    }
+
+    private static void append(StringBuilder body, String label, String value) {
+        if (value != null) {
+            body.append("\n  ").append(label).append(": ").append(value);
+        }
     }
 
     public McpSchema.CallToolResult orchestrate(ToolSpec spec, Map<String, Object> arguments) {
