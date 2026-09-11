@@ -25,6 +25,13 @@ public final class Renderers {
     private static final ObjectMapper MAPPER = JsonMapper.builder()
         /* A bot built against a newer catalogue may send a field this server has never heard of. */
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        /*
+        Flooring a coordinate is the bot's job, because which block an entity stands in is game
+        knowledge. Accepting a fraction where the DTO says int would let Jackson truncate it
+        towards zero instead, so a bot at z=-12.5 would be reported in block -12: the one next
+        door, silently, and only on the negative side of the axis.
+        */
+        .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
         .build();
 
     private static final Map<String, Entry<?>> BY_TOOL = Map.ofEntries(

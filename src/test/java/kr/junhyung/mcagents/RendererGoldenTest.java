@@ -2,8 +2,10 @@ package kr.junhyung.mcagents;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import kr.junhyung.mcagents.render.RenderException;
 import kr.junhyung.mcagents.render.Renderers;
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,6 +63,21 @@ class RendererGoldenTest {
     @MethodSource("cases")
     void rendersWhatTheBotUsedTo(Golden golden) {
         assertEquals(golden.text(), Renderers.render(golden.tool(), golden.data()).orElseThrow());
+    }
+
+    /**
+     * Flooring a coordinate is the bot's job, and a bot that sends a fraction instead is saying
+     * something the DTO cannot carry. Taking it would truncate towards zero, so a bot at z=-12.5
+     * would be reported standing in block -12: the one next door, silently, and only on the
+     * negative side of an axis. Refusing names the disagreement instead.
+     */
+    @Test
+    void aFractionalCoordinateIsRefusedRatherThanTruncated() {
+        JsonNode fractional = MAPPER.readTree("""
+                {"position": {"x": 8.5, "y": 65.0, "z": -12.5}, "dimension": "minecraft:overworld",
+                 "onGround": true, "yaw": 90.0, "pitch": 0.0}""");
+
+        assertThrows(RenderException.class, () -> Renderers.render("get-position", fractional));
     }
 
     /**

@@ -39,6 +39,14 @@ public final class Text {
         return "(" + x + ", " + y + ", " + z + ")";
     }
 
+    /**
+     * The block an entity is standing in. Rounding instead would put a bot at x=8.5 in block 9,
+     * which is the one next door, and a report that names the wrong block is worse than none.
+     */
+    public static String block(double x, double y, double z) {
+        return block((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
+    }
+
     public static String withLines(String header, List<String> lines) {
         return header + "\n" + String.join("\n", lines);
     }
