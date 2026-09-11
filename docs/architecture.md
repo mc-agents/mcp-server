@@ -50,12 +50,12 @@ agent ──MCP/HTTP──▶ mcp-server (레플리카 1, 봇 RPC 리스너 :876
             ┌───────────┼───────────┐
             │           │           │
       bot-fabric   bot-fabric   bot-mineflayer     ← 각자 Pod
-       (1~1.5GiB)               (~192MiB)
+       (~400MiB)                (~192MiB)
             ▲
             └── operator (Go) 가 파드를 세우고 지킨다
 ```
 
-**프로세스를 나누는 이유**는 셋입니다. `MinecraftClient.getInstance()`·`RenderSystem`·GLFW 가 JVM 전역이라 한 JVM 에 봇 하나뿐이고, 클라이언트가 GL crash 로 죽어도 MCP 엔드포인트는 살아서 `state: disconnected` 를 보고해야 하며, 봇 하나가 1~1.5GiB 라 한 Pod 에 여럿을 넣으면 스케줄이 안 붙습니다.
+**프로세스를 나누는 이유**는 셋입니다. `MinecraftClient.getInstance()`·`RenderSystem`·GLFW 가 JVM 전역이라 한 JVM 에 봇 하나뿐이고, 클라이언트가 GL crash 로 죽어도 MCP 엔드포인트는 살아서 `state: disconnected` 를 보고해야 하며, 봇 하나가 400MiB 급이라 한 Pod 에 여럿을 넣을 이유가 없습니다.
 
 **지금의 `replicaCount: 1` 제약이 봇 쪽에서 사라집니다.** 봇이 프로세스 메모리에 살기 때문에 파드를 늘릴 수 없었는데, 봇이 각자 파드가 되면 operator 가 감당하는 만큼 늘어납니다.
 
@@ -144,7 +144,11 @@ Gradle + Stonecutter(`versions/26.1.2`, `26.2`, `26.3`). 버전 하나 추가에
 
 **틱 구동 상태 머신**: RPC 스레드가 Minecraft 객체를 만지면 안 됩니다. 즉시 읽기는 `client.submit(...)`, 여러 틱 걸리는 것(walk·dig·wait-for-window·smelt)은 `Task`. `await bot.dig(block)` 한 줄이 `DigTask` 40줄이 되는 비용이 여기서 나옵니다. `cleanup()` 이 성공·실패·취소·타임아웃 어느 경우에도 정확히 한 번 도는 것이 계약입니다.
 
-**렌더링은 항상 켜고 프레임만 조입니다.** GLFW·GL 초기화가 `MinecraftClient` 생성자에 있어 "안 그리다 켜기"는 불가능합니다. 틱과 프레임이 분리되어 있으므로 1fps 로 조여도 네트워크·물리·인벤토리가 정상입니다. Xvfb + Mesa llvmpipe 로 GPU 없이 돌립니다.
+**렌더링은 항상 켜고 프레임만 조입니다.** GLFW·GL 초기화가 `MinecraftClient` 생성자에 있어 "안 그리다 켜기"는 불가능합니다. Xvfb + Mesa llvmpipe 로 GPU 없이 돌립니다.
+
+다만 **"틱과 프레임이 분리되어 있으니 1fps 로 조여도 된다"는 전제는 실측에서 틀렸습니다.** 둘이 같은 루프 iteration 에 있어서 1fps 에서는 `client.submit` 이 다음 프레임까지 기다리며 호출당 1초를 먹습니다. 그래서 진행 중인 호출이 있는 동안 60fps 로 올리고 끝나면 내립니다. idle 일 때만 1fps 입니다.
+
+**Yarn 매핑은 26.x 에 없습니다.** fabric meta 가 `1.21.11` 에서 멈추고 intermediary 가 `0.0.0` 을 답합니다. 26.1+ 는 Mojang 이름을 그대로 쓰고 리맵이 없어 `net.minecraft.client.Minecraft` 입니다. access widener 도 class tweaker 로 바뀌었습니다. "Yarn 이름이 버전마다 바뀌어 mixin 이 깨진다"는 걱정의 성격이 달라집니다 — 이름은 Mojang 것이고, 깨지는 것은 구조가 바뀔 때입니다.
 
 **클라이언트 jar 을 이미지에 굽지 않습니다.** 재배포 제약입니다. initContainer 가 Mojang version manifest 에서 jar·라이브러리·에셋을 받아 캐시 볼륨에 둡니다(200~600MB). MC 버전당 PVC 하나를 Job 이 채우고 봇은 readOnly 로 마운트하는 쪽이 Pod 시작을 0.5초로 만듭니다.
 
@@ -192,7 +196,9 @@ Gradle + Stonecutter(`versions/26.1.2`, `26.2`, `26.3`). 버전 하나 추가에
 
 ## 대가
 
-**메모리가 fabric 에서 크게 늡니다.** 지금 봇 8개가 206MiB 인데 `bot-fabric` 은 봇당 1~1.5GiB 입니다. 이것이 봇을 두 종류로 두는 가장 큰 이유입니다. 스크린샷이나 다이얼로그가 필요 없는 작업은 `bot-mineflayer` 로 돌리면 지금과 같은 비용입니다. `join-server` 의 `kind` 기본값을 `auto` 로 두고 **싼 쪽을 고르게** 합니다.
+**메모리가 fabric 에서 늘지만 걱정했던 만큼은 아닙니다.** 실측으로 컨테이너 전체가 봇당 **300~430MiB**(클라이언트 JVM RSS 253~347MiB)이고, 스크린샷 왕복은 1.1~2.1초입니다. 계획이 잡았던 1~1.5GiB 보다 훨씬 적습니다. 그래도 봇을 두 종류로 두는 이유는 남습니다 — mineflayer 봇 하나가 10MiB 급이므로 배수로는 여전히 크고, 스크린샷이 필요 없는 작업을 무겁게 돌릴 이유가 없습니다.
+
+**arm64 에서는 안 돕니다.** LWJGL 이 `linux-arm64` 네이티브를 제공하지 않아 봇 이미지는 amd64 이거나 arm64 빌드를 따로 끼워 넣어야 합니다. 스크린샷이나 다이얼로그가 필요 없는 작업은 `bot-mineflayer` 로 돌리면 지금과 같은 비용입니다. `join-server` 의 `kind` 기본값을 `auto` 로 두고 **싼 쪽을 고르게** 합니다.
 
 **버전 추종 비용의 성격이 바뀝니다.** 지금은 mineflayer 가 못 따라와서 우리가 우회를 쌓고 다이얼로그처럼 아예 막히는 것이 생깁니다. 앞으로는 매핑 변경으로 mixin 이 깨지는데, 통제 가능하고 비용이 유한합니다. 마이너는 한 시간 미만, 메이저는 0.5~3일, 렌더·HUD 리팩터가 겹치면 최악 1주로 봅니다.
 

@@ -108,8 +108,19 @@ public final class Messages {
             boolean retryable,
             Map<String, Object> detail) {}
 
+    /**
+     * What a {@code result} says about a blob frame it was accompanied by. {@code name} and the
+     * dimensions are optional: a bot that knows them saves the server from measuring, and a
+     * screenshot's size is worth telling an agent that is about to look at one.
+     */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Blob(String id, String mime, int bytes, Integer width, Integer height) {}
+    public record Blob(
+            String id,
+            String mime,
+            int bytes,
+            String name,
+            Integer width,
+            Integer height) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Result(

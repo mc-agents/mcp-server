@@ -97,6 +97,16 @@ today, and the reason a `wait-for-action-bar` does not fire on a line that was a
 **4. Blob frames first, then the `result` that names them.** The server either has everything the
 moment the result lands, or fails immediately. It never holds a half-assembled answer.
 
+A `result.blobs[]` entry is:
+
+| Field | | |
+| --- | --- | --- |
+| `id` | required | the UUID the blob frame carried |
+| `mime` | required | `image/png`, `image/jpeg` |
+| `bytes` | required | length, so the server can say how big it was without measuring |
+| `name` | optional | something human-readable when several blobs arrive together |
+| `width`, `height` | optional | for an image. The server puts them in the text beside it, because an agent reading a screenshot benefits from knowing it was 854x480 |
+
 ## Structured results
 
 A tool the catalogue marks `structured` answers with `result.data`, and **the server writes the
