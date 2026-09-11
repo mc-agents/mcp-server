@@ -101,7 +101,15 @@ def call(headers, tool, args):
     return True, "no answer", []
 
 
+# A rendered null is a field the bot did not send under the name the catalogue uses, and the
+# renderer had nothing to put there. "Position: null" was excused by the rule about positions
+# differing, which is how a bot standing somewhere definite reported standing nowhere.
+BROKEN = re.compile(r"\bnull\b|\bundefined\b|\bNaN\b")
+
+
 def explained(left, right):
+    if BROKEN.search(left) or BROKEN.search(right):
+        return None
     for pattern, why in EXPECTED:
         if pattern.search(left) or pattern.search(right):
             return why
