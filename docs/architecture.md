@@ -40,7 +40,7 @@
 | `mcp-server` | Java, 공식 `io.modelcontextprotocol.sdk:mcp` | MCP 엔드포인트, 도구 카탈로그, 봇 레지스트리, 이벤트 링버퍼, 인증. **프로토콜 문서의 주인** |
 | `bot-mineflayer` | TypeScript | 지금 코드를 봇으로 축소. 가볍고 빠름 |
 | `bot-fabric` | Java / Fabric | 진짜 클라이언트. 렌더링·다이얼로그·서버 동기화 레지스트리 |
-| `operator` | Go | `MinecraftBot` CRD, 봇 파드 수명. Thrust·Furnace 관례(controller-runtime 미사용, flag, pkg/) |
+| `operator` | Go | `MinecraftBot` CRD, 봇 파드 수명. Thrust·Furnace 관례(controller-runtime, flag, internal/, api/v1alpha1) |
 
 ## 구조
 
