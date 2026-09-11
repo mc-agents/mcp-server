@@ -5,9 +5,10 @@ The MCP endpoint for driving Minecraft bots. Speaks Streamable HTTP to agents on
 
 It does not know how to play Minecraft. Bots do that, and there are two of them:
 [`bot-mineflayer`](https://github.com/mc-agents/bot-mineflayer) is cheap, and
-[`bot-fabric`](https://github.com/mc-agents/bot-fabric) is a real client — it renders, so it can
-take a screenshot and press a dialog button. `join-server` picks the cheap one unless the work
-needs the other.
+[`bot-fabric`](https://github.com/mc-agents/bot-fabric) is a real client: it renders, so it can
+take a screenshot and press a dialog button and costs several times the memory for it. A bot
+announces its kind when it links, and `list-bots` shows it; a tool only one kind can run is
+refused on the other by name, before anything is sent.
 
 > **Local development only.** Bots authenticate offline, so the target server has to run
 > offline-mode.
@@ -33,6 +34,30 @@ loop short. Not by how many tools it adds.
 The catalogue is the single source. `tools/list` is built from it, argument validation runs
 against it, and a bot's `argsHash` is checked against it at handshake.
 
+## Running it
+
+```
+BOT_LINK_PORT=8765 MCP_PORT=3000 ./gradlew bootRun
+```
+
+Agents connect to `/mcp`; bots dial in on `:8765`. All 64 tools are in `tools/list` before any
+bot has linked, because an MCP client reads that list once when its session opens.
+
+[`dev/`](dev/README.md) has a fake bot that speaks the whole protocol, a sweep that calls every
+tool, and a one-liner for calling one by hand. None of them needs a Minecraft client.
+
 ## Status
 
-Bootstrapping. The contract is settled; the server is not written yet.
+The server answers the whole catalogue. `join-server` sends a bot that has linked into a world;
+creating the bot process is the [operator](https://github.com/mc-agents/operator)'s job and is not
+wired up yet, so for now a bot is started by hand and `join-server` finds it by name.
+
+### Known limits
+
+**The bot port has no authentication.** A NetworkPolicy opens `:8765` to this server alone. Giving
+every bot a rotating token would put secret rotation in the operator, for a port that does not
+leave the cluster.
+
+**One replica.** Bots are a shared resource, and sharing them across replicas needs leases and a
+roster. The requirement that replicas scale is about bot pods, which do scale, so that complexity
+is not paid for here.
