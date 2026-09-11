@@ -13,6 +13,29 @@ server in a cluster.
 
 One TCP connection per bot. `TCP_NODELAY` on — the latency of a frame is the latency of a tool.
 
+## How a bot is told where to dial
+
+A bot is started by something else -- the operator in a cluster, a shell on a laptop -- and reads
+where to go from its environment. There is no flag and no config file: a pod spec already says
+everything, and a second way to say it is a second thing that can disagree.
+
+| variable | meaning | default |
+| --- | --- | --- |
+| `MCP_SERVER_HOST` | where to dial | `127.0.0.1` |
+| `MCP_SERVER_PORT` | | `8765` |
+| `BOT_NAME` | the name reported in `hello`, and the name an agent addresses | the hostname |
+| `BOT_KIND` | what the starter thinks it started. Informational: a bot reports its own kind in `hello`, and a disagreement is the starter's bug | |
+| `MC_VERSION` | the version to claim; `auto` negotiates | `auto` |
+| `HEALTH_PORT` | where `/healthz` and `/readyz` are served | `8080` |
+| `RECONNECT_MIN_MS`, `RECONNECT_MAX_MS` | backoff bounds for redialling | `500`, `15000` |
+
+**`/readyz` must not go green until `hello` has been accepted.** Pod readiness is the only thing
+outside this protocol that knows whether a bot is linked, and the operator's `LINK` column is
+exactly that probe.
+
+Not `MCP_PORT`: the MCP server's own HTTP port is called that, and the two appearing in one
+namespace is how a Service's injected environment silently overrides a spec.
+
 ## Framing
 
 ```
