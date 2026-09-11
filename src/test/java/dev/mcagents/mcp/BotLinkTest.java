@@ -44,6 +44,7 @@ class BotLinkTest {
     @BeforeEach
     void connect() throws IOException {
         listener = new ServerSocket(0);
+        listener.setSoTimeout(10_000);
         botSide = new Socket("127.0.0.1", listener.getLocalPort());
         serverSide = listener.accept();
         link = new BotLink(serverSide, mapper, timers);

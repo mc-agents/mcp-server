@@ -41,6 +41,7 @@ class BotRegistryTest {
     private BotSession session(String name) {
         try {
             ServerSocket listener = new ServerSocket(0);
+            listener.setSoTimeout(10_000);
             Socket botSide = new Socket("127.0.0.1", listener.getLocalPort());
             Socket serverSide = listener.accept();
             open.add(listener);
