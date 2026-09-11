@@ -25,13 +25,20 @@ final class Normaliser {
             Map<String, Object> rules = asMap(property.getValue());
 
             Object given = arguments == null ? null : arguments.get(name);
-            Object value = given != null ? given : defaultFor(rules);
 
-            if (value == null) {
+            if (given == null && !rules.containsKey("default")) {
                 throw new IllegalArgumentException(
-                        "\"%s\" needs \"%s\" and no default is defined for it".formatted(spec.name(), name));
+                        "\"%s\" needs \"%s\", and it was not given".formatted(spec.name(), name));
             }
-            wire.put(name, clamp(coerce(value, rules), rules));
+
+            Object value = given != null ? given : rules.get("default");
+
+            /*
+            A null default is a decision, not a gap: it says "no filter", "no override", "choose
+            for me". It crosses the wire as an explicit null so that neither kind of bot has to
+            work out what an absent key was supposed to mean.
+            */
+            wire.put(name, value == null ? null : clamp(coerce(value, rules), rules));
         }
         return wire;
     }
@@ -42,25 +49,12 @@ final class Normaliser {
         return Math.clamp(asked, 1_000, 600_000);
     }
 
-    private static Object defaultFor(Map<String, Object> rules) {
-        Object explicit = rules.get("default");
-        if (explicit != null) {
-            return explicit;
-        }
-        /*
-        A schema written for MCP says a default in prose -- "(default: 5)" -- because that is what
-        a reader needs. Parsing prose would be guessing, so a wire property with no machine-readable
-        default is a gap in the catalogue rather than something to invent here.
-        */
-        return null;
-    }
-
     private static Object coerce(Object value, Map<String, Object> rules) {
-        String type = (String) rules.get("type");
-        if (type == null || !(value instanceof Number number)) {
+        Object type = rules.get("type");
+        if (!(value instanceof Number number)) {
             return value;
         }
-        return "integer".equals(type) ? (Object) number.intValue() : (Object) number.doubleValue();
+        return isInteger(type) ? (Object) number.intValue() : (Object) number.doubleValue();
     }
 
     private static Object clamp(Object value, Map<String, Object> rules) {
@@ -75,7 +69,12 @@ final class Normaliser {
         if (rules.get("maximum") instanceof Number max) {
             result = Math.min(result, max.doubleValue());
         }
-        return "integer".equals(rules.get("type")) ? (Object) (int) result : (Object) result;
+        return isInteger(rules.get("type")) ? (Object) (int) result : (Object) result;
+    }
+
+    /** A nullable property carries its type as {@code ["integer", "null"]}. */
+    private static boolean isInteger(Object type) {
+        return "integer".equals(type) || type instanceof java.util.List<?> list && list.contains("integer");
     }
 
     @SuppressWarnings("unchecked")

@@ -183,6 +183,19 @@ argument schema they compiled against.
 | `argsHash` disagrees | **That one tool** is disabled. The rest keep working |
 | Catalogue has a tool the bot did not report | Treated as absent |
 
+### How `argsHash` is computed
+
+Every repository has to arrive at the same string from the same schema, so the rule is exact:
+
+```
+argsHash = "sha256:" + hex(sha256(canonical(wireSchema)))
+```
+
+`canonical` serialises the schema as JSON with **object keys sorted recursively**, **no whitespace**
+(`,` and `:` as separators), arrays left in their order, and non-ASCII characters left as
+themselves rather than escaped. `catalogHash` is the same function applied to the whole `tools`
+array, and it is what says the catalogue has not been edited without being rehashed.
+
 That last row is why a bot can ship one tool at a time. A `bot-fabric` that cannot fish yet says
 nothing about `fish`, and the other 63 tools work from the first day. Being unable and being
 unwritten look the same on purpose.

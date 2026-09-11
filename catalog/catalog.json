@@ -103,7 +103,7 @@
             "description": "How many to return (default: 1, clamped to 256)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 256
           }
         },
         "required": [
@@ -122,13 +122,15 @@
           "maxDistance": {
             "description": "Search radius (default: 16)",
             "type": "number",
-            "minimum": 1
+            "minimum": 1,
+            "default": 16.0
           },
           "count": {
             "description": "How many to return (default: 1, clamped to 256)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 256,
+            "default": 1
           }
         },
         "required": [
@@ -138,7 +140,7 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:595baee5a15b3623b1c2d95714822b9a80e926c44ddf020b58911a1e2ab5ab68",
+      "wireSchemaHash": "sha256:09b6e3f01aaf0deb82deb37931f322029cc1a3d074fc3bf78c7272ce393efe8a",
       "resultSchema": {
         "type": "object",
         "properties": {
@@ -397,7 +399,8 @@
               "south",
               "east",
               "west"
-            ]
+            ],
+            "default": "down"
           }
         },
         "required": [
@@ -408,7 +411,7 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:3f8a605c4133a5340ef9f434ab7565c1704f6166b7403e66c0236c64f818c26f"
+      "wireSchemaHash": "sha256:1d8ac28736965a5135225168273bdababada6360c320eed181f50e766f6d5797"
     },
     {
       "name": "read-block-entity",
@@ -572,7 +575,7 @@
             "description": "How many recent lines to return (default: 20)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 200
           }
         },
         "additionalProperties": false
@@ -773,7 +776,8 @@
             "description": "How many times to craft (default: 1)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 64
+            "maximum": 64,
+            "default": 1
           }
         },
         "required": [
@@ -782,7 +786,7 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:70a94ed7a8c1448a479f6d51647a74bf9f25bdfa62acdf65cc0a7f4b4e3361a1"
+      "wireSchemaHash": "sha256:6eabdd8f7377be1796b386f6580f7b9d6d26e94007e165598a78f628b45d1545"
     },
     {
       "name": "get-recipe",
@@ -965,8 +969,12 @@
         "properties": {
           "outputItem": {
             "description": "Restrict the list to this item",
-            "type": "string",
-            "minLength": 1
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "default": null
           }
         },
         "additionalProperties": false,
@@ -974,7 +982,7 @@
           "outputItem"
         ]
       },
-      "wireSchemaHash": "sha256:dc77930f7b1a488a0667b66505a337c9b37cfab9c77f5b778fca9c2e095ca2c9",
+      "wireSchemaHash": "sha256:3f3167d3a8a4e89e377b172a705c77bd7f02c491abb7a32c289d33f92a7408cb",
       "resultSchema": {
         "type": "object",
         "properties": {
@@ -1103,7 +1111,7 @@
             "description": "How many recent lines to return (default: 5)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 200
           }
         },
         "additionalProperties": false
@@ -1193,18 +1201,24 @@
         "properties": {
           "type": {
             "description": "\"player\", \"mob\", or part of an entity name. Omit to match anything.",
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "default": null
           },
           "maxDistance": {
             "description": "Search radius (default: 16)",
             "type": "number",
-            "minimum": 1
+            "minimum": 1,
+            "default": 16.0
           },
           "count": {
             "description": "How many to return (default: 1)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 50
+            "maximum": 50,
+            "default": 1
           }
         },
         "additionalProperties": false,
@@ -1214,7 +1228,7 @@
           "type"
         ]
       },
-      "wireSchemaHash": "sha256:26ac3d114b08ee660fb9aff857be0901d07188f88a9146ab7698ec834ffad466",
+      "wireSchemaHash": "sha256:edc4079f23fb94f5260a9eebdfaa77b5fa60522c056205b3cbd1af9b687e73d0",
       "resultSchema": {
         "type": "object",
         "properties": {
@@ -1324,13 +1338,15 @@
           "maxDistance": {
             "description": "Search radius (default: 24)",
             "type": "number",
-            "minimum": 1
+            "minimum": 1,
+            "default": 24.0
           },
           "count": {
             "description": "How many to return (default: 20)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 50
+            "maximum": 50,
+            "default": 20
           }
         },
         "additionalProperties": false,
@@ -1339,7 +1355,7 @@
           "maxDistance"
         ]
       },
-      "wireSchemaHash": "sha256:f852935069287c4a188aa21bd3d79243af86478fbe59147664267f7f0850bc3a",
+      "wireSchemaHash": "sha256:b3e9baab003ac5f71d20062769363d14c389eaf32bcdc178262699127f884afb",
       "resultSchema": {
         "type": "object",
         "properties": {
@@ -1539,7 +1555,7 @@
             "description": "How many recent lines to return (default: 5)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 200
           }
         },
         "additionalProperties": false
@@ -1640,7 +1656,7 @@
             "description": "How many recent lines to return (default: 5)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 200
           }
         },
         "additionalProperties": false
@@ -1762,7 +1778,8 @@
               "sidebar",
               "list",
               "belowName"
-            ]
+            ],
+            "default": "sidebar"
           }
         },
         "additionalProperties": false,
@@ -1770,7 +1787,7 @@
           "slot"
         ]
       },
-      "wireSchemaHash": "sha256:4b9afb2a0d85aab5b6badbfafb4bce7f787b286b8488b81728ed3490668336ef",
+      "wireSchemaHash": "sha256:4fb4263637a58cb79437f6cee058c25c99acbe77297b9f5bfd22f8af5863b2b4",
       "resultSchema": {
         "type": "object",
         "properties": {
@@ -1847,7 +1864,7 @@
             "description": "How many recent lines to return (default: 5)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 200
           }
         },
         "additionalProperties": false
@@ -2035,7 +2052,8 @@
               "legs",
               "feet",
               "off-hand"
-            ]
+            ],
+            "default": "hand"
           }
         },
         "required": [
@@ -2044,7 +2062,7 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:c7bbbe896a9555b7a34682d9ad70c9d4aa99c31cf00f3f2d7d9de38dbd0ddcac"
+      "wireSchemaHash": "sha256:27acd4f5ec4c5f8b1d7a0b68b4815c4d5df3d56b5ad6948ed5bcbd274fcfbd8b"
     },
     {
       "name": "find-item",
@@ -2188,13 +2206,18 @@
             "description": "How many (default: 1)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 64
+            "maximum": 64,
+            "default": 1
           },
           "slot": {
             "description": "Inventory slot to fill (default: the first empty one)",
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 0,
-            "maximum": 44
+            "maximum": 44,
+            "default": null
           }
         },
         "required": [
@@ -2204,7 +2227,7 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:004236055391d13fdf4edeb2eed7b53e435d34296f9723dcb80a0dded759c458"
+      "wireSchemaHash": "sha256:53f2f7218c621e697a8255ddfc89d4ee5bf1bfcc803e70b31e40cb93a5b5840d"
     },
     {
       "name": "list-inventory",
@@ -2555,7 +2578,8 @@
             "description": "How long to hold the key (default: 1000)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 30000
+            "maximum": 30000,
+            "default": 1000
           }
         },
         "required": [
@@ -2564,7 +2588,7 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:0c88ad2a2de106157ee4c8d3ec3e2078889731d630f1228482b0578a16c272b3"
+      "wireSchemaHash": "sha256:0c94cab2eaa38162b31a6c28dd29b7bf7bb8e2531551c34b0d6c7ac65573310d"
     },
     {
       "name": "move-to-position",
@@ -2607,8 +2631,8 @@
           "timeoutMs": {
             "description": "Give up after this long (default: 60000)",
             "type": "integer",
-            "minimum": 50,
-            "maximum": 9007199254740991
+            "minimum": 1000,
+            "maximum": 600000
           }
         },
         "required": [
@@ -2636,13 +2660,15 @@
           "range": {
             "description": "How close to get (default: 1)",
             "type": "number",
-            "minimum": 0
+            "minimum": 0,
+            "default": 1.0
           },
           "timeoutMs": {
             "description": "Give up after this long (default: 60000)",
             "type": "integer",
-            "minimum": 50,
-            "maximum": 9007199254740991
+            "minimum": 1000,
+            "maximum": 600000,
+            "default": 60000
           }
         },
         "required": [
@@ -2654,7 +2680,7 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:63f60d8ed212893ff6d53d855a32eca235ad5dd90f05a1df211b33068081fa86"
+      "wireSchemaHash": "sha256:7b260e17f8c3524018ab301c032da4040a02a7285580f7c6895c90ec0d07dcca"
     },
     {
       "name": "set-stance",
@@ -2693,11 +2719,19 @@
         "properties": {
           "sneak": {
             "description": "Crouch, or stand up again",
-            "type": "boolean"
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "default": null
           },
           "sprint": {
             "description": "Sprint, or stop sprinting",
-            "type": "boolean"
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "default": null
           }
         },
         "additionalProperties": false,
@@ -2706,7 +2740,7 @@
           "sprint"
         ]
       },
-      "wireSchemaHash": "sha256:70ca0895cbdfd4ecdb5e4115f5aa2fa9505b168e225dcf2302f08bc56f5491e2"
+      "wireSchemaHash": "sha256:f2f7d5bf9fae762bd098393230fd01c27e1a6f1ef5b03851883addb71161ed20"
     },
     {
       "name": "ping-server",
@@ -2760,7 +2794,7 @@
       ],
       "exclusive": false,
       "untrusted": false,
-      "structured": true,
+      "structured": false,
       "defaultDeadlineMs": 300000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2880,17 +2914,20 @@
             "type": "integer",
             "minimum": 256,
             "maximum": 1920,
-            "description": "Image width (default: 854)"
+            "description": "Image width (default: 854)",
+            "default": 854
           },
           "height": {
             "type": "integer",
             "minimum": 144,
             "maximum": 1080,
-            "description": "Image height (default: 480)"
+            "description": "Image height (default: 480)",
+            "default": 480
           },
           "hud": {
             "type": "boolean",
-            "description": "Include the HUD and any open screen (default: true)"
+            "description": "Include the HUD and any open screen (default: true)",
+            "default": true
           }
         },
         "required": [
@@ -2899,7 +2936,7 @@
           "width"
         ]
       },
-      "wireSchemaHash": "sha256:14c6fbf3f34294fb5f822199cd97c9a6347985795cb30a13949cc53646b9b26f"
+      "wireSchemaHash": "sha256:5e168363ead5955da20ee091a62d2d24a085a14ca43f7c52479b2a3655e40465"
     },
     {
       "name": "complete-command",
@@ -2959,13 +2996,15 @@
             "description": "How long to wait for the answer (default: 5000)",
             "type": "integer",
             "minimum": 100,
-            "maximum": 30000
+            "maximum": 30000,
+            "default": 5000
           },
           "limit": {
             "description": "How many completions to show (default: 60)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 500
+            "maximum": 500,
+            "default": 60
           }
         },
         "required": [
@@ -2975,7 +3014,7 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:ca452b75e5a513d21b17f2e4c6ded23de8c48074fd58d5d0ae9688794bf7f58c",
+      "wireSchemaHash": "sha256:937b4b843b9e6bec05bff52a534955be179725d519c0836dab5568e0e47428d8",
       "resultSchema": {
         "type": "object",
         "properties": {
@@ -3165,7 +3204,8 @@
             "description": "How long to collect the reply before returning (default: 1000)",
             "type": "integer",
             "minimum": 0,
-            "maximum": 10000
+            "maximum": 10000,
+            "default": 1000
           }
         },
         "required": [
@@ -3174,7 +3214,7 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:b1a77f445106644a745cf0e35390a277802d4df8b08764e053bd18e0d26ca827"
+      "wireSchemaHash": "sha256:638c596cec20a332ff5d0d561d0c2a1c34c353d6dc451bf5f008f45bcf584a28"
     },
     {
       "name": "switch-server",
@@ -3228,7 +3268,8 @@
             "description": "Give up after this long (default: 30000)",
             "type": "integer",
             "minimum": 1000,
-            "maximum": 120000
+            "maximum": 120000,
+            "default": 30000
           }
         },
         "required": [
@@ -3237,7 +3278,7 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:c1baa6b6930b2c1e7e0eb37c2232a42b3e3334199d8151f423e04d5a92d7322e"
+      "wireSchemaHash": "sha256:00d3e77dd497e1df245c1cdcdd76472db66e5cb0e54f8989559990cbdf3340b5"
     },
     {
       "name": "wait-for-chat",
@@ -3499,8 +3540,7 @@
           },
           "slot": {
             "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991,
+            "minimum": 0,
             "description": "Slot number as listed by the window contents"
           },
           "button": {
@@ -3526,8 +3566,7 @@
         "properties": {
           "slot": {
             "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991,
+            "minimum": 0,
             "description": "Slot number as listed by the window contents"
           },
           "button": {
@@ -3536,11 +3575,13 @@
             "enum": [
               "left",
               "right"
-            ]
+            ],
+            "default": "left"
           },
           "shift": {
             "description": "Shift-click, which moves the whole stack across the window (default: false)",
-            "type": "boolean"
+            "type": "boolean",
+            "default": false
           }
         },
         "required": [
@@ -3550,7 +3591,7 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:a4196216f76f37f24b8051e9b29e52428432cf6d2b819c04677a9aadb2736417"
+      "wireSchemaHash": "sha256:9cde0759c81827ad3102a860df9e2cae1fa5b7debc27cef6f1a83d1b3e7a37de"
     },
     {
       "name": "drop-held-item",
@@ -3576,8 +3617,7 @@
           "slot": {
             "description": "Slot to empty onto the ground. Omit it to drop what the cursor holds.",
             "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
+            "minimum": 0
           }
         },
         "additionalProperties": false
@@ -3587,9 +3627,12 @@
         "properties": {
           "slot": {
             "description": "Slot to empty onto the ground. Omit it to drop what the cursor holds.",
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "default": null
           }
         },
         "additionalProperties": false,
@@ -3597,7 +3640,7 @@
           "slot"
         ]
       },
-      "wireSchemaHash": "sha256:88d1693ef9b04fd9227f2bcb62e5f9ae5914f7fa266020219a891f68bb022e01"
+      "wireSchemaHash": "sha256:75939f2efaf6239b49c458120d06cea9f954bfeecb0716a73ef98feb7f1c4c4f"
     },
     {
       "name": "open-container",
@@ -3788,7 +3831,7 @@
             "description": "How much input to load (default: 1)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 64
           },
           "fuelItem": {
             "type": "string",
@@ -3799,7 +3842,7 @@
             "description": "How much fuel to load (default: 1)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 64
           },
           "takeOutput": {
             "description": "Wait for the result and collect it (default: true)",
@@ -3845,7 +3888,8 @@
             "description": "How much input to load (default: 1)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 64,
+            "default": 1
           },
           "fuelItem": {
             "type": "string",
@@ -3856,17 +3900,20 @@
             "description": "How much fuel to load (default: 1)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 64,
+            "default": 1
           },
           "takeOutput": {
             "description": "Wait for the result and collect it (default: true)",
-            "type": "boolean"
+            "type": "boolean",
+            "default": true
           },
           "timeoutMs": {
             "description": "How long to wait for the result (default: 60000)",
             "type": "integer",
             "minimum": 1000,
-            "maximum": 600000
+            "maximum": 600000,
+            "default": 60000
           }
         },
         "required": [
@@ -3882,7 +3929,7 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:47d901f74cc12c284f3972137cf92a1ed21adbe824172bbecefcc0da912d6a1f"
+      "wireSchemaHash": "sha256:ee0fe9d676a496f246a7677f80dc3969187e96e741d3b20c67b24a651b55cfa5"
     },
     {
       "name": "close-window",
@@ -4070,15 +4117,20 @@
         "properties": {
           "titlePattern": {
             "description": "JavaScript regular expression the window title must match (default: any window)",
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "minLength": 1,
-            "maxLength": 256
+            "maxLength": 256,
+            "default": null
           },
           "timeoutMs": {
             "description": "How long to wait (default: 10000)",
             "type": "integer",
             "minimum": 100,
-            "maximum": 120000
+            "maximum": 120000,
+            "default": 10000
           }
         },
         "additionalProperties": false,
@@ -4087,7 +4139,7 @@
           "titlePattern"
         ]
       },
-      "wireSchemaHash": "sha256:428ee1e8b841a668c9948643525fa7ee1d9ed9324124c854aa98d850dda994a0",
+      "wireSchemaHash": "sha256:b20d676b0fdbcb821a1bf4d695a50f8fcd46618b37b642f323fd81e839671b3d",
       "resultSchema": {
         "type": "object",
         "properties": {
@@ -4315,13 +4367,15 @@
           "maxDistance": {
             "description": "Search radius (default: 8)",
             "type": "number",
-            "minimum": 1
+            "minimum": 1,
+            "default": 8.0
           },
           "times": {
             "description": "How many swings to land (default: 1, at most 20)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 20
+            "maximum": 20,
+            "default": 1
           }
         },
         "required": [
@@ -4331,7 +4385,7 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:fe44c2247ade4cb58b17c87ea8889073622b58e2cb0e5cb8f7f242874cd05cfc"
+      "wireSchemaHash": "sha256:ad34f9f2602d72747786a2ad0758c1debc3e06367a46ff110d04dd4636edd27a"
     },
     {
       "name": "fish",
@@ -4370,7 +4424,8 @@
             "description": "How long to wait for a bite (default: 60000)",
             "type": "integer",
             "minimum": 1000,
-            "maximum": 300000
+            "maximum": 300000,
+            "default": 60000
           }
         },
         "additionalProperties": false,
@@ -4378,7 +4433,7 @@
           "timeoutMs"
         ]
       },
-      "wireSchemaHash": "sha256:447b7f9cb903a3450f1e6c2ce5d21e83f94df5b3f1938cc32c081ac39e3044b1"
+      "wireSchemaHash": "sha256:264d959167057c7b4e46bcdaaf6a2a15d99a2807fa3abcf953ab4c85a21b6406"
     },
     {
       "name": "interact-entity",
@@ -4428,7 +4483,8 @@
           "maxDistance": {
             "description": "Search radius (default: 8)",
             "type": "number",
-            "minimum": 1
+            "minimum": 1,
+            "default": 8.0
           }
         },
         "required": [
@@ -4437,7 +4493,7 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:a8cf16bb2ccd859239ce41e7fbed6e728d6cbb812988989e2d79a9c2372c0bb7"
+      "wireSchemaHash": "sha256:34e1bc55c70e5bfb98e332cfb17c3ebecf6c0e115a101c51e7de4662a7342504"
     },
     {
       "name": "use-held-item",
@@ -4478,13 +4534,15 @@
         "properties": {
           "offhand": {
             "description": "Use the off-hand item instead of the main hand (default: false)",
-            "type": "boolean"
+            "type": "boolean",
+            "default": false
           },
           "holdMs": {
             "description": "How long to keep the button down before releasing, for bows and the like (default: 0)",
             "type": "integer",
             "minimum": 0,
-            "maximum": 60000
+            "maximum": 60000,
+            "default": 0
           }
         },
         "additionalProperties": false,
@@ -4493,8 +4551,8 @@
           "offhand"
         ]
       },
-      "wireSchemaHash": "sha256:d8193940ea106b05e271343588f518859a11ea31541fbe61184f12436c11b12f"
+      "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:9d35129d85e1f0ba7b9e9c79293b572c3ca4edf0bc2888ebf3c122e573a2ed03"
+  "catalogHash": "sha256:2cf8ed935f80f8388034c0642f85cc6ff446eeced47315f57e6da64927e4c9af"
 }
