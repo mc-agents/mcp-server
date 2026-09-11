@@ -161,6 +161,17 @@ public class RemoteTools {
             return unsupported(result) ? withdraw(spec, bot) : ToolDispatcher.failure(result.text());
         }
 
+        /*
+        A structured tool's words are the server's, built from the DTO. A bot that sends none has
+        disagreed with the catalogue, and saying that is worth far more than the exception the
+        renderer throws when handed nothing -- which is what a caller used to get.
+        */
+        if (spec.structured() && result.data() == null) {
+            return ToolDispatcher.failure(
+                    "bot \"%s\" (kind: %s) answered \"%s\" without the data the catalogue says it sends. Its build disagrees with this server's catalogue (%s)."
+                            .formatted(bot.name(), bot.kind(), spec.name(), spec.wireSchemaHash()));
+        }
+
         String body = Renderers.render(spec.name(), asNode(result.data())).orElse(result.text());
 
         if (spec.untrusted() && mark) {

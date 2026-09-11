@@ -244,15 +244,16 @@ public class LocalTools {
                         "Matched: (%s) %s".formatted(matched.entry().source(), matched.entry().text())));
 
                 case WaitOutcome.TimedOut timedOut -> ToolDispatcher.failure(
-                        "no %s matched /%s/ within %dms.".formatted(nounOf(feed), source, timedOut.waitedMs()));
+                        "nothing on the %s feed matched /%s/ within %dms."
+                                .formatted(feed, source, timedOut.waitedMs()));
 
                 /*
                 Being kicked after four seconds and matching nothing in ten are different facts.
                 Reporting the first as the second sends you looking in the wrong place.
                 */
                 case WaitOutcome.Abandoned abandoned -> ToolDispatcher.failure(
-                        "bot \"%s\" stopped while waiting for %s matching /%s/ (%s). %dms elapsed of %dms."
-                                .formatted(bot.name(), nounOf(feed), source, abandoned.reason(),
+                        "bot \"%s\" stopped while waiting on the %s feed for /%s/ (%s). %dms elapsed of %dms."
+                                .formatted(bot.name(), feed, source, abandoned.reason(),
                                         abandoned.waitedMs(), timeoutMs));
             };
         } catch (InterruptedException e) {
