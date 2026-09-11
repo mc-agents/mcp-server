@@ -51,15 +51,15 @@ Every JSON frame is a flat object with a `t` discriminator.
 
 | `t` | Fields |
 | --- | --- |
-| `helloOk` | `protocol`, `sessionId`, `heartbeatMs`, `repeatFlushMs`, `limits`, `acceptedTools[]`, `rejectedTools[]` |
+| `helloOk` | `protocol`, `sessionId`, `heartbeatMs`, `repeatFlushMs`, `limits`, `events`, `acceptedTools[]`, `rejectedTools[]` |
 | `helloErr` | `code`, `message`. Then close |
+| `fault` | `code`, `message`. A breach of the wire contract, not a failed tool. Then close |
 | `connect` | `id`, `host`, `port`, `username`, `version?`, `spawnTimeoutMs` |
 | `call` | `id`, `tool`, `args`, `deadlineMs`, `traceId?` |
 | `cancel` | `id`, `reason` |
 | `disconnect` | `id`, `reason`, `quitMessage?` — leave the game, keep the process |
 | `shutdown` | `reason`, `graceMs` |
 | `ping` | `nonce`, `ackEventSeq` |
-| `configure` | `events?`, `repeatFlushMs?` |
 
 ## Handshake
 

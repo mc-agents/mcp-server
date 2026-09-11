@@ -26,8 +26,10 @@ java {
 }
 
 // The catalogue ships from where it is reviewed. Copying it under src/main/resources would make a
-// second copy that can drift from the one the other repositories read.
-sourceSets.main { resources.srcDir("catalog").include("**/*.json") }
+// second copy that can drift from the one the other repositories read. The include has to sit on
+// the copy and not on the source set: on the source set it filters every resource, which silently
+// left application.yaml out of the jar.
+tasks.processResources { from("catalog") { include("*.json") } }
 
 tasks.test { useJUnitPlatform() }
 

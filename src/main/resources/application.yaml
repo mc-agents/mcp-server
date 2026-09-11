@@ -38,6 +38,8 @@ mcagents:
   bot-link:
     # Bots dial in here. The server never has to know a pod address.
     port: ${BOT_LINK_PORT:8765}
+  bots:
+    max: ${MCP_MAX_BOTS:16}
   auth:
     token: ${MCP_AUTH_TOKEN:}
 

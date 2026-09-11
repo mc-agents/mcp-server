@@ -69,6 +69,10 @@ public final class BotSession {
         }
     }
 
+    public int capabilityCount() {
+        return capabilities.size();
+    }
+
     public boolean supports(String tool) {
         return capabilities.containsKey(tool);
     }

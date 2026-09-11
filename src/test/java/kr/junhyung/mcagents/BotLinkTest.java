@@ -53,7 +53,6 @@ class BotLinkTest {
             @Override public void event(Messages.Event event) {}
             @Override public void status(Messages.Status status) {}
             @Override public void log(Messages.Log log) {}
-            @Override public void hello(Messages.Hello hello) {}
         }));
     }
 

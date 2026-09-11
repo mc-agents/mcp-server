@@ -3,6 +3,7 @@ package kr.junhyung.mcagents.bot;
 import kr.junhyung.mcagents.protocol.Frame;
 import kr.junhyung.mcagents.protocol.FrameCodec;
 import kr.junhyung.mcagents.protocol.Messages;
+import kr.junhyung.mcagents.protocol.ProtocolViolation;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -69,13 +70,52 @@ public final class BotLink implements AutoCloseable {
         this.hello = frame;
     }
 
+    /**
+     * Read the one frame that is allowed to come first.
+     *
+     * <p>Doing this before {@link #pump} rather than as a flag inside it is what makes "a frame
+     * before hello is a violation" structural: there is no path that applies a message while the
+     * server still does not know which bot sent it.
+     */
+    public Messages.Hello awaitHello(int timeoutMs) throws IOException {
+        socket.setSoTimeout(timeoutMs);
+        try {
+            Frame first = FrameCodec.read(in);
+
+            if (!(first instanceof Frame.Json json)) {
+                throw new ProtocolViolation(ProtocolViolation.Code.BLOB_BEFORE_HELLO,
+                        "the first frame on a link must be hello, not a blob");
+            }
+            if (!(mapper.readValue(json.payload(), Messages.FromBot.class) instanceof Messages.Hello frame)) {
+                throw new ProtocolViolation(ProtocolViolation.Code.HELLO_EXPECTED,
+                        "the first message on a link must be hello");
+            }
+
+            acceptHello(frame);
+            lastHeardFrom = System.currentTimeMillis();
+            return frame;
+        } finally {
+            socket.setSoTimeout(0);
+        }
+    }
+
+    /** Say why the link is closing. Best effort: the peer that broke the frame may not read it. */
+    public void fault(String code, String message) {
+        try {
+            send(new Messages.Fault(code, message));
+        } catch (IOException | RuntimeException ignored) {
+            // The link is already in a state where saying so may not be possible.
+        }
+    }
+
     public boolean isClosed() {
         return closed.get();
     }
 
     /**
-     * What the link hands upward. Results never reach it — the link settles those itself, so the
-     * order a caller sees is the order the wire had.
+     * What the link hands upward. Results never reach it: the link settles those itself, so the
+     * order a caller sees is the order the wire had. Neither does {@code hello}, which the link
+     * has already taken in {@link #awaitHello} and treats as a violation a second time.
      */
     public interface Sink {
         void event(Messages.Event event);
@@ -83,8 +123,6 @@ public final class BotLink implements AutoCloseable {
         void status(Messages.Status status);
 
         void log(Messages.Log log);
-
-        void hello(Messages.Hello hello);
     }
 
     /**
@@ -103,6 +141,8 @@ public final class BotLink implements AutoCloseable {
                     case Frame.Json json -> apply(mapper.readValue(json.payload(), Messages.FromBot.class), sink);
                 }
             }
+        } catch (ProtocolViolation e) {
+            fault(e.code().name(), e.getMessage());
         } catch (IOException e) {
             // A closed link is how this ends; the caller finds out through the failing calls.
         } finally {
@@ -110,16 +150,14 @@ public final class BotLink implements AutoCloseable {
         }
     }
 
-    private void apply(Messages.FromBot message, Sink sink) {
+    private void apply(Messages.FromBot message, Sink sink) throws ProtocolViolation {
         switch (message) {
             case Messages.Result result -> settle(result.id(), result);
             case Messages.Event event -> sink.event(event);
             case Messages.Status status -> sink.status(status);
             case Messages.Log log -> sink.log(log);
-            case Messages.Hello frame -> {
-                acceptHello(frame);
-                sink.hello(frame);
-            }
+            case Messages.Hello frame -> throw new ProtocolViolation(ProtocolViolation.Code.HELLO_TWICE,
+                    "hello arrived twice on one link (second said botName \"%s\")".formatted(frame.botName()));
             case Messages.Pong pong -> noteAck(pong.nonce());
         }
     }

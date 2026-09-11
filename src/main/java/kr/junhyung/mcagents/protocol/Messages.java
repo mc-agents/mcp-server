@@ -32,6 +32,7 @@ public final class Messages {
     @JsonSubTypes({
         @JsonSubTypes.Type(value = HelloOk.class, name = "helloOk"),
         @JsonSubTypes.Type(value = HelloErr.class, name = "helloErr"),
+        @JsonSubTypes.Type(value = Fault.class, name = "fault"),
         @JsonSubTypes.Type(value = Connect.class, name = "connect"),
         @JsonSubTypes.Type(value = Call.class, name = "call"),
         @JsonSubTypes.Type(value = Cancel.class, name = "cancel"),
@@ -62,10 +63,18 @@ public final class Messages {
             int heartbeatMs,
             int repeatFlushMs,
             Map<String, Object> limits,
+            Map<String, Boolean> events,
             List<String> acceptedTools,
             List<RejectedTool> rejectedTools) implements ToBot {}
 
     public record HelloErr(String code, String message) implements ToBot {}
+
+    /**
+     * A breach of the wire contract. Never a {@code result}: the offending call may not even be
+     * identifiable, and a session that kept going after one would be acting on frames it could not
+     * read. The link closes behind it.
+     */
+    public record Fault(String code, String message) implements ToBot {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Connect(
