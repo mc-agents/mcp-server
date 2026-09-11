@@ -1,0 +1,3285 @@
+{
+  "catalogVersion": "1.0.0",
+  "protocol": 1,
+  "tools": [
+    {
+      "name": "dig-block",
+      "group": "block",
+      "description": "Break the block at a position, walking to it first when out of reach.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 60000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:745bc34ffa94b53097b81ff9cabd6d41db733664935cd5c7d7a9a090cc329c65"
+    },
+    {
+      "name": "find-blocks",
+      "group": "block",
+      "description": "Find nearby blocks of a given type.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "blockType": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Block name, for example oak_log"
+          },
+          "maxDistance": {
+            "description": "Search radius (default: 16)",
+            "type": "number",
+            "minimum": 1
+          },
+          "count": {
+            "description": "How many to return (default: 1, clamped to 256)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "blockType"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "blockType": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Block name, for example oak_log"
+          },
+          "maxDistance": {
+            "description": "Search radius (default: 16)",
+            "type": "number",
+            "minimum": 1
+          },
+          "count": {
+            "description": "How many to return (default: 1, clamped to 256)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "blockType",
+          "count",
+          "maxDistance"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:595baee5a15b3623b1c2d95714822b9a80e926c44ddf020b58911a1e2ab5ab68"
+    },
+    {
+      "name": "get-block-info",
+      "group": "block",
+      "description": "Describe the block at a position.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:745bc34ffa94b53097b81ff9cabd6d41db733664935cd5c7d7a9a090cc329c65"
+    },
+    {
+      "name": "place-block",
+      "group": "block",
+      "description": "Place the held block at a position, using an adjacent block as reference.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 30000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          },
+          "faceDirection": {
+            "description": "Which neighbouring face to try first (default: 'down')",
+            "type": "string",
+            "enum": [
+              "down",
+              "up",
+              "north",
+              "south",
+              "east",
+              "west"
+            ]
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          },
+          "faceDirection": {
+            "description": "Which neighbouring face to try first (default: 'down')",
+            "type": "string",
+            "enum": [
+              "down",
+              "up",
+              "north",
+              "south",
+              "east",
+              "west"
+            ]
+          }
+        },
+        "required": [
+          "faceDirection",
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:3f8a605c4133a5340ef9f434ab7565c1704f6166b7403e66c0236c64f818c26f"
+    },
+    {
+      "name": "read-block-entity",
+      "group": "block",
+      "description": "Read the data a block carries beyond its type: sign text, a container's custom name, a banner's pattern. Signs are the common case, since that is where servers write instructions into the world itself.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:745bc34ffa94b53097b81ff9cabd6d41db733664935cd5c7d7a9a090cc329c65"
+    },
+    {
+      "name": "read-chat",
+      "group": "chat",
+      "description": "Read recent chat and system messages the bot received.",
+      "route": "local",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "count": {
+            "description": "How many recent lines to return (default: 20)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "send-chat",
+      "group": "chat",
+      "description": "Say something in chat as the bot. Use run-command for slash commands.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "Text to say"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "Text to say"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:5c7dd5f9ce17e6ef4722a41c75a474b6dddbbccab91d61afb2ada4ef8ff46829"
+    },
+    {
+      "name": "can-craft",
+      "group": "crafting",
+      "description": "Check whether the bot can craft an item right now.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "itemName": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Item to check"
+          }
+        },
+        "required": [
+          "itemName"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "itemName": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Item to check"
+          }
+        },
+        "required": [
+          "itemName"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:ff3fc389c507c53b6579cb9f27e960030ff0819170a6554d70c117b705d10fc6"
+    },
+    {
+      "name": "craft-item",
+      "group": "crafting",
+      "description": "Craft an item, walking to a nearby crafting table when the recipe needs one.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 60000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "outputItem": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Item to craft"
+          },
+          "amount": {
+            "description": "How many times to craft (default: 1)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
+          }
+        },
+        "required": [
+          "outputItem"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "outputItem": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Item to craft"
+          },
+          "amount": {
+            "description": "How many times to craft (default: 1)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
+          }
+        },
+        "required": [
+          "amount",
+          "outputItem"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:70a94ed7a8c1448a479f6d51647a74bf9f25bdfa62acdf65cc0a7f4b4e3361a1"
+    },
+    {
+      "name": "get-recipe",
+      "group": "crafting",
+      "description": "Show every recipe for an item together with what the bot still needs.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "itemName": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Item to look up"
+          }
+        },
+        "required": [
+          "itemName"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "itemName": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Item to look up"
+          }
+        },
+        "required": [
+          "itemName"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:43b6fd98f5f3aaa4d775078049aff85984616425cadbc9b90cd94485753d8645"
+    },
+    {
+      "name": "list-recipes",
+      "group": "crafting",
+      "description": "List recipes the bot can craft right now with what it carries. Pass outputItem to inspect one item instead of scanning everything.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "outputItem": {
+            "description": "Restrict the list to this item",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "outputItem": {
+            "description": "Restrict the list to this item",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "outputItem"
+        ]
+      },
+      "wireSchemaHash": "sha256:dc77930f7b1a488a0667b66505a337c9b37cfab9c77f5b778fca9c2e095ca2c9"
+    },
+    {
+      "name": "read-effects",
+      "group": "effect",
+      "description": "Read the sounds and particles the server has played near the bot. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
+      "route": "local",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "count": {
+            "description": "How many recent lines to return (default: 5)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "wait-for-effect",
+      "group": "effect",
+      "description": "Wait until a sound or particle whose name matches a regular expression is played. Returns straight away if it already says so.",
+      "route": "local",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "JavaScript regular expression source"
+          },
+          "timeoutMs": {
+            "description": "How long to wait (default: 10000)",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 120000
+          }
+        },
+        "required": [
+          "pattern"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "find-entity",
+      "group": "entity",
+      "description": "Find nearby entities, optionally filtered by type or name.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "type": {
+            "description": "\"player\", \"mob\", or part of an entity name. Omit to match anything.",
+            "type": "string"
+          },
+          "maxDistance": {
+            "description": "Search radius (default: 16)",
+            "type": "number",
+            "minimum": 1
+          },
+          "count": {
+            "description": "How many to return (default: 1)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "\"player\", \"mob\", or part of an entity name. Omit to match anything.",
+            "type": "string"
+          },
+          "maxDistance": {
+            "description": "Search radius (default: 16)",
+            "type": "number",
+            "minimum": 1
+          },
+          "count": {
+            "description": "How many to return (default: 1)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "count",
+          "maxDistance",
+          "type"
+        ]
+      },
+      "wireSchemaHash": "sha256:26ac3d114b08ee660fb9aff857be0901d07188f88a9146ab7698ec834ffad466"
+    },
+    {
+      "name": "read-displays",
+      "group": "entity",
+      "description": "Read the text floating in the world: holograms, name tags and NPC labels. They are display entities, so find-entity only reports that they exist.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "maxDistance": {
+            "description": "Search radius (default: 24)",
+            "type": "number",
+            "minimum": 1
+          },
+          "count": {
+            "description": "How many to return (default: 20)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "maxDistance": {
+            "description": "Search radius (default: 24)",
+            "type": "number",
+            "minimum": 1
+          },
+          "count": {
+            "description": "How many to return (default: 20)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "count",
+          "maxDistance"
+        ]
+      },
+      "wireSchemaHash": "sha256:f852935069287c4a188aa21bd3d79243af86478fbe59147664267f7f0850bc3a"
+    },
+    {
+      "name": "get-player-state",
+      "group": "hud",
+      "description": "Report the health, hunger, experience and position the bot sees for itself.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "required": []
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+    },
+    {
+      "name": "read-action-bar",
+      "group": "hud",
+      "description": "Read the action bar text above the hotbar, which servers use for live status. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
+      "route": "local",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "count": {
+            "description": "How many recent lines to return (default: 5)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "read-boss-bars",
+      "group": "hud",
+      "description": "Read every boss bar the server is showing above the hotbar.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "required": []
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+    },
+    {
+      "name": "read-dialog",
+      "group": "hud",
+      "description": "Read the dialogs the server has opened on screen, with their title, body and the buttons they offer, and the point at which each was closed again. The bot cannot press those buttons: the packet that answers a dialog is serialised from a definition that does not match 26.1, and a server drops the connection rather than read it. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
+      "route": "local",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "count": {
+            "description": "How many recent lines to return (default: 5)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "read-player-list",
+      "group": "hud",
+      "description": "List the players on the tab list, with their game mode and ping.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "required": []
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+    },
+    {
+      "name": "read-scoreboard",
+      "group": "hud",
+      "description": "Read the scoreboard the server draws on screen, which most servers use for stats and quest progress.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "slot": {
+            "description": "Which display slot to read (default: 'sidebar')",
+            "type": "string",
+            "enum": [
+              "sidebar",
+              "list",
+              "belowName"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "description": "Which display slot to read (default: 'sidebar')",
+            "type": "string",
+            "enum": [
+              "sidebar",
+              "list",
+              "belowName"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "slot"
+        ]
+      },
+      "wireSchemaHash": "sha256:4b9afb2a0d85aab5b6badbfafb4bce7f787b286b8488b81728ed3490668336ef"
+    },
+    {
+      "name": "read-title",
+      "group": "hud",
+      "description": "Read the titles and subtitles the server has thrown across the screen, which is where servers put things the player must not miss. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
+      "route": "local",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "count": {
+            "description": "How many recent lines to return (default: 5)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "wait-for-action-bar",
+      "group": "hud",
+      "description": "Wait until the action bar shows text matching a regular expression. Returns straight away if it already says so.",
+      "route": "local",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "JavaScript regular expression source"
+          },
+          "timeoutMs": {
+            "description": "How long to wait (default: 10000)",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 120000
+          }
+        },
+        "required": [
+          "pattern"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "wait-for-dialog",
+      "group": "hud",
+      "description": "Wait until a dialog whose text matches a regular expression is opened. Returns straight away if it already says so.",
+      "route": "local",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "JavaScript regular expression source"
+          },
+          "timeoutMs": {
+            "description": "How long to wait (default: 10000)",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 120000
+          }
+        },
+        "required": [
+          "pattern"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "wait-for-title",
+      "group": "hud",
+      "description": "Wait until a title or subtitle matching a regular expression is shown. Returns straight away if it already says so.",
+      "route": "local",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "JavaScript regular expression source"
+          },
+          "timeoutMs": {
+            "description": "How long to wait (default: 10000)",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 120000
+          }
+        },
+        "required": [
+          "pattern"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "equip-item",
+      "group": "inventory",
+      "description": "Equip an item from the inventory.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "itemName": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Item name or a fragment of it"
+          },
+          "destination": {
+            "description": "Where to equip it (default: 'hand')",
+            "type": "string",
+            "enum": [
+              "hand",
+              "head",
+              "torso",
+              "legs",
+              "feet",
+              "off-hand"
+            ]
+          }
+        },
+        "required": [
+          "itemName"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "itemName": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Item name or a fragment of it"
+          },
+          "destination": {
+            "description": "Where to equip it (default: 'hand')",
+            "type": "string",
+            "enum": [
+              "hand",
+              "head",
+              "torso",
+              "legs",
+              "feet",
+              "off-hand"
+            ]
+          }
+        },
+        "required": [
+          "destination",
+          "itemName"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:c7bbbe896a9555b7a34682d9ad70c9d4aa99c31cf00f3f2d7d9de38dbd0ddcac"
+    },
+    {
+      "name": "find-item",
+      "group": "inventory",
+      "description": "Look for an item in the bot's inventory by exact or partial name.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "nameOrType": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Item name or a fragment of it"
+          }
+        },
+        "required": [
+          "nameOrType"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "nameOrType": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Item name or a fragment of it"
+          }
+        },
+        "required": [
+          "nameOrType"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:03d628f9c594f99d125da58edc5215819cf61b5d2aad8102f42aab19de171135"
+    },
+    {
+      "name": "give-item",
+      "group": "inventory",
+      "description": "Put an item straight into the inventory. Creative mode only, which is what makes it useful: a test can start from the state it needs instead of gathering its way there.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "itemName": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Exact item name, for example diamond_pickaxe"
+          },
+          "count": {
+            "description": "How many (default: 1)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
+          },
+          "slot": {
+            "description": "Inventory slot to fill (default: the first empty one)",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 44
+          }
+        },
+        "required": [
+          "itemName"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "itemName": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Exact item name, for example diamond_pickaxe"
+          },
+          "count": {
+            "description": "How many (default: 1)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
+          },
+          "slot": {
+            "description": "Inventory slot to fill (default: the first empty one)",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 44
+          }
+        },
+        "required": [
+          "count",
+          "itemName",
+          "slot"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:004236055391d13fdf4edeb2eed7b53e435d34296f9723dcb80a0dded759c458"
+    },
+    {
+      "name": "list-inventory",
+      "group": "inventory",
+      "description": "List every item in the bot's inventory with slot numbers.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "required": []
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+    },
+    {
+      "name": "fly-to",
+      "group": "movement",
+      "description": "Fly straight to a position. Requires creative mode.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 60000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:745bc34ffa94b53097b81ff9cabd6d41db733664935cd5c7d7a9a090cc329c65"
+    },
+    {
+      "name": "get-position",
+      "group": "movement",
+      "description": "Report the block position the bot currently stands on.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "required": []
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+    },
+    {
+      "name": "jump",
+      "group": "movement",
+      "description": "Make the bot jump once.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "required": []
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+    },
+    {
+      "name": "look-at",
+      "group": "movement",
+      "description": "Turn the bot to face a position.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:745bc34ffa94b53097b81ff9cabd6d41db733664935cd5c7d7a9a090cc329c65"
+    },
+    {
+      "name": "move-in-direction",
+      "group": "movement",
+      "description": "Hold a movement key for a while. Use this when pathfinding is not wanted.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "forward",
+              "back",
+              "left",
+              "right"
+            ],
+            "description": "Direction to move"
+          },
+          "durationMs": {
+            "description": "How long to hold the key (default: 1000)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30000
+          }
+        },
+        "required": [
+          "direction"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "direction": {
+            "type": "string",
+            "enum": [
+              "forward",
+              "back",
+              "left",
+              "right"
+            ],
+            "description": "Direction to move"
+          },
+          "durationMs": {
+            "description": "How long to hold the key (default: 1000)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30000
+          }
+        },
+        "required": [
+          "direction",
+          "durationMs"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:0c88ad2a2de106157ee4c8d3ec3e2078889731d630f1228482b0578a16c272b3"
+    },
+    {
+      "name": "move-to-position",
+      "group": "movement",
+      "description": "Walk the bot to a position using pathfinding.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 60000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          },
+          "range": {
+            "description": "How close to get (default: 1)",
+            "type": "number",
+            "minimum": 0
+          },
+          "timeoutMs": {
+            "description": "Give up after this long (default: 60000)",
+            "type": "integer",
+            "minimum": 50,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          },
+          "range": {
+            "description": "How close to get (default: 1)",
+            "type": "number",
+            "minimum": 0
+          },
+          "timeoutMs": {
+            "description": "Give up after this long (default: 60000)",
+            "type": "integer",
+            "minimum": 50,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "range",
+          "timeoutMs",
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:63f60d8ed212893ff6d53d855a32eca235ad5dd90f05a1df211b33068081fa86"
+    },
+    {
+      "name": "set-stance",
+      "group": "movement",
+      "description": "Hold the bot crouching or sprinting. Both stay on until turned off, so a plugin that only reacts to a crouching player can be reached. Nothing else here changes the stance.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "sneak": {
+            "description": "Crouch, or stand up again",
+            "type": "boolean"
+          },
+          "sprint": {
+            "description": "Sprint, or stop sprinting",
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "sneak": {
+            "description": "Crouch, or stand up again",
+            "type": "boolean"
+          },
+          "sprint": {
+            "description": "Sprint, or stop sprinting",
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "sneak",
+          "sprint"
+        ]
+      },
+      "wireSchemaHash": "sha256:70ca0895cbdfd4ecdb5e4115f5aa2fa9505b168e225dcf2302f08bc56f5491e2"
+    },
+    {
+      "name": "ping-server",
+      "group": "probe",
+      "description": "Send a Minecraft server list ping and report version, protocol, player count and MOTD. Use it to check a server is up and speaks a version we can join before spending a bot slot.",
+      "route": "local",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Server host"
+          },
+          "port": {
+            "description": "Server port (default: 25565)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "timeoutMs": {
+            "description": "How long to wait for the answer (default: 3000)",
+            "type": "integer",
+            "minimum": 200,
+            "maximum": 30000
+          }
+        },
+        "required": [
+          "host"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "wait-for-server",
+      "group": "probe",
+      "description": "Wait until a Minecraft server answers a server list ping and reports it can be joined. Use it after restarting a server so the next join-server does not race the boot.",
+      "route": "local",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": true,
+      "defaultDeadlineMs": 300000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Server host"
+          },
+          "port": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535,
+            "description": "Server port (default: 25565)"
+          },
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 600000,
+            "description": "How long to keep trying (default: 120000)"
+          }
+        },
+        "required": [
+          "host"
+        ]
+      }
+    },
+    {
+      "name": "press-dialog-button",
+      "group": "screen",
+      "description": "Press a button on the dialog the server has opened. Identify it by its label. Reading a dialog is not enough to carry a conversation forward; this is what answers it.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 10000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": "string",
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Button label, or part of it"
+          }
+        },
+        "required": [
+          "label"
+        ]
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Button label, or part of it"
+          }
+        },
+        "required": [
+          "label"
+        ]
+      },
+      "wireSchemaHash": "sha256:1010547a2695089153ad40d50abaa241830dddac1a875129be6cb7b41961789a"
+    },
+    {
+      "name": "screenshot",
+      "group": "screen",
+      "description": "Capture what the bot actually sees, as the client renders it. This is the only way to check a HUD drawn in custom fonts, a model, or a layout that overlaps; everything else reports text and leaves the look to guesswork.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": false,
+      "defaultDeadlineMs": 30000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": "string",
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected."
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 256,
+            "maximum": 1920,
+            "description": "Image width (default: 854)"
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 144,
+            "maximum": 1080,
+            "description": "Image height (default: 480)"
+          },
+          "hud": {
+            "type": "boolean",
+            "description": "Include the HUD and any open screen (default: true)"
+          }
+        },
+        "required": []
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "width": {
+            "type": "integer",
+            "minimum": 256,
+            "maximum": 1920,
+            "description": "Image width (default: 854)"
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 144,
+            "maximum": 1080,
+            "description": "Image height (default: 480)"
+          },
+          "hud": {
+            "type": "boolean",
+            "description": "Include the HUD and any open screen (default: true)"
+          }
+        },
+        "required": [
+          "height",
+          "hud",
+          "width"
+        ]
+      },
+      "wireSchemaHash": "sha256:14c6fbf3f34294fb5f822199cd97c9a6347985795cb30a13949cc53646b9b26f"
+    },
+    {
+      "name": "complete-command",
+      "group": "server",
+      "description": "Ask the server what completes a partial command, which is how to find out what a plugin offers without being told. \"/\" lists every command the bot may run.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "The partial command, for example \"/is \""
+          },
+          "timeoutMs": {
+            "description": "How long to wait for the answer (default: 5000)",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 30000
+          },
+          "limit": {
+            "description": "How many completions to show (default: 60)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "The partial command, for example \"/is \""
+          },
+          "timeoutMs": {
+            "description": "How long to wait for the answer (default: 5000)",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 30000
+          },
+          "limit": {
+            "description": "How many completions to show (default: 60)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          }
+        },
+        "required": [
+          "limit",
+          "text",
+          "timeoutMs"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:ca452b75e5a513d21b17f2e4c6ded23de8c48074fd58d5d0ae9688794bf7f58c"
+    },
+    {
+      "name": "detect-gamemode",
+      "group": "server",
+      "description": "Report the game mode the server assigned to the bot.",
+      "route": "local",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get-world-state",
+      "group": "server",
+      "description": "Report the in-game time and weather, for a feature that only happens at a certain time of day. This is the clock the world ticks on, not whatever a server may draw on its HUD.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "required": []
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+    },
+    {
+      "name": "run-command",
+      "group": "server",
+      "description": "Run a slash command as the bot and return the messages the server sent back.",
+      "route": "compose",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "command": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "Command with or without the leading slash"
+          },
+          "collectMs": {
+            "description": "How long to collect the reply before returning (default: 1000)",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "command"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "Command with or without the leading slash"
+          },
+          "collectMs": {
+            "description": "How long to collect the reply before returning (default: 1000)",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "collectMs",
+          "command"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:b1a77f445106644a745cf0e35390a277802d4df8b08764e053bd18e0d26ca827"
+    },
+    {
+      "name": "switch-server",
+      "group": "server",
+      "description": "Send the bot to another backend server through the proxy and wait until it spawns there.",
+      "route": "compose",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 30000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Backend server name the proxy knows"
+          },
+          "timeoutMs": {
+            "description": "Give up after this long (default: 30000)",
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 120000
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Backend server name the proxy knows"
+          },
+          "timeoutMs": {
+            "description": "Give up after this long (default: 30000)",
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 120000
+          }
+        },
+        "required": [
+          "target",
+          "timeoutMs"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:c1baa6b6930b2c1e7e0eb37c2232a42b3e3334199d8151f423e04d5a92d7322e"
+    },
+    {
+      "name": "wait-for-chat",
+      "group": "server",
+      "description": "Wait until a message matching a regular expression arrives. Only messages received after the call count.",
+      "route": "local",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "JavaScript regular expression source"
+          },
+          "timeoutMs": {
+            "description": "How long to wait (default: 10000)",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 120000
+          }
+        },
+        "required": [
+          "pattern"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "wait-ticks",
+      "group": "server",
+      "description": "Wait a number of server ticks so the server has time to apply a change.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 60000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "ticks": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 400,
+            "description": "How many ticks to wait (20 ticks is one second)"
+          }
+        },
+        "required": [
+          "ticks"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "ticks": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 400,
+            "description": "How many ticks to wait (20 ticks is one second)"
+          }
+        },
+        "required": [
+          "ticks"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
+    },
+    {
+      "name": "get-bot-status",
+      "group": "sessions",
+      "description": "Report connection state, position and health for one bot.",
+      "route": "local",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "join-server",
+      "group": "sessions",
+      "description": "Connect a new bot to a Minecraft server and keep it online until leave-server is called. The bot survives MCP session restarts, so reuse it instead of joining again.",
+      "route": "orchestrate",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 90000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name used to address this bot in other tools"
+          },
+          "host": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Server host or Kubernetes service name to connect to"
+          },
+          "port": {
+            "description": "Server port (default: 25565)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "username": {
+            "description": "In-game username (default: derived from name)",
+            "type": "string"
+          },
+          "version": {
+            "description": "Force a protocol version instead of auto-detecting",
+            "type": "string"
+          },
+          "owner": {
+            "description": "Free-form label recording who asked for this bot. Defaults to the authenticated caller.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "host"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "leave-server",
+      "group": "sessions",
+      "description": "Disconnect a bot and forget it.",
+      "route": "orchestrate",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list-bots",
+      "group": "sessions",
+      "description": "List every bot this server currently holds, including bots joined by other agents.",
+      "route": "local",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "restart-bot",
+      "group": "sessions",
+      "description": "Drop the bot and bring it back on the same server under the same name. Use it after redeploying a plugin, when the bot is still connected but holding state from the old build.",
+      "route": "orchestrate",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 90000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": "string",
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "click-slot",
+      "group": "slot",
+      "description": "Click one slot of the window that is currently open.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "slot": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Slot number as listed by the window contents"
+          },
+          "button": {
+            "description": "Which mouse button to press (default: 'left')",
+            "type": "string",
+            "enum": [
+              "left",
+              "right"
+            ]
+          },
+          "shift": {
+            "description": "Shift-click, which moves the whole stack across the window (default: false)",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "slot"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Slot number as listed by the window contents"
+          },
+          "button": {
+            "description": "Which mouse button to press (default: 'left')",
+            "type": "string",
+            "enum": [
+              "left",
+              "right"
+            ]
+          },
+          "shift": {
+            "description": "Shift-click, which moves the whole stack across the window (default: false)",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "button",
+          "shift",
+          "slot"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:a4196216f76f37f24b8051e9b29e52428432cf6d2b819c04677a9aadb2736417"
+    },
+    {
+      "name": "drop-held-item",
+      "group": "slot",
+      "description": "Drop whatever the cursor is holding, or the stack in a given slot. The window stays open.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "slot": {
+            "description": "Slot to empty onto the ground. Omit it to drop what the cursor holds.",
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "description": "Slot to empty onto the ground. Omit it to drop what the cursor holds.",
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "slot"
+        ]
+      },
+      "wireSchemaHash": "sha256:88d1693ef9b04fd9227f2bcb62e5f9ae5914f7fa266020219a891f68bb022e01"
+    },
+    {
+      "name": "open-container",
+      "group": "slot",
+      "description": "Open the chest-like block at a position, walking to it first when out of reach, and list what it holds.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": true,
+      "structured": true,
+      "defaultDeadlineMs": 30000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:745bc34ffa94b53097b81ff9cabd6d41db733664935cd5c7d7a9a090cc329c65"
+    },
+    {
+      "name": "smelt-item",
+      "group": "smelting",
+      "description": "Load a furnace, blast furnace or smoker with fuel and input, then optionally wait for the output.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 120000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          },
+          "inputItem": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Item to smelt"
+          },
+          "inputCount": {
+            "description": "How much input to load (default: 1)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "fuelItem": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Item to burn as fuel"
+          },
+          "fuelCount": {
+            "description": "How much fuel to load (default: 1)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "takeOutput": {
+            "description": "Wait for the result and collect it (default: true)",
+            "type": "boolean"
+          },
+          "timeoutMs": {
+            "description": "How long to wait for the result (default: 60000)",
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 600000
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z",
+          "inputItem",
+          "fuelItem"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          },
+          "inputItem": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Item to smelt"
+          },
+          "inputCount": {
+            "description": "How much input to load (default: 1)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "fuelItem": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Item to burn as fuel"
+          },
+          "fuelCount": {
+            "description": "How much fuel to load (default: 1)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "takeOutput": {
+            "description": "Wait for the result and collect it (default: true)",
+            "type": "boolean"
+          },
+          "timeoutMs": {
+            "description": "How long to wait for the result (default: 60000)",
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 600000
+          }
+        },
+        "required": [
+          "fuelCount",
+          "fuelItem",
+          "inputCount",
+          "inputItem",
+          "takeOutput",
+          "timeoutMs",
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:47d901f74cc12c284f3972137cf92a1ed21adbe824172bbecefcc0da912d6a1f"
+    },
+    {
+      "name": "close-window",
+      "group": "window",
+      "description": "Close the GUI window the bot currently has open.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "required": []
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+    },
+    {
+      "name": "read-window",
+      "group": "window",
+      "description": "Read every filled slot of the GUI window the bot currently has open.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "required": []
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+    },
+    {
+      "name": "wait-for-window",
+      "group": "window",
+      "description": "Wait until a GUI window opens and return its contents. Returns straight away if a matching window is already open.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "defaultDeadlineMs": 30000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "titlePattern": {
+            "description": "JavaScript regular expression the window title must match (default: any window)",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "timeoutMs": {
+            "description": "How long to wait (default: 10000)",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 120000
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "titlePattern": {
+            "description": "JavaScript regular expression the window title must match (default: any window)",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "timeoutMs": {
+            "description": "How long to wait (default: 10000)",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 120000
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "timeoutMs",
+          "titlePattern"
+        ]
+      },
+      "wireSchemaHash": "sha256:428ee1e8b841a668c9948643525fa7ee1d9ed9324124c854aa98d850dda994a0"
+    },
+    {
+      "name": "activate-block",
+      "group": "world",
+      "description": "Right-click the block at a position, walking to it first when out of reach. Presses buttons and levers, opens doors, and triggers custom blocks.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:745bc34ffa94b53097b81ff9cabd6d41db733664935cd5c7d7a9a090cc329c65"
+    },
+    {
+      "name": "attack-entity",
+      "group": "world",
+      "description": "Attack the nearest entity whose name matches, walking to it first when out of reach.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 30000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Entity name or part of a player name, for example villager or Steve"
+          },
+          "maxDistance": {
+            "description": "Search radius (default: 8)",
+            "type": "number",
+            "minimum": 1
+          },
+          "times": {
+            "description": "How many swings to land (default: 1, at most 20)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Entity name or part of a player name, for example villager or Steve"
+          },
+          "maxDistance": {
+            "description": "Search radius (default: 8)",
+            "type": "number",
+            "minimum": 1
+          },
+          "times": {
+            "description": "How many swings to land (default: 1, at most 20)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "required": [
+          "maxDistance",
+          "name",
+          "times"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:fe44c2247ade4cb58b17c87ea8889073622b58e2cb0e5cb8f7f242874cd05cfc"
+    },
+    {
+      "name": "fish",
+      "group": "world",
+      "description": "Cast the rod and wait for a bite, then reel in. Equips a fishing rod from the inventory if one is not already in hand. The bot has to be standing within reach of water.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 60000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "How long to wait for a bite (default: 60000)",
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 300000
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "timeoutMs": {
+            "description": "How long to wait for a bite (default: 60000)",
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 300000
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "timeoutMs"
+        ]
+      },
+      "wireSchemaHash": "sha256:447b7f9cb903a3450f1e6c2ce5d21e83f94df5b3f1938cc32c081ac39e3044b1"
+    },
+    {
+      "name": "interact-entity",
+      "group": "world",
+      "description": "Right-click the nearest entity whose name matches, walking to it first when out of reach. This is what opens an NPC dialogue.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Entity name or part of a player name, for example villager or Steve"
+          },
+          "maxDistance": {
+            "description": "Search radius (default: 8)",
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Entity name or part of a player name, for example villager or Steve"
+          },
+          "maxDistance": {
+            "description": "Search radius (default: 8)",
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "maxDistance",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:a8cf16bb2ccd859239ce41e7fbed6e728d6cbb812988989e2d79a9c2372c0bb7"
+    },
+    {
+      "name": "use-held-item",
+      "group": "world",
+      "description": "Right-click with the item the bot is holding, optionally holding the button down for a while.",
+      "route": "rpc",
+      "kinds": [
+        "mineflayer",
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "offhand": {
+            "description": "Use the off-hand item instead of the main hand (default: false)",
+            "type": "boolean"
+          },
+          "holdMs": {
+            "description": "How long to keep the button down before releasing, for bows and the like (default: 0)",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 60000
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "offhand": {
+            "description": "Use the off-hand item instead of the main hand (default: false)",
+            "type": "boolean"
+          },
+          "holdMs": {
+            "description": "How long to keep the button down before releasing, for bows and the like (default: 0)",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 60000
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "holdMs",
+          "offhand"
+        ]
+      },
+      "wireSchemaHash": "sha256:d8193940ea106b05e271343588f518859a11ea31541fbe61184f12436c11b12f"
+    }
+  ],
+  "catalogHash": "sha256:bbba8cd9571432d9ffb013fc87d5bdcbad67f0a69b0dcce7c653a9034b847776"
+}
