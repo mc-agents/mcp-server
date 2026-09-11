@@ -190,18 +190,30 @@ public final class BotLink implements AutoCloseable {
      * fires first the bot has gone quiet, and saying so is different from saying the tool failed.
      */
     public CompletableFuture<Messages.Result> call(String tool, Map<String, Object> args, int deadlineMs) {
+        return request(tool, deadlineMs, id -> new Messages.Call(id, tool, args, deadlineMs, null));
+    }
+
+    /**
+     * Send anything the bot answers with a {@code result} and wait for that answer.
+     *
+     * <p>{@code connect} and {@code disconnect} carry an id for the same reason {@code call} does,
+     * so they go through the same machinery: one answer per id, one timer, and a link that drops
+     * fails them the same way it fails a tool.
+     */
+    public CompletableFuture<Messages.Result> request(String label, int deadlineMs,
+            java.util.function.LongFunction<Messages.ToBot> build) {
         long id = nextCallId.getAndIncrement();
         PendingCall call = new PendingCall();
         pending.put(id, call);
 
-        call.timeout = timers.schedule(() -> abandon(id, tool, deadlineMs), deadlineMs + CALL_GRACE_MS,
+        call.timeout = timers.schedule(() -> abandon(id, label, deadlineMs), deadlineMs + CALL_GRACE_MS,
                 TimeUnit.MILLISECONDS);
 
         try {
-            send(new Messages.Call(id, tool, args, deadlineMs, null));
+            send(build.apply(id));
         } catch (IOException e) {
             settle(id, failed(id, "bot", "LINK_LOST",
-                    "the link to the bot dropped while sending \"%s\": %s".formatted(tool, e.getMessage())));
+                    "the link to the bot dropped while sending \"%s\": %s".formatted(label, e.getMessage())));
         }
         return call.future;
     }

@@ -79,6 +79,20 @@ public final class EventFeed {
         return entries.peekLast();
     }
 
+    /**
+     * A mark meaning "from here on". {@code run-command} takes one before sending and collects
+     * everything past it, which is the only way to tell a command's answer from the chat that
+     * happened to be scrolling by.
+     */
+    public synchronized long nextSeq() {
+        FeedEntry last = entries.peekLast();
+        return last == null ? 0 : last.seq() + 1;
+    }
+
+    public synchronized List<FeedEntry> since(long seq) {
+        return entries.stream().filter(entry -> entry.seq() >= seq).toList();
+    }
+
     public CompletableFuture<WaitOutcome> waitFor(Predicate<FeedEntry> matches, long timeoutMs) {
         Waiter waiter = new Waiter(matches, System.currentTimeMillis());
         waiters.add(waiter);

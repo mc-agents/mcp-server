@@ -5,7 +5,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 /**
@@ -26,6 +29,9 @@ public final class BotSession {
     private final Map<String, String> capabilities = new ConcurrentHashMap<>();
     private final long joinedAt = System.currentTimeMillis();
 
+    private final Set<StatusWaiter> statusWaiters = ConcurrentHashMap.newKeySet();
+    private final ScheduledExecutorService timers;
+
     private volatile Messages.Status status;
     private volatile long lastUsedAt = System.currentTimeMillis();
 
@@ -33,6 +39,7 @@ public final class BotSession {
         this.name = name;
         this.kind = kind;
         this.link = link;
+        this.timers = timers;
         for (String feed : FEEDS) {
             feeds.put(feed, new EventFeed(feed, timers));
         }
@@ -115,8 +122,39 @@ public final class BotSession {
                 Math.max(1, event.repeats())));
     }
 
+    /**
+     * Wait for the bot to report a state, which is how join-server knows a login turned into a
+     * spawn. A status that already satisfies the test settles at once: the bot may well have got
+     * there before the caller started looking, and a wait that missed it would time out on
+     * something that had already happened.
+     */
+    public CompletableFuture<Messages.Status> awaitStatus(Predicate<Messages.Status> matches, long timeoutMs) {
+        Messages.Status now = status;
+
+        if (now != null && matches.test(now)) {
+            return CompletableFuture.completedFuture(now);
+        }
+
+        StatusWaiter waiter = new StatusWaiter(matches);
+        statusWaiters.add(waiter);
+
+        waiter.timeout = timers.schedule(() -> {
+            if (statusWaiters.remove(waiter)) {
+                waiter.settle(null);
+            }
+        }, timeoutMs, TimeUnit.MILLISECONDS);
+
+        return waiter.future;
+    }
+
     public void accept(Messages.Status update) {
         this.status = update;
+
+        for (StatusWaiter waiter : Set.copyOf(statusWaiters)) {
+            if (waiter.matches.test(update) && statusWaiters.remove(waiter)) {
+                waiter.settle(update);
+            }
+        }
 
         if ("disconnected".equals(update.state()) || "faulted".equals(update.state())) {
             String reason = update.reason() != null ? update.reason()
@@ -143,10 +181,34 @@ public final class BotSession {
         for (EventFeed feed : feeds.values()) {
             feed.abandon(reason);
         }
+        for (StatusWaiter waiter : Set.copyOf(statusWaiters)) {
+            if (statusWaiters.remove(waiter)) {
+                waiter.settle(null);
+            }
+        }
     }
 
     public void close(String reason) {
         abandonWaiters(reason);
         link.close();
+    }
+
+    /** Settles with null when nothing matched, which the caller reads as "it never got there". */
+    private static final class StatusWaiter {
+        private final Predicate<Messages.Status> matches;
+        private final CompletableFuture<Messages.Status> future = new CompletableFuture<>();
+        private volatile ScheduledFuture<?> timeout;
+
+        private StatusWaiter(Predicate<Messages.Status> matches) {
+            this.matches = matches;
+        }
+
+        private void settle(Messages.Status status) {
+            ScheduledFuture<?> scheduled = timeout;
+            if (scheduled != null) {
+                scheduled.cancel(false);
+            }
+            future.complete(status);
+        }
     }
 }

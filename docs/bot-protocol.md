@@ -75,6 +75,19 @@ bot                                     server
  |-- result{id, ok:true} -------------->|  join-server returns here
 ```
 
+`connect` and `disconnect` carry an id and are answered with a `result`, exactly like a `call`:
+one answer per id whatever happens, so the server never has to read silence. A failed `connect`
+says which half went wrong through its error code, because the fixes are in different places:
+
+| `error.code` | Means | Look at |
+| --- | --- | --- |
+| `LOGIN_REFUSED` | The server rejected the login: whitelist, ban, full, wrong version | The target server |
+| `LOGIN_TIMEOUT` | No answer to the login at all | The address, and whether the server is up |
+| `SPAWN_TIMEOUT` | Logged in, never spawned. Usually a plugin holding the player | The world and its plugins |
+
+Any code beginning `SPAWN` is read as the third row and everything else as a login problem, so a
+bot may add codes without the server having to learn them.
+
 A bot that has not sent `hello` within 5s is dropped. A frame before `hello`, or a second `hello`,
 is a violation.
 

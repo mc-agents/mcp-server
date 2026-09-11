@@ -20,11 +20,14 @@ public class ToolDispatcher {
     private final BotRegistry bots;
     private final LocalTools local;
     private final RemoteTools remote;
+    private final Orchestration orchestration;
 
-    public ToolDispatcher(BotRegistry bots, LocalTools local, RemoteTools remote) {
+    public ToolDispatcher(BotRegistry bots, LocalTools local, RemoteTools remote,
+            Orchestration orchestration) {
         this.bots = bots;
         this.local = local;
         this.remote = remote;
+        this.orchestration = orchestration;
     }
 
     public McpSchema.CallToolResult call(ToolSpec spec, Map<String, Object> arguments) {
@@ -33,7 +36,7 @@ public class ToolDispatcher {
                 case LOCAL -> local.call(spec, arguments);
                 case RPC -> remote.call(spec, resolve(spec, arguments), arguments);
                 case COMPOSE -> remote.compose(spec, resolve(spec, arguments), arguments);
-                case ORCHESTRATE -> local.orchestrate(spec, arguments);
+                case ORCHESTRATE -> orchestration.call(spec, arguments);
             };
         } catch (IllegalArgumentException | IllegalStateException e) {
             return failure(e.getMessage());

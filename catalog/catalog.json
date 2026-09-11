@@ -3398,7 +3398,7 @@
     {
       "name": "join-server",
       "group": "sessions",
-      "description": "Connect a new bot to a Minecraft server and keep it online until leave-server is called. The bot survives MCP session restarts, so reuse it instead of joining again.",
+      "description": "Send a bot into a Minecraft server and wait until it has spawned. The bot is a process that is already running and linked, so this costs a second or two rather than the time a client takes to boot; list-bots shows which bots are available. A failure says how far it got, because a bot that never started and a server that refused the login have different fixes.",
       "route": "orchestrate",
       "kinds": [
         "mineflayer",
@@ -3450,7 +3450,7 @@
     {
       "name": "leave-server",
       "group": "sessions",
-      "description": "Disconnect a bot and forget it.",
+      "description": "Take a bot out of the world it is in. The process stays up and linked, ready for the next join-server, so leaving and rejoining is cheap.",
       "route": "orchestrate",
       "kinds": [
         "mineflayer",
@@ -3495,7 +3495,7 @@
     {
       "name": "restart-bot",
       "group": "sessions",
-      "description": "Drop the bot and bring it back on the same server under the same name. Use it after redeploying a plugin, when the bot is still connected but holding state from the old build.",
+      "description": "Put a bot back on the server it is on, under the same name. Use it after redeploying a plugin: the bot is still connected and still holding whatever the previous build gave it, and a stale inventory or scoreboard looks exactly like a bug in the new one.",
       "route": "orchestrate",
       "kinds": [
         "mineflayer",
@@ -4554,5 +4554,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:2cf8ed935f80f8388034c0642f85cc6ff446eeced47315f57e6da64927e4c9af"
+  "catalogHash": "sha256:7c846f197b4c55177a3413fd4189f4c73009bc6ea44923521da85d5518a38f23"
 }

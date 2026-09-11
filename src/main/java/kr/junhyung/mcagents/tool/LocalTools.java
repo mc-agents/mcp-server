@@ -7,6 +7,7 @@ import kr.junhyung.mcagents.bot.WaitOutcome;
 import kr.junhyung.mcagents.catalog.ToolSpec;
 import kr.junhyung.mcagents.probe.ServerListPing;
 import kr.junhyung.mcagents.protocol.Messages;
+import kr.junhyung.mcagents.render.Text;
 import io.modelcontextprotocol.spec.McpSchema;
 import java.io.IOException;
 import java.time.Instant;
@@ -98,8 +99,8 @@ public class LocalTools {
         append(body, "Dimension", last.dimension());
 
         if (last.position() != null) {
-            append(body, "Position", "(%.0f, %.0f, %.0f)"
-                    .formatted(last.position().x(), last.position().y(), last.position().z()));
+            append(body, "Position",
+                    Text.block(last.position().x(), last.position().y(), last.position().z()));
         }
         if (last.health() != null) {
             append(body, "Health", "%.1f of 20".formatted(last.health()));
@@ -196,11 +197,6 @@ public class LocalTools {
         if (value != null) {
             body.append("\n  ").append(label).append(": ").append(value);
         }
-    }
-
-    public McpSchema.CallToolResult orchestrate(ToolSpec spec, Map<String, Object> arguments) {
-        return ToolDispatcher.failure(
-                "%s needs the operator, which is not wired up yet".formatted(spec.name()));
     }
 
     private McpSchema.CallToolResult read(ToolSpec spec, String feed, Map<String, Object> arguments) {
