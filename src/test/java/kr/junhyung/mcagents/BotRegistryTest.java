@@ -11,6 +11,7 @@ import kr.junhyung.mcagents.bot.BotLink;
 import kr.junhyung.mcagents.bot.BotRegistry;
 import kr.junhyung.mcagents.bot.BotSession;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -40,9 +41,9 @@ class BotRegistryTest {
     */
     private BotSession session(String name) {
         try {
-            ServerSocket listener = new ServerSocket(0);
+            ServerSocket listener = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
             listener.setSoTimeout(10_000);
-            Socket botSide = new Socket("127.0.0.1", listener.getLocalPort());
+            Socket botSide = new Socket(InetAddress.getLoopbackAddress(), listener.getLocalPort());
             Socket serverSide = listener.accept();
             open.add(listener);
             open.add(botSide);

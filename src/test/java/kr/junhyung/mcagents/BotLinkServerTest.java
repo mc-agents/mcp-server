@@ -17,6 +17,7 @@ import kr.junhyung.mcagents.protocol.FrameCodec;
 import kr.junhyung.mcagents.protocol.Messages;
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +66,7 @@ class BotLinkServerTest {
     }
 
     private Socket dial() throws IOException {
-        Socket socket = new Socket("127.0.0.1", server.boundPort());
+        Socket socket = new Socket(InetAddress.getLoopbackAddress(), server.boundPort());
         socket.setSoTimeout(5_000);
         open.add(socket);
         return socket;

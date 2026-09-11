@@ -12,6 +12,7 @@ import kr.junhyung.mcagents.protocol.Messages;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
@@ -43,9 +44,9 @@ class BotLinkTest {
 
     @BeforeEach
     void connect() throws IOException {
-        listener = new ServerSocket(0);
+        listener = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
         listener.setSoTimeout(10_000);
-        botSide = new Socket("127.0.0.1", listener.getLocalPort());
+        botSide = new Socket(InetAddress.getLoopbackAddress(), listener.getLocalPort());
         serverSide = listener.accept();
         link = new BotLink(serverSide, mapper, timers);
 
