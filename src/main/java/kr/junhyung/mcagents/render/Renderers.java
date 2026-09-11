@@ -53,7 +53,7 @@ public final class Renderers {
         Map.entry("read-displays", entry(DisplaysRenderer.View.class, new DisplaysRenderer())),
         Map.entry("read-player-list", entry(PlayerListRenderer.View.class, new PlayerListRenderer())),
         Map.entry("read-scoreboard", entry(ScoreboardRenderer.View.class, new ScoreboardRenderer())),
-        Map.entry("read-window", entry(WindowRenderer.View.class, new WindowRenderer())),
+        Map.entry("read-window", entry(OpenWindowRenderer.View.class, new OpenWindowRenderer())),
         Map.entry("wait-for-window", entry(AwaitedWindowRenderer.View.class, new AwaitedWindowRenderer())));
 
     private Renderers() {}

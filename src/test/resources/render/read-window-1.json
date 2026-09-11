@@ -2,71 +2,73 @@
   "tool": "read-window",
   "note": "live capture against Paper 26.1.2, called with {}",
   "data": {
-    "title": "container.chest",
-    "type": "minecraft:generic_9x3",
-    "slotCount": 63,
-    "containerSlots": [
-      0,
-      26
-    ],
-    "inventorySlots": [
-      27,
-      63
-    ],
-    "filled": [
-      {
-        "slot": 0,
-        "name": "diamond_sword",
-        "count": 1,
-        "label": "Excalibur",
-        "lore": [
-          "A blade of legend",
-          "+5 damage"
-        ]
-      },
-      {
-        "slot": 4,
-        "name": "golden_apple",
-        "count": 3,
-        "label": null,
-        "lore": []
-      },
-      {
-        "slot": 54,
-        "name": "oak_planks",
-        "count": 24,
-        "label": null,
-        "lore": []
-      },
-      {
-        "slot": 55,
-        "name": "stick",
-        "count": 16,
-        "label": null,
-        "lore": []
-      },
-      {
-        "slot": 56,
-        "name": "diamond",
-        "count": 6,
-        "label": null,
-        "lore": []
-      },
-      {
-        "slot": 57,
-        "name": "chest",
-        "count": 4,
-        "label": null,
-        "lore": []
-      },
-      {
-        "slot": 58,
-        "name": "oak_sign",
-        "count": 2,
-        "label": null,
-        "lore": []
-      }
-    ]
+    "window": {
+      "title": "container.chest",
+      "type": "minecraft:generic_9x3",
+      "slotCount": 63,
+      "containerSlots": [
+        0,
+        26
+      ],
+      "inventorySlots": [
+        27,
+        63
+      ],
+      "filled": [
+        {
+          "slot": 0,
+          "name": "diamond_sword",
+          "count": 1,
+          "label": "Excalibur",
+          "lore": [
+            "A blade of legend",
+            "+5 damage"
+          ]
+        },
+        {
+          "slot": 4,
+          "name": "golden_apple",
+          "count": 3,
+          "label": null,
+          "lore": []
+        },
+        {
+          "slot": 54,
+          "name": "oak_planks",
+          "count": 24,
+          "label": null,
+          "lore": []
+        },
+        {
+          "slot": 55,
+          "name": "stick",
+          "count": 16,
+          "label": null,
+          "lore": []
+        },
+        {
+          "slot": 56,
+          "name": "diamond",
+          "count": 6,
+          "label": null,
+          "lore": []
+        },
+        {
+          "slot": 57,
+          "name": "chest",
+          "count": 4,
+          "label": null,
+          "lore": []
+        },
+        {
+          "slot": 58,
+          "name": "oak_sign",
+          "count": 2,
+          "label": null,
+          "lore": []
+        }
+      ]
+    }
   },
   "text": "window \"container.chest\" (type minecraft:generic_9x3, 63 slots, container 0-26, player inventory 27-63)\n  0: Excalibur [diamond_sword] x1\n    A blade of legend\n    +5 damage\n  4: golden_apple x3\n  54: oak_planks x24\n  55: stick x16\n  56: diamond x6\n  57: chest x4\n  58: oak_sign x2"
 }

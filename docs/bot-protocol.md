@@ -92,7 +92,7 @@ happened.
 failed *call* does to a session; a status is a report, and a bot that has just been kicked has a
 sentence about it and no call to attach a class to.
 | `log` | `level`, `message`, `fields?` |
-| `pong` | `nonce`, `ts`, `busy` |
+| `pong` | `nonce` (the integer the `ping` carried), `ts`, `busy` (how many calls are in flight, an integer) |
 
 `capabilities[]` is `{tool, argsHash}`. `features[]` holds `blob`, `eventFold`, `structuredDialog`.
 
@@ -108,7 +108,7 @@ sentence about it and no call to attach a class to.
 | `cancel` | `id`, `reason` |
 | `disconnect` | `id`, `reason`, `quitMessage?` — leave the game, keep the process |
 | `shutdown` | `reason`, `graceMs` |
-| `ping` | `nonce`, `ackEventSeq` |
+| `ping` | `nonce` (an integer), `ackEventSeq` |
 
 ## Handshake
 

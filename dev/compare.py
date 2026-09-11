@@ -60,6 +60,7 @@ EXPECTED = [
     (re.compile(r"blocks away|within \d+ blocks"), "measured from where that bot is standing"),
     (re.compile(r"tick \d+ of the day"), "the world ticked between the two calls"),
     (re.compile(r"is not supported by bot"), "both refused it, naming the bot that was asked"),
+    (re.compile(r"does not implement"), "one kind has not written it yet, which is allowed"),
 ]
 
 

@@ -2,18 +2,20 @@
   "tool": "read-window",
   "note": "an empty window on a server that numbers its window types",
   "data": {
-    "title": "Shop",
-    "type": 3,
-    "slotCount": 63,
-    "containerSlots": [
-      0,
-      26
-    ],
-    "inventorySlots": [
-      27,
-      63
-    ],
-    "filled": []
+    "window": {
+      "title": "Shop",
+      "type": 3,
+      "slotCount": 63,
+      "containerSlots": [
+        0,
+        26
+      ],
+      "inventorySlots": [
+        27,
+        63
+      ],
+      "filled": []
+    }
   },
   "text": "window \"Shop\" (type 3, 63 slots, container 0-26, player inventory 27-63)\nevery slot is empty"
 }

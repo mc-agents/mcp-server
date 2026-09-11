@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "2.1.0",
+  "catalogVersion": "2.2.0",
   "protocol": 1,
   "tools": [
     {
@@ -3971,7 +3971,7 @@
     {
       "name": "read-window",
       "group": "window",
-      "description": "Read every filled slot of the GUI window the bot currently has open.",
+      "description": "Read the window that is currently open: its title, its type, and every slot that has something in it. Answers that nothing is open rather than failing, because that is a state worth reporting.",
       "route": "rpc",
       "kinds": [
         "mineflayer",
@@ -4002,83 +4002,92 @@
       "resultSchema": {
         "type": "object",
         "properties": {
-          "title": {
-            "description": "Plain text, with colour codes and glyphs already taken out",
-            "type": "string"
-          },
-          "type": {
-            "description": "Registry id on a modern server, a number on an older one",
-            "type": [
-              "integer",
-              "string"
-            ]
-          },
-          "slotCount": {
-            "type": "integer"
-          },
-          "containerSlots": {
-            "description": "First and last slot of the container half",
-            "type": "array",
-            "items": {
-              "type": "integer"
-            }
-          },
-          "inventorySlots": {
-            "description": "First and last slot of the player's own inventory",
-            "type": "array",
-            "items": {
-              "type": "integer"
-            }
-          },
-          "filled": {
-            "description": "Only the slots that hold something, in slot order",
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "slot": {
+          "window": {
+            "description": "null when nothing is open, which is a state and not a failure",
+            "type": "object",
+            "properties": {
+              "title": {
+                "description": "Plain text, with colour codes and glyphs already taken out",
+                "type": "string"
+              },
+              "type": {
+                "description": "Registry id on a modern server, a number on an older one",
+                "type": [
+                  "integer",
+                  "string"
+                ]
+              },
+              "slotCount": {
+                "type": "integer"
+              },
+              "containerSlots": {
+                "description": "First and last slot of the container half",
+                "type": "array",
+                "items": {
                   "type": "integer"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "count": {
-                  "type": "integer"
-                },
-                "label": {
-                  "description": "The custom name the server gave it, if any",
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "lore": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
                 }
               },
-              "required": [
-                "count",
-                "label",
-                "lore",
-                "name",
-                "slot"
-              ],
-              "additionalProperties": false
-            }
+              "inventorySlots": {
+                "description": "First and last slot of the player's own inventory",
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              },
+              "filled": {
+                "description": "Only the slots that hold something, in slot order",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "slot": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "label": {
+                      "description": "The custom name the server gave it, if any",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "lore": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "count",
+                    "label",
+                    "lore",
+                    "name",
+                    "slot"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "containerSlots",
+              "filled",
+              "inventorySlots",
+              "slotCount",
+              "title",
+              "type"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
-          "containerSlots",
-          "filled",
-          "inventorySlots",
-          "slotCount",
-          "title",
-          "type"
-        ],
-        "additionalProperties": false
+          "window"
+        ]
       }
     },
     {
@@ -4559,5 +4568,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:22375543b225b144e5fc3e76e24a08be0d25e345c398d024996700238f85b1ce"
+  "catalogHash": "sha256:ea2dc3f0e253ec3e1861b6c1ee7de8f3e82ab489b9df96842aa360f90d9a1591"
 }

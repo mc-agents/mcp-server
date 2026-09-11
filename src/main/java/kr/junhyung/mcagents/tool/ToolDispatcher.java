@@ -58,6 +58,18 @@ public class ToolDispatcher {
                             .formatted(spec.name(), session.name(), session.kind(),
                                     String.join(" or ", spec.kinds())));
         }
+
+        /*
+        A tool the bot did not report at handshake is absent, which is how one kind of bot ships a
+        tool before the other does. Sending it anyway spends a round trip to be told the same
+        thing, and the bot's answer arrives as "does not implement it after all", which reads like
+        something changed rather than like it was never there.
+        */
+        if (!session.supports(spec.name())) {
+            throw new IllegalStateException(
+                    "bot \"%s\" (kind: %s) does not implement \"%s\". It was not offered at the handshake, so this kind of bot cannot run it yet. list-bots shows what else is connected."
+                            .formatted(session.name(), session.kind(), spec.name()));
+        }
         return session;
     }
 

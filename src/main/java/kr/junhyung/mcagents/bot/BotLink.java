@@ -20,6 +20,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
@@ -32,6 +34,8 @@ import tools.jackson.databind.ObjectMapper;
  * handed off; the applying itself stays in order.
  */
 public final class BotLink implements AutoCloseable {
+
+    private static final Logger log = LoggerFactory.getLogger(BotLink.class);
 
     /** Grace on top of a call's deadline before the server stops waiting for the bot. */
     private static final long CALL_GRACE_MS = 2_000;
@@ -109,8 +113,14 @@ public final class BotLink implements AutoCloseable {
         }
     }
 
-    /** Say why the link is closing. Best effort: the peer that broke the frame may not read it. */
+    /**
+     * Say why the link is closing, to the bot and to this server's own log.
+     *
+     * <p>Both, because a bot that cannot read the fault reconnects and does the same thing again,
+     * and whoever is watching the server sees a link close for no stated reason.
+     */
     public void fault(String code, String message) {
+        log.warn("closing a bot link: {} {}", code, message);
         try {
             send(new Messages.Fault(code, message));
         } catch (IOException | RuntimeException ignored) {
