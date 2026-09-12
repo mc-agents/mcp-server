@@ -97,6 +97,24 @@ that never arrives, and the tools that need a `fabric` bot fail against a `minef
 
 Holds the MCP session id in `dev/sid`; delete that file to start a new session.
 
+## `compose.yml` — a proxy with two backends
+
+```
+docker compose -f dev/compose.yml up -d
+./dev/call.sh join-server '{"name":"alice","host":"127.0.0.1","port":25579}'
+./dev/call.sh switch-server '{"bot":"alice","target":"arena"}'
+```
+
+`switch-server` is the one tool that cannot be written without a proxy: it is a proxy command and a
+re-login on the same connection, and both of its other outcomes -- "already connected" and "that
+server does not exist" -- only ever arrive as chat. Guessing at what a proxy says back is how the
+other bot ended up sending a dialog packet no server could decode.
+
+Velocity with two Paper backends, `lobby` and `arena`, on different worlds so a bot that thinks it
+switched and did not is caught by where it is standing. Forwarding is off and everything is offline
+mode; a real deployment uses modern forwarding and a shared secret, and none of that changes what
+the tool does. Nothing else in `dev/` needs this running.
+
 ## A real server to point at
 
 `ping-server` and `wait-for-server` talk to a Minecraft server directly, so they need one. Any

@@ -1,0 +1,50 @@
+# A proxy for switch-server to be written against, and nothing else.
+#
+# Forwarding is "none" on purpose: modern forwarding needs a secret shared with every backend, and
+# what is being tested here is the proxy command and the re-login it causes, not how a backend
+# learns who connected. Offline mode all the way through, the same as the rest of dev.
+config-version = "2.9"
+bind = "0.0.0.0:25565"
+motd = "mc-agents dev proxy"
+show-max-players = 20
+online-mode = false
+force-key-authentication = false
+player-info-forwarding-mode = "none"
+forwarding-secret-file = "forwarding.secret"
+forced-hosts = {}
+
+[servers]
+	lobby = "lobby:25565"
+	arena = "arena:25565"
+	try = ["lobby"]
+
+[advanced]
+	haproxy-protocol = false
+
+[query]
+	enabled = false
+
+[packet-limiter]
+	#Size of the moving time window in seconds used to calculate average rates.
+	#A larger window tolerates short bursts while still enforcing the configured limits over time.
+	interval = 7
+	#Maximum average number of packets per second a client may send. -1 disables this check.
+	packets-per-second = -1
+	#Maximum average number of compressed (on-wire) bytes per second a client may send. -1 disables this check.
+	bytes-per-second = -1
+	#Maximum average number of decompressed bytes per second a client may send.
+	#Protects against compression bomb attacks where small packets expand to excessive sizes after decompression.
+	#-1 disables this check.
+	decompressed-bytes-per-second = 5242880
+
+[ping-passthrough]
+	# Should Velocity pass the version number from the backend server when responding to server list ping requests?
+	version = false
+	# Should Velocity pass the player count from the backend server when responding to server list ping requests?
+	players = false
+	# Should Velocity pass the description from the backend server when responding to server list ping requests?
+	description = false
+	# Should Velocity pass the favicon (also known as the server icon) from the backend server when responding to server list ping requests?
+	favicon = false
+	# Should Velocity pass the mod list from the backend server when responding to server list ping requests?
+	modinfo = false
