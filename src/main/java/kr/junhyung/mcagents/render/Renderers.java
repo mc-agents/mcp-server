@@ -36,6 +36,7 @@ public final class Renderers {
 
     private static final Map<String, Entry<?>> BY_TOOL = Map.ofEntries(
         Map.entry("can-craft", entry(CanCraftRenderer.View.class, new CanCraftRenderer())),
+        Map.entry("close-window", entry(ClosedWindowRenderer.View.class, new ClosedWindowRenderer())),
         Map.entry("complete-command", entry(CompletionsRenderer.View.class, new CompletionsRenderer())),
         Map.entry("find-blocks", entry(FoundBlocksRenderer.View.class, new FoundBlocksRenderer())),
         Map.entry("find-entity", entry(FoundEntitiesRenderer.View.class, new FoundEntitiesRenderer())),

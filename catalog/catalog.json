@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "2.3.0",
+  "catalogVersion": "2.4.0",
   "protocol": 1,
   "tools": [
     {
@@ -3943,7 +3943,7 @@
     {
       "name": "close-window",
       "group": "window",
-      "description": "Close the GUI window the bot currently has open.",
+      "description": "Close the GUI window the bot has open. Answers that there was none rather than failing, because asking to close nothing is a no-op and not a mistake.",
       "route": "rpc",
       "kinds": [
         "mineflayer",
@@ -3951,7 +3951,7 @@
       ],
       "exclusive": false,
       "untrusted": false,
-      "structured": false,
+      "structured": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -3970,7 +3970,22 @@
         "additionalProperties": false,
         "required": []
       },
-      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "closed": {
+            "description": "the title of the window that was closed, null when none was open",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "closed"
+        ]
+      }
     },
     {
       "name": "read-window",
@@ -4572,5 +4587,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:f4d5febc1c5abdb6834d44261c9babf63247c584492e77b019ea29a544fe31ab"
+  "catalogHash": "sha256:f976e0f0ef2c2bc9795238617f34426b779dae55b78da8b939a60d150ff88034"
 }
