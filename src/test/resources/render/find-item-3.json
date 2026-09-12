@@ -1,0 +1,27 @@
+{
+  "tool": "find-item",
+  "note": "the item a caller asked for is the one a server named, not the one the id names",
+  "data": {
+    "query": "paper",
+    "item": {
+      "name": "paper",
+      "count": 1,
+      "slot": 36,
+      "label": "Mana Potion",
+      "labelComponent": {
+        "text": "",
+        "extra": [
+          {
+            "text": "",
+            "font": "hyperfarm:gui/icons"
+          },
+          {
+            "text": "Mana Potion",
+            "font": "hyperfarm:gui/label"
+          }
+        ]
+      }
+    }
+  },
+  "text": "Found [gui/label] Mana Potion [paper] x1 in slot 36."
+}

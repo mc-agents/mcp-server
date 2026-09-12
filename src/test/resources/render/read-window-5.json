@@ -1,0 +1,34 @@
+{
+  "tool": "read-window",
+  "note": "a plugin's menu titled in the pack's own font, which is what a menu header is drawn with",
+  "data": {
+    "window": {
+      "title": "Mana Shop",
+      "titleComponent": {
+        "text": "",
+        "extra": [
+          {
+            "text": "",
+            "font": "hyperfarm:gui/icons"
+          },
+          {
+            "text": "Mana Shop",
+            "font": "hyperfarm:gui/header"
+          }
+        ]
+      },
+      "type": "minecraft:generic_9x3",
+      "slotCount": 63,
+      "containerSlots": [
+        0,
+        26
+      ],
+      "inventorySlots": [
+        27,
+        62
+      ],
+      "filled": []
+    }
+  },
+  "text": "window \"[gui/header] Mana Shop\" (type minecraft:generic_9x3, 63 slots, container 0-26, player inventory 27-62)\nevery slot is empty"
+}

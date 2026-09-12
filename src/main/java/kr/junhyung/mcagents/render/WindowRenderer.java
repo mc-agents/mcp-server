@@ -19,11 +19,11 @@ public final class WindowRenderer implements Renderer<WindowRenderer.View> {
      * whichever it was given rather than inventing one the other kind of bot would disagree about.
      */
     public record View(String title, Object type, int slotCount, List<Integer> containerSlots,
-        List<Integer> inventorySlots, List<Slot> filled) {}
+        List<Integer> inventorySlots, List<Slot> filled, JsonNode titleComponent) {}
 
     @Override
     public String render(View view) {
-        String header = "window \"" + view.title() + "\" (type " + type(view.type()) + ", "
+        String header = "window \"" + Flatten.read(view.title(), view.titleComponent()) + "\" (type " + type(view.type()) + ", "
             + view.slotCount() + " slots, "
             + "container " + view.containerSlots().get(0) + "-" + view.containerSlots().get(1) + ", "
             + "player inventory " + view.inventorySlots().get(0) + "-" + view.inventorySlots().get(1) + ")";

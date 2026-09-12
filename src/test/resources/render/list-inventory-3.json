@@ -1,0 +1,35 @@
+{
+  "tool": "list-inventory",
+  "note": "a quest item named in the pack's own font, which read as plain paper before",
+  "data": {
+    "items": [
+      {
+        "name": "paper",
+        "count": 1,
+        "slot": 36,
+        "label": "Mana Potion",
+        "labelComponent": {
+          "text": "",
+          "extra": [
+            {
+              "text": "",
+              "font": "hyperfarm:gui/icons"
+            },
+            {
+              "text": "Mana Potion",
+              "font": "hyperfarm:gui/label"
+            }
+          ]
+        }
+      },
+      {
+        "name": "oak_planks",
+        "count": 24,
+        "slot": 37,
+        "label": null,
+        "labelComponent": null
+      }
+    ]
+  },
+  "text": "2 item stack(s):\n- [gui/label] Mana Potion [paper] x1 (slot 36)\n- oak_planks x24 (slot 37)"
+}

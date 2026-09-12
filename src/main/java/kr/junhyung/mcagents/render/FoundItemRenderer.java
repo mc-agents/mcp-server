@@ -12,6 +12,6 @@ public final class FoundItemRenderer implements Renderer<FoundItemRenderer.View>
             return "No inventory item matches \"" + view.query() + "\".";
         }
 
-        return "Found " + item.name() + " x" + item.count() + " in slot " + item.slot() + ".";
+        return "Found " + Stack.describe(item) + " x" + item.count() + " in slot " + item.slot() + ".";
     }
 }

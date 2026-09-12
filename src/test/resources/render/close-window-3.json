@@ -1,0 +1,21 @@
+{
+  "tool": "close-window",
+  "note": "the title of a menu the pack draws, read from its component rather than from the string",
+  "data": {
+    "closed": "Mana Shop",
+    "closedComponent": {
+      "text": "",
+      "extra": [
+        {
+          "text": "",
+          "font": "hyperfarm:gui/icons"
+        },
+        {
+          "text": "Mana Shop",
+          "font": "hyperfarm:gui/header"
+        }
+      ]
+    }
+  },
+  "text": "Closed window \"[gui/header] Mana Shop\"."
+}

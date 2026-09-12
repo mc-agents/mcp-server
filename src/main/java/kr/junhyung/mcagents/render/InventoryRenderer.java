@@ -13,7 +13,7 @@ public final class InventoryRenderer implements Renderer<InventoryRenderer.View>
         }
 
         List<String> lines = view.items().stream()
-            .map(item -> "- " + item.name() + " x" + item.count() + " (slot " + item.slot() + ")")
+            .map(item -> "- " + Stack.describe(item) + " x" + item.count() + " (slot " + item.slot() + ")")
             .toList();
 
         return Text.withLines(view.items().size() + " item stack(s):", lines);

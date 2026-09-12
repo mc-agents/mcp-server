@@ -64,7 +64,10 @@ setblock 1 -60 3 air
 # The paper in slot 8 is a menu button as a plugin writes one: the name is an icon glyph and a
 # label in the pack's own fonts, and the lore has a blank line for spacing. Both are lost by a
 # reader that flattens the name to a string, and the blank line is where a menu's spacing lives.
-setblock 1 -60 3 chest{Items:[{Slot:0b,id:"minecraft:diamond_sword",count:1,components:{"minecraft:custom_name":{text:"Excalibur",color:"aqua",italic:false},"minecraft:lore":[{text:"A sword a server named",color:"gray"},{text:"Second line of lore",color:"dark_gray"}]}},{Slot:4b,id:"minecraft:cooked_beef",count:12},{Slot:8b,id:"minecraft:paper",count:1,components:{"minecraft:custom_name":{text:"",extra:[{text:"",font:"hyperfarm:gui/icons"},{text:"Mana Potion",font:"hyperfarm:gui/label"}]},"minecraft:lore":[{text:"Restores ",extra:[{text:"50",color:"aqua"},{text:" mana"}]},{text:""},{text:"Right-click to drink",color:"dark_gray"}]}},{Slot:26b,id:"minecraft:emerald",count:3}]}
+# The chest has a name of its own, so the window title comes from a component rather than from
+# the translate key a plain chest carries -- and it is drawn in the pack's own font, which is
+# what a plugin menu header is. "Chest" stays inside it so a wait on that pattern still matches.
+setblock 1 -60 3 chest{CustomName:{text:"",extra:[{text:"",font:"hyperfarm:gui/icons"},{text:"Probe Chest",font:"hyperfarm:gui/header"}]},Items:[{Slot:0b,id:"minecraft:diamond_sword",count:1,components:{"minecraft:custom_name":{text:"Excalibur",color:"aqua",italic:false},"minecraft:lore":[{text:"A sword a server named",color:"gray"},{text:"Second line of lore",color:"dark_gray"}]}},{Slot:4b,id:"minecraft:cooked_beef",count:12},{Slot:8b,id:"minecraft:paper",count:1,components:{"minecraft:custom_name":{text:"",extra:[{text:"",font:"hyperfarm:gui/icons"},{text:"Mana Potion",font:"hyperfarm:gui/label"}]},"minecraft:lore":[{text:"Restores ",extra:[{text:"50",color:"aqua"},{text:" mana"}]},{text:""},{text:"Right-click to drink",color:"dark_gray"}]}},{Slot:26b,id:"minecraft:emerald",count:3}]}
 
 # --- a furnace with fuel and input: smelt-item ---
 setblock 1 -60 5 air
@@ -90,6 +93,9 @@ clear @a
 give @a minecraft:diamond 3
 give @a minecraft:oak_planks 24
 give @a minecraft:bow 1
+# A carried item with a name of its own, so list-inventory has a label to read rather than only an
+# item id. This is what a quest item looks like: named by the server, in the pack's own font.
+give @a minecraft:paper[custom_name={text:"",extra:[{text:"",font:"hyperfarm:gui/icons"},{text:"Quest Note",font:"hyperfarm:gui/label"}]}] 1
 kill @e[type=item]
 
 # --- a wall to walk around: move-to-position ---

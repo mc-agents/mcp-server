@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "2.11.0",
+  "catalogVersion": "2.12.0",
   "protocol": 1,
   "tools": [
     {
@@ -2293,10 +2293,28 @@
               },
               "slot": {
                 "type": "integer"
+              },
+              "label": {
+                "description": "The custom name the server gave it, if any",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "labelComponent": {
+                "description": "The component that name was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
               }
             },
             "required": [
               "count",
+              "label",
+              "labelComponent",
               "name",
               "slot"
             ],
@@ -2438,10 +2456,28 @@
                 },
                 "slot": {
                   "type": "integer"
+                },
+                "label": {
+                  "description": "The custom name the server gave it, if any",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "labelComponent": {
+                  "description": "The component that name was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.",
+                  "type": [
+                    "object",
+                    "array",
+                    "string",
+                    "null"
+                  ]
                 }
               },
               "required": [
                 "count",
+                "label",
+                "labelComponent",
                 "name",
                 "slot"
               ],
@@ -4217,6 +4253,15 @@
               ],
               "additionalProperties": false
             }
+          },
+          "titleComponent": {
+            "description": "The component the window's title was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.",
+            "type": [
+              "object",
+              "array",
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -4225,6 +4270,7 @@
           "inventorySlots",
           "slotCount",
           "title",
+          "titleComponent",
           "type"
         ],
         "additionalProperties": false
@@ -4414,10 +4460,20 @@
               "string",
               "null"
             ]
+          },
+          "closedComponent": {
+            "description": "The component that title was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.",
+            "type": [
+              "object",
+              "array",
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
-          "closed"
+          "closed",
+          "closedComponent"
         ]
       }
     },
@@ -4541,6 +4597,15 @@
                   ],
                   "additionalProperties": false
                 }
+              },
+              "titleComponent": {
+                "description": "The component the window's title was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
               }
             },
             "required": [
@@ -4549,6 +4614,7 @@
               "inventorySlots",
               "slotCount",
               "title",
+              "titleComponent",
               "type"
             ],
             "additionalProperties": false
@@ -4725,6 +4791,15 @@
                   ],
                   "additionalProperties": false
                 }
+              },
+              "titleComponent": {
+                "description": "The component the window's title was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
               }
             },
             "required": [
@@ -4733,6 +4808,7 @@
               "inventorySlots",
               "slotCount",
               "title",
+              "titleComponent",
               "type"
             ],
             "additionalProperties": false
@@ -5058,5 +5134,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:afce6ab365fbeff4dd4d63a10eadf23e9373af1444700375801b73ef4515d3ac"
+  "catalogHash": "sha256:54540603ce27834eeb6817457fa39f63a4a0146ee992d8291a1633073ac2137f"
 }
