@@ -301,6 +301,12 @@ writes a label and a number as two components puts the space in one of them, and
 the two kinds of bot disagree about a HUD they both read correctly. Leading and trailing space
 inside a segment is the server's, and survives.
 
+**A DTO carries segments where a server stacks labels.** `read-boss-bars` and `read-displays` send
+the pieces their text is drawn from, for the same reason the feeds do: a real server's boss bar
+named a place, a date and a channel side by side, and joined into one string it read as one word.
+`read-displays` also sends `glyphPieces`, because a display drawn only from glyphs is an icon --
+something is there and there is nothing to read -- which is not the same as an empty display.
+
 **Only `actionBar` and `title` carry segments.** They are the feeds a server draws with stacked
 glyphs, and the pieces are what keep two labels from running together. Chat is prose: splitting it
 at every style change turns one sentence into a dozen fragments joined by separators, which is

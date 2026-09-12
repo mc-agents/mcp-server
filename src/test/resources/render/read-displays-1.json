@@ -12,7 +12,9 @@
           "y": -58,
           "z": 7
         },
-        "distance": 2
+        "distance": 2,
+        "segments": [],
+        "glyphPieces": 0
       }
     ]
   },

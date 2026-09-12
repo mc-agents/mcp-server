@@ -1,0 +1,20 @@
+{
+  "tool": "read-boss-bars",
+  "note": "a real server builds a boss bar out of stacked labels, and joining them ran them together",
+  "data": {
+    "bars": [
+      {
+        "title": "맵 어딘가겨울 6일 오후 3시2채널",
+        "progress": 0,
+        "color": "yellow",
+        "dividers": 0,
+        "segments": [
+          {"text": "맵 어딘가", "font": "hud/place_text"},
+          {"text": "겨울 6일 오후 3시", "font": "hud/clock_text"},
+          {"text": "2채널", "font": "hud/channel_text"}
+        ]
+      }
+    ]
+  },
+  "text": "boss bar \"[hud/place_text] 맵 어딘가 | [hud/clock_text] 겨울 6일 오후 3시 | [hud/channel_text] 2채널\" (0%, yellow, 0 notches)"
+}

@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "2.8.0",
+  "catalogVersion": "2.9.0",
   "protocol": 1,
   "tools": [
     {
@@ -1425,12 +1425,41 @@
                 },
                 "distance": {
                   "type": "number"
+                },
+                "segments": {
+                  "description": "The pieces the text is drawn from, glyphs taken out",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "text": {
+                        "type": "string"
+                      },
+                      "font": {
+                        "description": "The font the piece was drawn in, absent for the default one",
+                        "type": "string"
+                      },
+                      "color": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "text"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "glyphPieces": {
+                  "description": "How many pieces held nothing but glyphs. A display made only of those is an icon: it says something is there, and there is nothing to read",
+                  "type": "integer"
                 }
               },
               "required": [
                 "distance",
                 "entity",
+                "glyphPieces",
                 "position",
+                "segments",
                 "text"
               ],
               "additionalProperties": false
@@ -1643,12 +1672,36 @@
                 },
                 "dividers": {
                   "type": "integer"
+                },
+                "segments": {
+                  "description": "The pieces the title is drawn from, glyphs taken out, in order. A server builds a boss bar out of stacked labels the same way it builds an action bar, and joining them into one string runs them together",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "text": {
+                        "type": "string"
+                      },
+                      "font": {
+                        "description": "The font the piece was drawn in, absent for the default one",
+                        "type": "string"
+                      },
+                      "color": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "text"
+                    ],
+                    "additionalProperties": false
+                  }
                 }
               },
               "required": [
                 "color",
                 "dividers",
                 "progress",
+                "segments",
                 "title"
               ],
               "additionalProperties": false
@@ -4827,5 +4880,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:b47a01004857ba234386b86db7866b213bc017135ad71b1387ad0474c866547b"
+  "catalogHash": "sha256:743470e66f63588ed6f081ca0591d755b1e925e0d4c42eea2f83b350343f601e"
 }

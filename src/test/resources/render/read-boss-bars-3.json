@@ -7,15 +7,17 @@
         "title": "",
         "progress": 1,
         "color": "white",
-        "dividers": 0
+        "dividers": 0,
+        "segments": []
       },
       {
         "title": "Wither",
         "progress": 0.735,
         "color": "purple",
-        "dividers": 10
+        "dividers": 10,
+        "segments": []
       }
     ]
   },
-  "text": "boss bar \"(untitled)\" (100%, white, 0 segments)\nboss bar \"Wither\" (74%, purple, 10 segments)"
+  "text": "boss bar \"(untitled)\" (100%, white, 0 notches)\nboss bar \"Wither\" (74%, purple, 10 notches)"
 }

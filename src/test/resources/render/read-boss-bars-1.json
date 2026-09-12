@@ -7,9 +7,10 @@
         "title": "Probe Bar",
         "progress": 0.7300000190734863,
         "color": "purple",
-        "dividers": 10
+        "dividers": 10,
+        "segments": []
       }
     ]
   },
-  "text": "boss bar \"Probe Bar\" (73%, purple, 10 segments)"
+  "text": "boss bar \"Probe Bar\" (73%, purple, 10 notches)"
 }

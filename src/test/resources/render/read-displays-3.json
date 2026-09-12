@@ -12,7 +12,9 @@
           "y": 5,
           "z": 0
         },
-        "distance": 22.65
+        "distance": 22.65,
+        "segments": [],
+        "glyphPieces": 0
       },
       {
         "text": "Bank",
@@ -22,7 +24,9 @@
           "y": 5,
           "z": 0
         },
-        "distance": 2.25
+        "distance": 2.25,
+        "segments": [],
+        "glyphPieces": 0
       }
     ]
   },
