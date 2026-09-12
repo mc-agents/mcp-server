@@ -35,7 +35,7 @@ public class RemoteTools {
 
     private McpSchema.CallToolResult call(ToolSpec spec, BotSession bot, Map<String, Object> arguments,
             boolean mark) {
-        if (!bot.isReady()) {
+        if (spec.needsWorld() && !bot.isReady()) {
             return ToolDispatcher.failure(
                     "bot \"%s\" is not in a world. Its state is %s. Use get-bot-status to see why."
                             .formatted(bot.name(), state(bot)));

@@ -89,6 +89,27 @@ class CatalogContractTest {
         return "sha256:" + HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(canonical));
     }
 
+    /**
+     * A tool a bot runs needs a world unless the catalogue says otherwise, and the one that does not
+     * is the one worth having when a bot cannot reach a world: a screenshot of the screen it is
+     * stuck on. Leaving the field off a tool would silently give it the default.
+     */
+    @Test
+    void everyToolABotRunsSaysWhetherItNeedsAWorld() throws IOException {
+        for (JsonNode tool : tools()) {
+            String route = tool.get("route").asString();
+
+            if (!route.equals("rpc") && !route.equals("compose")) {
+                continue;
+            }
+
+            String name = tool.get("name").asString();
+            assertTrue(tool.has("needsWorld"), name + " does not say whether it needs a world");
+            assertEquals(!name.equals("screenshot"), tool.get("needsWorld").asBoolean(),
+                    name + " disagrees with the one exception there is meant to be");
+        }
+    }
+
     @Test
     void everyStructuredToolSaysWhatItSendsAndHasARenderer() throws IOException {
         for (JsonNode tool : tools()) {

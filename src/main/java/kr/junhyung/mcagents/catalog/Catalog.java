@@ -59,6 +59,12 @@ public final class Catalog {
                     node.get("exclusive").asBoolean(),
                     node.get("untrusted").asBoolean(),
                     node.get("structured").asBoolean(),
+                    /*
+                    A tool the catalogue does not mark needs a world. screenshot is the exception,
+                    and the exception is the point: the screen a bot is stuck on is the answer to
+                    why it cannot get into one.
+                    */
+                    !node.has("needsWorld") || node.get("needsWorld").asBoolean(),
                     node.get("defaultDeadlineMs").asInt(),
                     mapper.convertValue(node.get("inputSchema"), SCHEMA),
                     node.has("wireSchema") ? mapper.convertValue(node.get("wireSchema"), SCHEMA) : null,

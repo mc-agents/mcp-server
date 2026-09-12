@@ -192,6 +192,12 @@ nothing.
 so a compromised one must not be able to drop the warning by dropping a field. `untrusted` in the
 catalogue is what says a tool reads content the server did not write.
 
+**A tool needs a world unless the catalogue says otherwise.** `needsWorld` is false for exactly one
+tool, `screenshot`, and the exception is the point: the screen a bot is stuck on is the answer to
+why it cannot reach a world. A resource pack prompt held a join for ninety seconds and the only
+thing that could have said so was a picture, which the server was refusing to ask for because the
+bot was not in a world.
+
 ## Errors
 
 A `result` with `ok:false` carries `error: {class, code, message, retryable, detail?}`. The class

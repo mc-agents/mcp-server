@@ -26,6 +26,7 @@ public record ToolSpec(
         boolean exclusive,
         boolean untrusted,
         boolean structured,
+        boolean needsWorld,
         int defaultDeadlineMs,
         Map<String, Object> inputSchema,
         Map<String, Object> wireSchema,

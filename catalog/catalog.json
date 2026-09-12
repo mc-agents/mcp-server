@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "2.7.0",
+  "catalogVersion": "2.8.0",
   "protocol": 1,
   "tools": [
     {
@@ -14,6 +14,7 @@
       "exclusive": true,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 60000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -80,6 +81,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -195,6 +197,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -333,6 +336,7 @@
       "exclusive": true,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 30000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -425,6 +429,7 @@
       "exclusive": false,
       "untrusted": true,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -593,6 +598,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -643,6 +649,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -743,6 +750,7 @@
       "exclusive": true,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 60000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -805,6 +813,7 @@
       "exclusive": false,
       "untrusted": true,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -957,6 +966,7 @@
       "exclusive": false,
       "untrusted": true,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -1184,6 +1194,7 @@
       "exclusive": false,
       "untrusted": true,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -1325,6 +1336,7 @@
       "exclusive": false,
       "untrusted": true,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -1444,6 +1456,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -1589,6 +1602,7 @@
       "exclusive": false,
       "untrusted": true,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -1690,6 +1704,7 @@
       "exclusive": false,
       "untrusted": true,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -1763,6 +1778,7 @@
       "exclusive": false,
       "untrusted": true,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2018,6 +2034,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2092,6 +2109,7 @@
       "exclusive": false,
       "untrusted": true,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2178,6 +2196,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2257,6 +2276,7 @@
       "exclusive": false,
       "untrusted": true,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2321,6 +2341,7 @@
       "exclusive": true,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 60000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2387,6 +2408,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2448,6 +2470,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2480,6 +2503,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2546,6 +2570,7 @@
       "exclusive": true,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2618,6 +2643,7 @@
       "exclusive": true,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 60000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2710,6 +2736,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2850,6 +2877,7 @@
       "exclusive": true,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 10000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2895,6 +2923,7 @@
       "exclusive": false,
       "untrusted": true,
       "structured": false,
+      "needsWorld": false,
       "defaultDeadlineMs": 30000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2966,6 +2995,7 @@
       "exclusive": false,
       "untrusted": true,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -3110,6 +3140,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -3184,6 +3215,7 @@
       "exclusive": false,
       "untrusted": true,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -3240,6 +3272,7 @@
       "exclusive": true,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 30000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -3344,6 +3377,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 60000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -3554,6 +3588,7 @@
       "exclusive": true,
       "untrusted": false,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -3758,6 +3793,7 @@
       "exclusive": true,
       "untrusted": false,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -3857,6 +3893,7 @@
       "exclusive": true,
       "untrusted": true,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 30000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -4004,6 +4041,7 @@
       "exclusive": true,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 120000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -4146,6 +4184,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -4193,6 +4232,7 @@
       "exclusive": false,
       "untrusted": true,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -4315,6 +4355,7 @@
       "exclusive": false,
       "untrusted": true,
       "structured": true,
+      "needsWorld": true,
       "defaultDeadlineMs": 30000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -4486,6 +4527,7 @@
       "exclusive": true,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -4552,6 +4594,7 @@
       "exclusive": true,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 30000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -4626,6 +4669,7 @@
       "exclusive": true,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 60000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -4674,6 +4718,7 @@
       "exclusive": true,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -4734,6 +4779,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": false,
+      "needsWorld": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -4781,5 +4827,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:aaa8347cb0eb3e7f33a959cf33525d7cebd2270c88b208a96a5e00f2cad1d2d8"
+  "catalogHash": "sha256:b47a01004857ba234386b86db7866b213bc017135ad71b1387ad0474c866547b"
 }
