@@ -28,7 +28,10 @@ bossbar set minecraft:mcagents visible true
 # Both faces, and one line deliberately empty, because "" and a missing line are different things
 # and a text parser that conflates them reads the shop sign below it wrong.
 setblock 3 -60 0 air
-setblock 3 -60 0 oak_sign[rotation=8]{front_text:{messages:['{"text":"Welcome","color":"yellow"}','{"text":"to the shop"}','""','{"text":"line four"}']},back_text:{messages:['{"text":"back side"}','""','""','{"text":"four again"}']}}
+# messages holds components, not JSON strings. Quoting them makes the sign literally read
+# {"text":"Welcome"}, which is what it did -- and a bot that parses any string looking like JSON
+# hid that while the client drew the braces.
+setblock 3 -60 0 oak_sign[rotation=8]{front_text:{messages:[{text:"Welcome",color:"yellow"},{text:"to the shop"},{text:""},{text:"line four"}]},back_text:{messages:[{text:"back side"},{text:""},{text:""},{text:"four again"}]}}
 
 # --- a hologram: read-displays ---
 kill @e[type=text_display,tag=mcagents]
