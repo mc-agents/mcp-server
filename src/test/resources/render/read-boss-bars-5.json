@@ -1,0 +1,25 @@
+{
+  "tool": "read-boss-bars",
+  "note": "the component wins over the pieces the bot sent, which is the point of sending it",
+  "data": {
+    "bars": [
+      {
+        "title": "wrong",
+        "progress": 0,
+        "color": "yellow",
+        "dividers": 0,
+        "segments": [{"text": "wrong"}],
+        "component": {
+          "text": "",
+          "extra": [
+            {"text": "", "font": "hyperfarm:space"},
+            {"text": "맵 어딘가", "font": "hyperfarm:hud/boss_text"},
+            {"text": "겨울 6일", "font": "hyperfarm:hud/clock_text"},
+            {"extra": [{"text": "1채널"}], "font": "hyperfarm:hud/channel_text"}
+          ]
+        }
+      }
+    ]
+  },
+  "text": "boss bar \"[hud/boss_text] 맵 어딘가 | [hud/clock_text] 겨울 6일 | [hud/channel_text] 1채널\" (0%, yellow, 0 notches)"
+}

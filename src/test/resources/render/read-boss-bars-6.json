@@ -1,0 +1,17 @@
+{
+  "tool": "read-boss-bars",
+  "note": "a translate key is the bot's to resolve, so its pieces are kept",
+  "data": {
+    "bars": [
+      {
+        "title": "Wither",
+        "progress": 0.5,
+        "color": "purple",
+        "dividers": 10,
+        "segments": [{"text": "Wither"}],
+        "component": {"translate": "entity.minecraft.wither"}
+      }
+    ]
+  },
+  "text": "boss bar \"Wither\" (50%, purple, 10 notches)"
+}

@@ -1,10 +1,12 @@
 package kr.junhyung.mcagents.render;
 
 import java.util.List;
+import tools.jackson.databind.JsonNode;
 
 public final class BossBarsRenderer implements Renderer<BossBarsRenderer.View> {
 
-    public record Bar(String title, double progress, String color, int dividers, List<Piece> segments) {}
+    public record Bar(String title, double progress, String color, int dividers, List<Piece> segments,
+        JsonNode component) {}
 
     public record View(List<Bar> bars) {}
 
@@ -27,7 +29,8 @@ public final class BossBarsRenderer implements Renderer<BossBarsRenderer.View> {
      * reader to work out which.
      */
     private static String bar(Bar bar) {
-        String title = Piece.join(bar.segments(), bar.title());
+        List<Piece> pieces = Flatten.pieces(bar.component());
+        String title = Piece.join(pieces == null ? bar.segments() : pieces, bar.title());
 
         return "boss bar \"" + (title.isEmpty() ? "(untitled)" : title) + "\" ("
             + Text.percent(bar.progress()) + "%, " + bar.color() + ", " + bar.dividers() + " notches)";

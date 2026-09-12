@@ -1,11 +1,12 @@
 package kr.junhyung.mcagents.render;
 
 import java.util.List;
+import tools.jackson.databind.JsonNode;
 
 public final class DisplaysRenderer implements Renderer<DisplaysRenderer.View> {
 
     public record Display(String text, String entity, Point position, double distance,
-        List<Piece> segments, int glyphPieces) {}
+        List<Piece> segments, int glyphPieces, JsonNode component) {}
 
     public record View(double maxDistance, List<Display> displays) {}
 
@@ -26,11 +27,14 @@ public final class DisplaysRenderer implements Renderer<DisplaysRenderer.View> {
      * different and wrong thing -- a real server's nameplates came back as three empty lines.
      */
     private static String display(Display one) {
-        String said = Piece.join(one.segments(), one.text());
+        List<Piece> pieces = Flatten.pieces(one.component());
+        Integer glyphs = Flatten.glyphPieces(one.component());
+
+        String said = Piece.join(pieces == null ? one.segments() : pieces, one.text());
 
         if (said.isEmpty()) {
-            said = one.glyphPieces() > 0
-                ? "(" + one.glyphPieces() + " glyph piece(s), nothing to read)"
+            said = (glyphs == null ? one.glyphPieces() : glyphs) > 0
+                ? "(" + (glyphs == null ? one.glyphPieces() : glyphs) + " glyph piece(s), nothing to read)"
                 : "(empty)";
         }
 

@@ -301,6 +301,18 @@ writes a label and a number as two components puts the space in one of them, and
 the two kinds of bot disagree about a HUD they both read correctly. Leading and trailing space
 inside a segment is the server's, and survives.
 
+**A DTO carries the component a server sent, and the server flattens it.** `read-boss-bars` and
+`read-displays` send `component`: Minecraft's own JSON, as the bot received it. Breaking it into
+pieces -- inheriting the font down the tree, taking the glyphs out, dropping what is left blank --
+happens once, in `render/Flatten`, instead of once per kind of bot. It used to be twice, and every
+bug in it came from the copy that had no game to ask: the 26.x `{"": "x"}` shorthand, translate keys
+left as keys, a prismarine wrapper whose style nothing looked inside, and style fields in NBT form
+that a JSON-shaped reader skipped. Four, in one day, against one real server.
+
+A bot still sends `segments` and `text`, and they are what the server uses when there is no
+component -- or when the component holds a translate key, which the bot resolved with the game's
+language table and the server cannot.
+
 **A DTO carries segments where a server stacks labels.** `read-boss-bars` and `read-displays` send
 the pieces their text is drawn from, for the same reason the feeds do: a real server's boss bar
 named a place, a date and a channel side by side, and joined into one string it read as one word.

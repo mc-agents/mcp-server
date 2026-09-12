@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "2.9.0",
+  "catalogVersion": "2.10.0",
   "protocol": 1,
   "tools": [
     {
@@ -1452,9 +1452,19 @@
                 "glyphPieces": {
                   "description": "How many pieces held nothing but glyphs. A display made only of those is an icon: it says something is there, and there is nothing to read",
                   "type": "integer"
+                },
+                "component": {
+                  "description": "The component the server sent, as Minecraft's own JSON. The flattening a renderer needs is done from this when it is here, so the rule lives in one place instead of once per kind of bot; segments are the fallback for a bot that cannot produce it. It also keeps what flattening drops -- click and hover actions, and the nesting.",
+                  "type": [
+                    "object",
+                    "array",
+                    "string",
+                    "null"
+                  ]
                 }
               },
               "required": [
+                "component",
                 "distance",
                 "entity",
                 "glyphPieces",
@@ -1695,10 +1705,20 @@
                     ],
                     "additionalProperties": false
                   }
+                },
+                "component": {
+                  "description": "The component the server sent, as Minecraft's own JSON. The flattening a renderer needs is done from this when it is here, so the rule lives in one place instead of once per kind of bot; segments are the fallback for a bot that cannot produce it. It also keeps what flattening drops -- click and hover actions, and the nesting.",
+                  "type": [
+                    "object",
+                    "array",
+                    "string",
+                    "null"
+                  ]
                 }
               },
               "required": [
                 "color",
+                "component",
                 "dividers",
                 "progress",
                 "segments",
@@ -4880,5 +4900,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:743470e66f63588ed6f081ca0591d755b1e925e0d4c42eea2f83b350343f601e"
+  "catalogHash": "sha256:b65f8512379ffc905a31930272a5000f80ab2755a4cd4039e06299ba0e2c6700"
 }
