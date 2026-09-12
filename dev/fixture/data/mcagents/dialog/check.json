@@ -4,13 +4,38 @@
   "external_title": "Bot check",
   "can_close_with_escape": true,
   "body": [
-    { "type": "minecraft:plain_message", "contents": "Which button did the bot press?" }
+    {
+      "type": "minecraft:plain_message",
+      "contents": "Which button did the bot press?"
+    }
   ],
   "columns": 1,
   "actions": [
-    { "label": "Confirm", "action": { "type": "minecraft:run_command", "command": "say the bot pressed Confirm" } },
-    { "label": "Cancel", "action": { "type": "minecraft:run_command", "command": "say the bot pressed Cancel" } },
-    { "label": "Custom", "action": { "type": "minecraft:dynamic/custom", "id": "mcagents:pressed" } }
+    {
+      "label": "Confirm",
+      "action": {
+        "type": "minecraft:run_command",
+        "command": "help"
+      },
+      "tooltip": "a command the client runs without asking"
+    },
+    {
+      "label": "Cancel",
+      "action": {
+        "type": "minecraft:run_command",
+        "command": "say the bot pressed Cancel"
+      },
+      "tooltip": "a command that sends chat as the player, which the client will not run from here"
+    },
+    {
+      "label": "Custom",
+      "action": {
+        "type": "minecraft:dynamic/custom",
+        "id": "mcagents:pressed"
+      }
+    }
   ],
-  "exit_action": { "label": "Close" }
+  "exit_action": {
+    "label": "Close"
+  }
 }
