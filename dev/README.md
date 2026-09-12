@@ -53,6 +53,31 @@ disagreeing about what `find-entity` calls an entity's type for as long as it ex
 Run it against two bots of the same kind first. That should produce no findings at all, and it is
 what says the suite itself is right before it is pointed at two kinds.
 
+Run `fixture.sh` again right before comparing. The fixture fixes both inventories and sweeps the
+floor, and without that a run that tested `drop-held-item` or `fish` leaves the next one reporting
+what the last one left lying about.
+
+## `conform.py` — hold a bot to its half of the protocol
+
+```
+python3 dev/conform.py 18777
+MCP_SERVER_HOST=127.0.0.1 MCP_SERVER_PORT=18777 BOT_NAME=conform <start the bot>
+```
+
+Plays the server badly on purpose and checks the bot keeps its end: hello first and complete, every
+capability carrying the hash the catalogue gives, a pong that echoes the nonce, one result per id
+whatever happens -- cancelled, cancelled late, two in flight -- a refusal for a tool it never
+offered, blobs before the result that names them, and a link that survives a frame the bot cannot
+read.
+
+The server's half is covered by the unit tests in `src/test`; this is the other side, and a third
+kind of bot written against `docs/bot-protocol.md` is what it exists for. Both of the bots that do
+exist have to pass it too, because a contract nothing checks is a description of whatever one
+implementation happened to do.
+
+It never sends `connect`, so the bot answers every tool with "not in a world". That is a result,
+and a result is what is being checked.
+
 ## `sweep.py` — call all 64 tools once
 
 ```
