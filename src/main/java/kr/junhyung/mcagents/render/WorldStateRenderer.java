@@ -4,6 +4,14 @@ import java.util.List;
 
 public final class WorldStateRenderer implements Renderer<WorldStateRenderer.View> {
 
+    private static String cycle(Boolean running) {
+        if (running == null) {
+            return "not something this bot can tell";
+        }
+        return running ? "running" : "frozen";
+    }
+
+
     private static final int TICKS_PER_DAY = 24_000;
     private static final int TICKS_PER_HOUR = 1_000;
     /**
@@ -12,7 +20,8 @@ public final class WorldStateRenderer implements Renderer<WorldStateRenderer.Vie
     private static final int SUNRISE_OFFSET = 6_000;
 
     public record View(int timeOfDay, int day, int moonPhase, boolean isDay, String weather,
-        boolean doDaylightCycle) {}
+        /* null when the bot cannot tell: a Minecraft client is never told the game rule. */
+        Boolean doDaylightCycle) {}
 
     @Override
     public String render(View view) {
@@ -25,7 +34,7 @@ public final class WorldStateRenderer implements Renderer<WorldStateRenderer.Vie
                 + (view.isDay() ? "day" : "night") + ")",
             "day: " + view.day() + ", moon phase " + view.moonPhase(),
             "weather: " + view.weather(),
-            "daylight cycle: " + (view.doDaylightCycle() ? "running" : "frozen")));
+            "daylight cycle: " + cycle(view.doDaylightCycle())));
     }
 
     private static String two(int value) {

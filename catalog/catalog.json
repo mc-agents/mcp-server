@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "2.2.0",
+  "catalogVersion": "2.3.0",
   "protocol": 1,
   "tools": [
     {
@@ -3138,7 +3138,11 @@
             ]
           },
           "doDaylightCycle": {
-            "type": "boolean"
+            "description": "null when the bot cannot tell. A mineflayer bot is told the game rule; a Minecraft client is not, and only sees whether the clock moved.",
+            "type": [
+              "boolean",
+              "null"
+            ]
           }
         },
         "required": [
@@ -4568,5 +4572,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:ea2dc3f0e253ec3e1861b6c1ee7de8f3e82ab489b9df96842aa360f90d9a1591"
+  "catalogHash": "sha256:f4d5febc1c5abdb6834d44261c9babf63247c584492e77b019ea29a544fe31ab"
 }
