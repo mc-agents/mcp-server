@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:multi_action",
+  "title": "Bot check",
+  "external_title": "Bot check",
+  "can_close_with_escape": true,
+  "body": [
+    { "type": "minecraft:plain_message", "contents": "Which button did the bot press?" }
+  ],
+  "columns": 1,
+  "actions": [
+    { "label": "Confirm", "action": { "type": "minecraft:run_command", "command": "say the bot pressed Confirm" } },
+    { "label": "Cancel", "action": { "type": "minecraft:run_command", "command": "say the bot pressed Cancel" } },
+    { "label": "Custom", "action": { "type": "minecraft:dynamic/custom", "id": "mcagents:pressed" } }
+  ],
+  "exit_action": { "label": "Close" }
+}

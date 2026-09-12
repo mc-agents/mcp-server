@@ -117,7 +117,7 @@ public class RemoteTools {
         }
 
         String lines = replies.stream()
-                .map(line -> "  " + line.text())
+                .map(line -> "  " + line.rendered())
                 .reduce((a, b) -> a + "\n" + b).orElse("");
 
         return ToolDispatcher.text("%s The server replied %s:\n%s"

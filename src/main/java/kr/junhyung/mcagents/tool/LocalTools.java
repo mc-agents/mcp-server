@@ -228,18 +228,18 @@ public class LocalTools {
         }
 
         FeedEntry showing = bot.feed(feed).latest();
-        if (showing != null && pattern.matcher(showing.text()).find()) {
+        if (showing != null && pattern.matcher(showing.rendered()).find()) {
             return ToolDispatcher.text(Trust.mark(
-                    "The %s already shows: %s".formatted(nounOf(feed), showing.text())));
+                    "The %s already shows: %s".formatted(nounOf(feed), showing.rendered())));
         }
 
         try {
-            WaitOutcome outcome = bot.waitOn(feed, line -> pattern.matcher(line.text()).find(), timeoutMs)
+            WaitOutcome outcome = bot.waitOn(feed, line -> pattern.matcher(line.rendered()).find(), timeoutMs)
                     .get(timeoutMs + 2_000L, TimeUnit.MILLISECONDS);
 
             return switch (outcome) {
                 case WaitOutcome.Matched matched -> ToolDispatcher.text(Trust.mark(
-                        "Matched: (%s) %s".formatted(matched.entry().source(), matched.entry().text())));
+                        "Matched: (%s) %s".formatted(matched.entry().source(), matched.entry().rendered())));
 
                 case WaitOutcome.TimedOut timedOut -> ToolDispatcher.failure(
                         "nothing on the %s feed matched /%s/ within %dms."
@@ -294,7 +294,7 @@ public class LocalTools {
                 ? " (shown %d times, first at %s)".formatted(line.repeats(), Instant.ofEpochMilli(line.firstSeen()))
                 : "";
         String source = withSource ? line.source() + ": " : "";
-        return "[%s] %s%s%s".formatted(Instant.ofEpochMilli(line.seen()), source, line.text(), repeats);
+        return "[%s] %s%s%s".formatted(Instant.ofEpochMilli(line.seen()), source, line.rendered(), repeats);
     }
 
     private static String nounOf(String feed) {

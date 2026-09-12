@@ -281,9 +281,32 @@ is a firehose.
 into runs, and a run is re-sent once a second while it stays open so the server's view of "how long
 has this been showing" stays current.
 
+`event.source` is **who produced it**: a player's name for a message a player sent, and
+`system` for anything else. Not where the client drew it -- that is what `kind` already says, and
+one bot reporting `chat`/`system`/`game_info` while the other reported player names made the two
+describe the same chat log differently.
+
 Segments travel structured: `{text, font?, color?}`. The bot strips glyphs and colour codes,
 because that is game knowledge; the server joins them for display, because that is presentation.
 Neither bot gets to have an opinion about what the separator looks like.
+
+**A segment's text is not trimmed.** `"Wave "` and `"Wave"` are different pieces: a server that
+writes a label and a number as two components puts the space in one of them, and trimming it makes
+the two kinds of bot disagree about a HUD they both read correctly. Leading and trailing space
+inside a segment is the server's, and survives.
+
+**Only `actionBar` and `title` carry segments.** They are the feeds a server draws with stacked
+glyphs, and the pieces are what keep two labels from running together. Chat is prose: splitting it
+at every style change turns one sentence into a dozen fragments joined by separators, which is
+harder to read than the sentence. A chat line sends `text` and no segments.
+
+**An id is namespaced.** A sound, a particle, an item: `minecraft:happy_villager`, not
+`happy_villager`. It is what the server said and what a caller would type back.
+
+**A segment with nothing left in it is dropped.** A HUD is drawn by stacking a glyph, a spacer
+made of private use area codepoints, and a label; once the glyphs are out, the spacer holds
+whitespace and nothing else. It is a position on the screen rather than something to read, so it
+does not become a segment.
 
 ## Limits
 

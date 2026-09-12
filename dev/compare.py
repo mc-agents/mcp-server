@@ -27,14 +27,18 @@ REPO = Path(__file__).resolve().parent.parent
 CATALOG = json.loads((REPO / "catalog/catalog.json").read_text())
 
 # Enough to satisfy required arguments. The same values go to both bots, which is the point.
+# Aimed at what dev/fixture.sh puts in the world: the sign at (3, -60, 0), the chest at
+# (1, -60, 3), the named cow, the diamond blocks. Against an empty world every one of these
+# answers "nothing there" and the two kinds of bot agree about a world neither can see.
 SAMPLES = {
-    "blockType": "minecraft:dirt", "itemName": "minecraft:stick", "outputItem": "minecraft:torch",
-    "nameOrType": "stick", "message": "hello", "command": "/help", "text": "/he",
+    "blockType": "minecraft:diamond_block", "itemName": "minecraft:stick",
+    "outputItem": "minecraft:torch", "nameOrType": "diamond", "message": "hello",
+    "command": "/help", "text": "/he", "prefix": "/he",
     "pattern": "never-matches-this", "titlePattern": "chest", "slot": 0,
-    "x": 0, "y": -60, "z": 0, "direction": "forward", "ticks": 2, "label": "Confirm",
-    "type": "minecraft:cow", "entity": "minecraft:cow", "prefix": "/he",
+    "x": 3, "y": -60, "z": 0, "direction": "forward", "ticks": 2, "label": "Confirm",
+    "type": "minecraft:cow", "entity": "Probe Cow",
     "inputItem": "minecraft:iron_ore", "fuelItem": "minecraft:coal", "timeoutMs": 1500,
-    "collectMs": 300, "durationMs": 200, "count": 1, "host": "127.0.0.1",
+    "collectMs": 300, "durationMs": 200, "count": 3, "host": "127.0.0.1",
 }
 
 # Tools whose answer is about this bot rather than about the world, or which move it.
@@ -52,11 +56,20 @@ NOT_COMPARABLE = {
 NOT_COMPARABLE |= {name for name in (tool["name"] for tool in CATALOG["tools"])
                    if name.startswith("wait-")}
 
+# A feed entry is stamped with when it arrived, and two bots never receive the same broadcast at
+# the same millisecond. What is being compared is what they made of it, so the stamp comes out
+# before the comparison rather than being excused after one.
+TIMESTAMP = re.compile(r"\[\d{4}-\d{2}-\d{2}T[\d:.]+Z\]")
+
+
+def settled(text):
+    return TIMESTAMP.sub("[when]", text)
+
+
 # Sentences that legitimately differ, and why. Anything not matched here is a finding.
 EXPECTED = [
     (re.compile(r"^Position: |^position: |\nposition: "), "where that bot is standing"),
     (re.compile(r"\(this bot\)"), "the player list marks the caller"),
-    (re.compile(r"^\[\d{4}-"), "a feed entry carries the time it arrived"),
     (re.compile(r"blocks away|within \d+ blocks"), "measured from where that bot is standing"),
     (re.compile(r"tick \d+ of the day"), "the world ticked between the two calls"),
     (re.compile(r"is not supported by bot"), "both refused it, naming the bot that was asked"),
@@ -97,7 +110,7 @@ def call(headers, tool, args):
                 content = result.get("content", [{}])
                 kinds = [c.get("type") for c in content]
                 text = content[0].get("text", "") if content else ""
-                return bool(result.get("isError")), text, kinds
+                return bool(result.get("isError")), settled(text), kinds
     return True, "no answer", []
 
 
@@ -132,6 +145,10 @@ def main(first, second):
             continue
 
         args = {field: SAMPLES[field] for field in required}
+        # One line of a feed, not the history: the two bots joined at different times, so the
+        # depth of what they have seen is a fact about when they arrived and not about the world.
+        if name.startswith("read-") and "count" in (tool["inputSchema"].get("properties") or {}):
+            args["count"] = 1
         print("  %s" % name, end="\r", flush=True)
         left = call(headers, name, dict(args, bot=first))
         right = call(headers, name, dict(args, bot=second))
