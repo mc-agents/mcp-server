@@ -60,6 +60,16 @@ setblock 1 -60 5 furnace[facing=north]
 # --- the blocks find-blocks is asked for, in a known place ---
 fill 7 -60 -2 9 -60 0 minecraft:diamond_block
 
+# --- water to fish in: fish ---
+# A flat world has none, and a rod cast at dry ground never gets a bite, so the tool would only
+# ever be able to report its own timeout.
+# Wide enough that a cast lands in it whichever way the bot happens to be facing. A three by three
+# pool sounds like plenty and is not: the bobber flies several blocks, and a bot whose aim was a
+# little off put it on dry grass and then waited out the whole timeout for a bite that could not
+# come. Well clear of the blocks above, which sit at positive x.
+fill -10 -61 -10 -2 -61 -2 minecraft:water
+fill -10 -60 -10 -2 -60 -2 minecraft:water
+
 # --- the same inventory for everyone: list-inventory and find-item ---
 # Without this the comparison is about what each bot has happened to pick up. Dropped items go too,
 # or a run that tested drop-held-item leaves the next one reading a different floor.
