@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.List;
+import tools.jackson.databind.JsonNode;
 import java.util.Map;
 
 /**
@@ -150,6 +151,12 @@ public final class Messages {
             String source,
             String text,
             List<Segment> segments,
+            /*
+            The component the server sent, as Minecraft's own JSON. The flattening happens here
+            rather than in each kind of bot, and this is what it happens to; text and segments are
+            what a bot that cannot send one falls back to.
+            */
+            JsonNode component,
             Object data,
             long ts,
             long firstTs,

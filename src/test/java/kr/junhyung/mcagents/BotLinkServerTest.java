@@ -263,7 +263,7 @@ class BotLinkServerTest {
 
         long now = System.currentTimeMillis();
         send(bot, new Messages.Event(1, "chat", "server", "Welcome to the server",
-                List.of(), null, now, now, 1, false));
+                List.of(), null, null, now, now, 1, false));
 
         for (int attempt = 0; attempt < 100 && session.feed("chat").latest() == null; attempt++) {
             TimeUnit.MILLISECONDS.sleep(20);

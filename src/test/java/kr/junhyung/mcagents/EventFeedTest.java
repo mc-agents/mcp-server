@@ -9,6 +9,8 @@ import kr.junhyung.mcagents.bot.EventFeed;
 import kr.junhyung.mcagents.bot.FeedEntry;
 import kr.junhyung.mcagents.bot.WaitOutcome;
 import java.util.List;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,7 +30,26 @@ class EventFeedTest {
 
     private static FeedEntry entry(long seq, String text, int repeats) {
         long now = System.currentTimeMillis();
-        return new FeedEntry(seq, "chat", text, List.of(), now, now, repeats);
+        return new FeedEntry(seq, "chat", text, List.of(), null, now, now, repeats);
+    }
+
+    /**
+     * The pieces come from the component when there is one, which is the whole reason it travels:
+     * the flattening rule lives in the server and a bot that sends the component does not have to
+     * be right about fonts, nesting or the shorthand.
+     */
+    @Test
+    void aLineWithAComponentIsFlattenedFromIt() throws Exception {
+        JsonNode component = JsonMapper.builder().build().readTree("""
+                {"text": "", "extra": [
+                  {"text": "20/20", "font": "hyperfarm:hud/bars_text"},
+                  {"text": "\uE001"},
+                  {"text": "0", "font": "hyperfarm:hud/money_text"}]}""");
+        long now = System.currentTimeMillis();
+
+        FeedEntry line = new FeedEntry(1, "actionbar", "wrong", List.of(), component, now, now, 1);
+
+        assertEquals("[hud/bars_text] 20/20 | [hud/money_text] 0", line.rendered());
     }
 
     @Test

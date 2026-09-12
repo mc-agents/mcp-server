@@ -117,6 +117,7 @@ public final class BotSession {
                 event.segments() == null ? List.of() : event.segments().stream()
                         .map(s -> new FeedEntry.Segment(s.text(), s.font(), s.color()))
                         .toList(),
+                event.component(),
                 event.firstTs(),
                 event.ts(),
                 Math.max(1, event.repeats())));

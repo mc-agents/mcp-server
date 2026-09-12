@@ -71,7 +71,7 @@ Every JSON frame is a flat object with a `t` discriminator.
 | --- | --- |
 | `hello` | `protocols[]`, `botName`, `kind`, `agentVersion`, `mcVersion`, `catalogVersion`, `capabilities[]`, `features[]` |
 | `result` | `id`, `ok`, `text`, `data?`, `blobs[]?`, `error?`, `elapsedMs` |
-| `event` | `seq`, `kind`, `source`, `text`, `segments[]?`, `data?`, `ts`, `firstTs`, `repeats`, `closed` |
+| `event` | `seq`, `kind`, `source`, `text`, `segments[]?`, `component?`, `data?`, `ts`, `firstTs`, `repeats`, `closed` |
 | `status` | `state`, `ts`, and whatever it knows: `address`, `username`, `mcVersion`, `serverBrand`, `gameMode`, `dimension`, `position`, `health`, `food`, `reason`, `lastError` |
 
 `status.state` is one of five:
@@ -308,6 +308,11 @@ happens once, in `render/Flatten`, instead of once per kind of bot. It used to b
 bug in it came from the copy that had no game to ask: the 26.x `{"": "x"}` shorthand, translate keys
 left as keys, a prismarine wrapper whose style nothing looked inside, and style fields in NBT form
 that a JSON-shaped reader skipped. Four, in one day, against one real server.
+
+The feeds carry it too, on every kind and not only the ones with segments. A HUD component on a
+server that draws with glyphs is around a kilobyte, and folding means one of those crosses the wire
+about once a second per feed: a kilobyte a second per bot, next to the gigabyte of memory a real
+client costs. The measurement is the reason it is on the feeds rather than only on the tools.
 
 A bot still sends `segments` and `text`, and they are what the server uses when there is no
 component -- or when the component holds a translate key, which the bot resolved with the game's
