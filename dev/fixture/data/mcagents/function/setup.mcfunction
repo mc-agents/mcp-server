@@ -79,4 +79,11 @@ give @a minecraft:oak_planks 24
 give @a minecraft:bow 1
 kill @e[type=item]
 
+# --- a wall to walk around: move-to-position ---
+# Straight-line walking is enough in an empty world and useless in a built one, so the fixture has
+# something in the way. Three blocks high, so it cannot be jumped, with the way round it eight
+# blocks north: a bot that reports "could not reach" here has no pathfinding, and one that arrives
+# by the short way has not gone round anything.
+fill 14 -60 -6 14 -58 6 minecraft:stone
+
 say mc-agents fixture is in place
