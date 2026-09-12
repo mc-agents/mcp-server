@@ -157,7 +157,8 @@ public final class Messages {
             what a bot that cannot send one falls back to.
             */
             JsonNode component,
-            Object data,
+            /* Structure a sentence cannot hold: the dialog feed sends the dialog itself here. */
+            JsonNode data,
             long ts,
             long firstTs,
             int repeats,

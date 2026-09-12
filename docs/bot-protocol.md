@@ -349,6 +349,18 @@ named a place, a date and a channel side by side, and joined into one string it 
 `read-displays` also sends `glyphPieces`, because a display drawn only from glyphs is an icon --
 something is there and there is nothing to read -- which is not the same as an empty display.
 
+**The dialog feed carries the dialog, not a description of it.** `event.data` on a `dialog` line is
+the dialog as the game serialises it -- `title`, `body`, `actions`/`yes`/`no`/`action`/`exit_action`,
+`inputs` -- and the server reads the parts worth reading and writes the line. A dialog is not one
+piece of text, so it cannot travel as a component, and which of its parts to say in what order is
+presentation. One kind of bot used to build that sentence itself while the other had no dialog feed
+at all, so the same dialog read one way or not at all depending on which bot was asked.
+
+A bot that is sent a dialog by registry reference has to resolve it: `/dialog show` names one the
+datapack declared and the packet then carries nothing but an index into the `minecraft:dialog`
+registry. `source` is `dialog` for one being shown and `closed` for it going away, and the sentence
+for the second is the server's.
+
 **Only `actionBar` and `title` carry segments.** They are the feeds a server draws with stacked
 glyphs, and the pieces are what keep two labels from running together. Chat is prose: splitting it
 at every style change turns one sentence into a dozen fragments joined by separators, which is

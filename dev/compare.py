@@ -55,6 +55,9 @@ SAMPLES = {
 AIMED_AT = {
     "open-container": {"x": 1, "y": -60, "z": 3},
     "wait-for-window": {"titlePattern": "Chest"},
+    # Both lines the settle step made: the dialog and its going away. One of each is exactly what
+    # both bots have seen, so the depth is not a fact about when they arrived here.
+    "read-dialog": {"count": 2},
 }
 
 # Tools that leave the world different for the bot asked second, so the two answers are about two
@@ -188,6 +191,10 @@ def settle(headers, bots):
     players may stand inside each other, which is what makes that possible at all, and the
     teleport runs as the bot so no username has to be guessed from a bot name.
 
+    A dialog shown and cleared, because the dialog feed is empty in a world nothing has opened one
+    in, and two bots agreeing that nothing happened is the suite going blind. One kind of bot used
+    to have no dialog feed at all and this run said the two matched.
+
     The clock set to day, because the time of day is a measurement that comes out of both answers
     -- but "night" derived from it is a word the two have to agree on, and the two calls are
     seconds apart. A run that happened to straddle dusk reported one bot saying day and the other
@@ -200,6 +207,12 @@ def settle(headers, bots):
     """
     for bot in bots:
         if not ran(headers, bot, "tp @s %d %d %d" % TOGETHER):
+            return False
+        # Shown and then taken away, so the dialog feed holds both of its lines and neither bot is
+        # left with a screen in front of the tools that come after.
+        if not ran(headers, bot, "dialog show @s mcagents:check"):
+            return False
+        if not ran(headers, bot, "dialog clear @s"):
             return False
 
     return (ran(headers, bots[0], "time set day")
@@ -239,11 +252,12 @@ def main(first, second):
         # type, find-entity answered with the other bot standing next to it, and that difference
         # cannot be anything but the one thing the two can never agree about.
         args = {field: SAMPLES[field] for field in properties if field in SAMPLES and field != "bot"}
-        args.update(AIMED_AT.get(name, {}))
         # One line of a feed, not the history: the two bots joined at different times, so the
         # depth of what they have seen is a fact about when they arrived and not about the world.
         if name.startswith("read-") and "count" in (tool["inputSchema"].get("properties") or {}):
             args["count"] = 1
+        # Last, so a tool that wants a different count than that can say so.
+        args.update(AIMED_AT.get(name, {}))
         print("  %s" % name, end="\r", flush=True)
         left = call(headers, name, dict(args, bot=first))
         right = call(headers, name, dict(args, bot=second))

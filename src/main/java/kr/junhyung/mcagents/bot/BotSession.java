@@ -112,12 +112,14 @@ public final class BotSession {
         }
         target.accept(new FeedEntry(
                 event.seq(),
+                event.kind(),
                 event.source(),
                 event.text(),
                 event.segments() == null ? List.of() : event.segments().stream()
                         .map(s -> new FeedEntry.Segment(s.text(), s.font(), s.color()))
                         .toList(),
                 event.component(),
+                event.data(),
                 event.firstTs(),
                 event.ts(),
                 Math.max(1, event.repeats())));

@@ -30,7 +30,7 @@ class EventFeedTest {
 
     private static FeedEntry entry(long seq, String text, int repeats) {
         long now = System.currentTimeMillis();
-        return new FeedEntry(seq, "chat", text, List.of(), null, now, now, repeats);
+        return new FeedEntry(seq, "chat", "chat", text, List.of(), null, null, now, now, repeats);
     }
 
     /**
@@ -47,7 +47,7 @@ class EventFeedTest {
                   {"text": "0", "font": "hyperfarm:hud/money_text"}]}""");
         long now = System.currentTimeMillis();
 
-        FeedEntry line = new FeedEntry(1, "actionbar", "wrong", List.of(), component, now, now, 1);
+        FeedEntry line = new FeedEntry(1, "actionBar", "actionbar", "wrong", List.of(), component, null, now, now, 1);
 
         assertEquals("[hud/bars_text] 20/20 | [hud/money_text] 0", line.rendered());
     }
@@ -67,7 +67,7 @@ class EventFeedTest {
                   {"text": " and welcome"}]}""");
         long now = System.currentTimeMillis();
 
-        FeedEntry line = new FeedEntry(1, "chat", "wrong", List.of(), component, now, now, 1);
+        FeedEntry line = new FeedEntry(1, "chat", "chat", "wrong", List.of(), component, null, now, now, 1);
 
         assertEquals("Hello world and welcome", line.rendered());
     }
@@ -80,9 +80,45 @@ class EventFeedTest {
                 new FeedEntry.Segment("Hello ", null, "red"),
                 new FeedEntry.Segment("world", null, "blue"));
 
-        FeedEntry line = new FeedEntry(1, "chat", "wrong", segments, null, now, now, 1);
+        FeedEntry line = new FeedEntry(1, "chat", "chat", "wrong", segments, null, null, now, now, 1);
 
         assertEquals("Hello world", line.rendered());
+    }
+
+    /*
+    A dialog is a title, some body, a row of buttons and a count of inputs: not one piece of text,
+    so it travels as structure and the sentence is written here. One kind of bot used to build that
+    sentence itself and the other had no dialog feed at all.
+    */
+    @Test
+    void aDialogIsDescribedFromItsStructure() throws Exception {
+        JsonNode dialog = JsonMapper.builder().build().readTree("""
+                {"type": "minecraft:multi_action",
+                 "title": {"text": "", "extra": [
+                   {"text": "\uE001", "font": "hyperfarm:gui/icons"},
+                   {"text": "Bot check", "font": "hyperfarm:gui/header"}]},
+                 "body": [{"type": "minecraft:plain_message",
+                           "contents": "Which button did the bot press?"}],
+                 "actions": [{"label": "Confirm"}, {"label": "Cancel"}],
+                 "exit_action": {"label": "Close"},
+                 "inputs": [{"key": "name", "type": "minecraft:text"}]}""");
+        long now = System.currentTimeMillis();
+
+        FeedEntry line = new FeedEntry(1, "dialog", "dialog", "wrong", List.of(), null, dialog, now, now, 1);
+
+        assertEquals("[gui/header] Bot check | Which button did the bot press?"
+                + " | buttons: Confirm, Cancel, Close | 1 input field(s)", line.rendered());
+    }
+
+    /** The dialog going away is a line of its own, and the words for it are the server's. */
+    @Test
+    void aClosedDialogSaysSoWhateverTheBotCalledIt() {
+        long now = System.currentTimeMillis();
+
+        FeedEntry line = new FeedEntry(1, "dialog", "closed", "the bot's own wording",
+                List.of(), null, null, now, now, 1);
+
+        assertEquals("the dialog was closed", line.rendered());
     }
 
     @Test
