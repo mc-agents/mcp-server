@@ -50,6 +50,40 @@ public final class Flatten {
     }
 
     /**
+     * A line a server wrote, read from its component when there is one and from the bot's own
+     * flattening when there is not.
+     *
+     * <p>The two travel side by side for every label: a bot that cannot send a component -- or one
+     * whose component holds a translate key only the game can resolve -- still says what it read.
+     */
+    public static String read(String text, JsonNode component) {
+        return Piece.join(pieces(component), text == null ? "" : text);
+    }
+
+    /**
+     * The same, for a list. Paired by position, because that is how the two arrive: a bot sends the
+     * lines it read and the components it read them from, in the order the item carries them. A
+     * shorter list of components is not a disagreement worth refusing over -- the line is read the
+     * way it would have been before there were any.
+     */
+    public static List<String> readAll(List<String> lines, List<JsonNode> components) {
+        if (lines == null) {
+            return List.of();
+        }
+
+        List<String> read = new ArrayList<>(lines.size());
+
+        for (int index = 0; index < lines.size(); index++) {
+            JsonNode component = components == null || index >= components.size()
+                ? null
+                : components.get(index);
+            read.add(read(lines.get(index), component));
+        }
+
+        return read;
+    }
+
+    /**
      * How many pieces held nothing but glyphs. On a HUD those are spacers; on a display entity a
      * piece made only of them is an icon, which is not the same as an empty display.
      */

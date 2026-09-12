@@ -1,10 +1,18 @@
 package kr.junhyung.mcagents.render;
 
 import java.util.List;
+import tools.jackson.databind.JsonNode;
 
 public final class WindowRenderer implements Renderer<WindowRenderer.View> {
 
-    public record Slot(int slot, String name, int count, String label, List<String> lore) {}
+    /**
+     * {@code labelComponent} and {@code loreComponents} are what the server actually wrote, beside
+     * what the bot made of it. A menu built out of custom-named items is how a plugin draws a
+     * screen, and the names carry the resource pack's own glyphs: flattened to a string the icons
+     * vanish and the words run together, and the two kinds of bot lost different ones.
+     */
+    public record Slot(int slot, String name, int count, String label, List<String> lore,
+        JsonNode labelComponent, List<JsonNode> loreComponents) {}
 
     /**
      * {@code type} is a registry id on a modern server and a number on an older one, and the bot passes on
@@ -28,10 +36,14 @@ public final class WindowRenderer implements Renderer<WindowRenderer.View> {
     }
 
     private static String slot(Slot slot) {
-        String label = slot.label() == null ? slot.name() : slot.label() + " [" + slot.name() + "]";
-        String lore = slot.lore().isEmpty() ? "" : "\n    " + String.join("\n    ", slot.lore());
+        String named = slot.label() == null
+            ? slot.name()
+            : Flatten.read(slot.label(), slot.labelComponent()) + " [" + slot.name() + "]";
 
-        return "  " + slot.slot() + ": " + label + " x" + slot.count() + lore;
+        List<String> lines = Flatten.readAll(slot.lore(), slot.loreComponents());
+        String lore = lines.isEmpty() ? "" : "\n    " + String.join("\n    ", lines);
+
+        return "  " + slot.slot() + ": " + named + " x" + slot.count() + lore;
     }
 
     private static String type(Object type) {

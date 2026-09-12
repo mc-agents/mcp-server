@@ -1,0 +1,43 @@
+{
+  "tool": "read-window",
+  "note": "a plugin's menu: the item names carry the resource pack's own glyphs and the lore is merely coloured",
+  "data": {
+    "window": {
+      "title": "Mana Shop",
+      "type": "minecraft:generic_9x3",
+      "slotCount": 63,
+      "containerSlots": [0, 26],
+      "inventorySlots": [27, 62],
+      "filled": [
+        {
+          "slot": 11,
+          "name": "paper",
+          "count": 1,
+          "label": "Mana Potion",
+          "lore": ["Restores 50 mana", "Right-click to drink"],
+          "labelComponent": {
+            "text": "",
+            "extra": [
+              {"text": "", "font": "hyperfarm:gui/icons"},
+              {"text": "Mana Potion", "font": "hyperfarm:gui/label"}
+            ]
+          },
+          "loreComponents": [
+            {"text": "Restores ", "extra": [{"text": "50", "color": "aqua"}, {"text": " mana"}]},
+            {"text": "Right-click to drink", "color": "dark_gray"}
+          ]
+        },
+        {
+          "slot": 13,
+          "name": "barrier",
+          "count": 1,
+          "label": "Sold Out",
+          "lore": [],
+          "labelComponent": {"text": "Sold Out", "color": "red"},
+          "loreComponents": []
+        }
+      ]
+    }
+  },
+  "text": "window \"Mana Shop\" (type minecraft:generic_9x3, 63 slots, container 0-26, player inventory 27-62)\n  11: [gui/label] Mana Potion [paper] x1\n    Restores 50 mana\n    Right-click to drink\n  13: Sold Out [barrier] x1"
+}

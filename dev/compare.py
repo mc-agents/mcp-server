@@ -5,7 +5,10 @@ answered, and the only way to know that holds is to ask both and compare the str
 
     python3 dev/compare.py alice bravo
 
-Both names must already be joined to the same server, standing in the same place. What this finds
+Both names must already be joined to the same server. Standing in the same place is not a
+precondition any more -- this puts them there, because "the three closest diamond blocks" is a
+different set from two blocks apart, and a suite that only passes when the two happened to spawn
+near each other reports a finding about where they stood. What this finds
 is a renderer that only one kind reaches, a DTO field one kind leaves out, and a tool that says
 "not supported" on a bot the catalogue says supports it. What it cannot find is two bots that are
 wrong in the same way; for that there is a real server on the other end.
@@ -174,9 +177,50 @@ def explained(tool, left, right):
     return None
 
 
+# Beside the fixture, in reach of the sign at (3, -60, 0) and the chest at (1, -60, 3).
+TOGETHER = (2, -59, 0)
+
+
+def settle(headers, bots):
+    """Put the two bots and the world into the state the comparison needs.
+
+    Both bots on one block, so an answer about what is nearest is about the same nearest. Two
+    players may stand inside each other, which is what makes that possible at all, and the
+    teleport runs as the bot so no username has to be guessed from a bot name.
+
+    The clock set to day, because the time of day is a measurement that comes out of both answers
+    -- but "night" derived from it is a word the two have to agree on, and the two calls are
+    seconds apart. A run that happened to straddle dusk reported one bot saying day and the other
+    night. A Minecraft day is ten minutes and a run is twenty seconds, so setting it at the start
+    is enough.
+
+    A broadcast last, because a command's feedback reaches other operators as "[who: what]" and
+    its sender as "what": gathering leaves the two with different last chat lines, a difference
+    this made and not one to report. A broadcast is sent to everyone the same way.
+    """
+    for bot in bots:
+        if not ran(headers, bot, "tp @s %d %d %d" % TOGETHER):
+            return False
+
+    return (ran(headers, bots[0], "time set day")
+            and ran(headers, bots[0], "say settled for the comparison"))
+
+
+def ran(headers, bot, command):
+    failed, said, _ = call(headers, "run-command",
+                           {"bot": bot, "command": command, "collectMs": 300})
+    if failed:
+        print("could not run /%s as %s: %s" % (command, bot, said))
+
+    return not failed
+
+
 def main(first, second):
     headers = session()
     same, expected, findings = 0, [], []
+
+    if not settle(headers, (first, second)):
+        return 2
 
     for tool in CATALOG["tools"]:
         name = tool["name"]

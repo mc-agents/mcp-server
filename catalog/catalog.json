@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "2.10.0",
+  "catalogVersion": "2.11.0",
   "protocol": 1,
   "tools": [
     {
@@ -3766,12 +3766,27 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "labelComponent": {
+                "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              },
+              "loreComponents": {
+                "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                "type": "array"
               }
             },
             "required": [
               "count",
               "label",
+              "labelComponent",
               "lore",
+              "loreComponents",
               "name"
             ]
           },
@@ -3800,12 +3815,27 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "labelComponent": {
+                "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              },
+              "loreComponents": {
+                "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                "type": "array"
               }
             },
             "required": [
               "count",
               "label",
+              "labelComponent",
               "lore",
+              "loreComponents",
               "name"
             ]
           },
@@ -3834,12 +3864,27 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "labelComponent": {
+                "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              },
+              "loreComponents": {
+                "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                "type": "array"
               }
             },
             "required": [
               "count",
               "label",
+              "labelComponent",
               "lore",
+              "loreComponents",
               "name"
             ]
           }
@@ -3938,12 +3983,27 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "labelComponent": {
+                "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              },
+              "loreComponents": {
+                "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                "type": "array"
               }
             },
             "required": [
               "count",
               "label",
+              "labelComponent",
               "lore",
+              "loreComponents",
               "name"
             ]
           }
@@ -4078,12 +4138,27 @@
                   "items": {
                     "type": "string"
                   }
+                },
+                "labelComponent": {
+                  "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                  "type": [
+                    "object",
+                    "array",
+                    "string",
+                    "null"
+                  ]
+                },
+                "loreComponents": {
+                  "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                  "type": "array"
                 }
               },
               "required": [
                 "count",
                 "label",
+                "labelComponent",
                 "lore",
+                "loreComponents",
                 "name",
                 "slot"
               ],
@@ -4387,12 +4462,27 @@
                       "items": {
                         "type": "string"
                       }
+                    },
+                    "labelComponent": {
+                      "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                      "type": [
+                        "object",
+                        "array",
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "loreComponents": {
+                      "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                      "type": "array"
                     }
                   },
                   "required": [
                     "count",
                     "label",
+                    "labelComponent",
                     "lore",
+                    "loreComponents",
                     "name",
                     "slot"
                   ],
@@ -4556,12 +4646,27 @@
                       "items": {
                         "type": "string"
                       }
+                    },
+                    "labelComponent": {
+                      "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                      "type": [
+                        "object",
+                        "array",
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "loreComponents": {
+                      "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                      "type": "array"
                     }
                   },
                   "required": [
                     "count",
                     "label",
+                    "labelComponent",
                     "lore",
+                    "loreComponents",
                     "name",
                     "slot"
                   ],
@@ -4900,5 +5005,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:b65f8512379ffc905a31930272a5000f80ab2755a4cd4039e06299ba0e2c6700"
+  "catalogHash": "sha256:3ab3fe0177612dca09929fca0e8ae0413bd27cdae7750ec5870fddc65482b7ed"
 }

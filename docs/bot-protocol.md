@@ -296,6 +296,13 @@ Segments travel structured: `{text, font?, color?}`. The bot strips glyphs and c
 because that is game knowledge; the server joins them for display, because that is presentation.
 Neither bot gets to have an opinion about what the separator looks like.
 
+**A separator goes between labels, not between words.** The pieces are joined with ` | ` only when
+one of them names a font, because a font is what says the pieces are separate labels stacked on a
+HUD. Without one there is nothing to take apart: the pieces are one run of text the server
+happened to colour, and the screen shows them touching. Separating those reported a chat line
+reading "Hello world and welcome" as `Hello  | world |  and welcome`, and both kinds of bot said
+it, so the comparison suite called them identical and was right about the wrong thing.
+
 **A segment's text is not trimmed.** `"Wave "` and `"Wave"` are different pieces: a server that
 writes a label and a number as two components puts the space in one of them, and trimming it makes
 the two kinds of bot disagree about a HUD they both read correctly. Leading and trailing space
@@ -308,6 +315,17 @@ happens once, in `render/Flatten`, instead of once per kind of bot. It used to b
 bug in it came from the copy that had no game to ask: the 26.x `{"": "x"}` shorthand, translate keys
 left as keys, a prismarine wrapper whose style nothing looked inside, and style fields in NBT form
 that a JSON-shaped reader skipped. Four, in one day, against one real server.
+
+The stacks in a window carry it as well: `labelComponent` beside `label`, and `loreComponents`
+beside `lore`, paired by position. A plugin draws a screen out of custom-named items and writes
+those names in the resource pack's own glyphs, so an item label is a HUD in the same way an action
+bar is. `read-window`, `open-container`, `wait-for-window`, `click-slot` and `drop-held-item` all
+send them, from the one place in each bot that describes a stack.
+
+**A blank lore line is a line.** It is where a menu puts its spacing, and the line below it sits
+where the server put it -- the same reason a blank sign face line is reported rather than dropped.
+One kind of bot used to drop them and the other kept them, so an item with a spacer read as two
+different items; dropping them also left nothing for the components below to pair with.
 
 The feeds carry it too, on every kind and not only the ones with segments. A HUD component on a
 server that draws with glyphs is around a kilobyte, and folding means one of those crosses the wire

@@ -1,0 +1,39 @@
+{
+  "tool": "click-slot",
+  "note": "the cursor holds a custom-named item, and the name is read from the component the server wrote",
+  "data": {
+    "slot": 11,
+    "button": "left",
+    "shift": false,
+    "before": {
+      "name": "paper",
+      "count": 1,
+      "label": "Mana Potion",
+      "lore": [],
+      "labelComponent": {
+        "text": "",
+        "extra": [
+          {"text": "", "font": "hyperfarm:gui/icons"},
+          {"text": "Mana Potion", "font": "hyperfarm:gui/label"}
+        ]
+      },
+      "loreComponents": []
+    },
+    "after": null,
+    "cursor": {
+      "name": "paper",
+      "count": 1,
+      "label": "Mana Potion",
+      "lore": [],
+      "labelComponent": {
+        "text": "",
+        "extra": [
+          {"text": "", "font": "hyperfarm:gui/icons"},
+          {"text": "Mana Potion", "font": "hyperfarm:gui/label"}
+        ]
+      },
+      "loreComponents": []
+    }
+  },
+  "text": "Left-clicked slot 11.\n  slot 11: [gui/label] Mana Potion [paper] x1 -> empty\n  cursor: [gui/label] Mana Potion [paper] x1"
+}

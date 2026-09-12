@@ -33,12 +33,12 @@ public record FeedEntry(
     /**
      * What a reader is shown.
      *
-     * <p>Built from the segments, because that is the whole reason they travel apart: a server
+     * <p>Built from the component, or from the segments when the bot could not send one: a server
      * drawing a HUD stacks a bar glyph, a spacer and a label, and flattening those runs the labels
-     * together -- two bars both reading 20/20 arrive as "20/2020/20". The separator is the
-     * server's so the two kinds of bot cannot each pick one.
+     * together -- two bars both reading 20/20 arrive as "20/2020/20". {@link Piece#join} decides
+     * where a separator belongs, so the two kinds of bot cannot each pick one.
      *
-     * <p>A bot that sent no segments keeps its own text, which is every feed that is one piece.
+     * <p>A bot that sent neither keeps its own text, which is every feed that is one piece.
      */
     public String rendered() {
         List<Piece> flattened = Flatten.pieces(component);
@@ -49,15 +49,10 @@ public record FeedEntry(
         if (segments.isEmpty()) {
             return text;
         }
-        return segments.stream().map(FeedEntry::describe).reduce((a, b) -> a + " | " + b).orElse(text);
+        return Piece.join(segments.stream().map(FeedEntry::piece).toList(), text);
     }
 
-    /** The font is usually the only thing saying which number is which, so it rides along. */
-    private static String describe(Segment segment) {
-        if (segment.font() == null) {
-            return segment.text();
-        }
-        int colon = segment.font().indexOf(':');
-        return "[%s] %s".formatted(segment.font().substring(colon + 1), segment.text());
+    private static Piece piece(Segment segment) {
+        return new Piece(segment.text(), segment.font(), segment.color());
     }
 }

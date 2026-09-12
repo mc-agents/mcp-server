@@ -52,6 +52,39 @@ class EventFeedTest {
         assertEquals("[hud/bars_text] 20/20 | [hud/money_text] 0", line.rendered());
     }
 
+    /**
+     * A separator belongs between the labels of a HUD, not between the words of a sentence. A chat
+     * line the server merely coloured came back as "Hello  | world |  and welcome" -- three pieces
+     * the player saw as one line -- and an agent checking what a message said would have gone
+     * looking for text that is not on the screen.
+     */
+    @Test
+    void aLineStyledOnlyByColourReadsAsTheOneLineItIs() throws Exception {
+        JsonNode component = JsonMapper.builder().build().readTree("""
+                {"text": "", "extra": [
+                  {"text": "Hello ", "color": "red"},
+                  {"text": "world", "color": "blue"},
+                  {"text": " and welcome"}]}""");
+        long now = System.currentTimeMillis();
+
+        FeedEntry line = new FeedEntry(1, "chat", "wrong", List.of(), component, now, now, 1);
+
+        assertEquals("Hello world and welcome", line.rendered());
+    }
+
+    /** The same, for a bot that sent pieces instead of a component. */
+    @Test
+    void segmentsWithNoFontBetweenThemReadAsOneLineToo() {
+        long now = System.currentTimeMillis();
+        List<FeedEntry.Segment> segments = List.of(
+                new FeedEntry.Segment("Hello ", null, "red"),
+                new FeedEntry.Segment("world", null, "blue"));
+
+        FeedEntry line = new FeedEntry(1, "chat", "wrong", segments, null, now, now, 1);
+
+        assertEquals("Hello world", line.rendered());
+    }
+
     @Test
     void theNewestLinesComeBackWithinTheRequestedCount() {
         for (int i = 0; i < 5; i++) {
