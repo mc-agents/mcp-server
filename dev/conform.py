@@ -333,8 +333,14 @@ def main(port):
                              "\n       " + complaint if complaint else ""))
         failed += 1 if complaint else 0
 
-    link.send({"t": "shutdown", "reason": "conformance run finished", "graceMs": 1000})
     print("\n%d check(s) failed" % failed)
+
+    # Asking it to stop is a courtesy, and a bot that faulted on the unreadable frame and closed
+    # the link has already stopped. Letting that throw here reported a crash for a clean run.
+    try:
+        link.send({"t": "shutdown", "reason": "conformance run finished", "graceMs": 1000})
+    except OSError:
+        pass
 
     return 1 if failed else 0
 
