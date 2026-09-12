@@ -19,6 +19,35 @@ python3 dev/bot.py 18765 alice mineflayer
 Pass `fabric` as the third argument to see the kind checks from the other side: `screenshot` and
 `press-dialog-button` start working and nothing else changes.
 
+## `fixture.sh` — put something in the world to read
+
+```
+./dev/fixture.sh <paper container>          install and load
+./dev/fixture.sh <paper container> hud      send an action bar, a title, a sound, a particle
+./dev/fixture.sh <paper container> dialog   open the dialog
+```
+
+An empty flat world makes every reading tool answer "nothing there", and two bots agree perfectly
+about a world neither can see. `dev/fixture` is a datapack that puts a scoreboard, a boss bar, a
+two-sided sign, a hologram, a named cow, a chest with custom names and lore, a furnace and a patch
+of diamond blocks at fixed coordinates. `compare.py` is aimed at those coordinates.
+
+The action bar it sends is in `minecraft:illageralt` with the label and the numbers as separate
+pieces, which is the case a plain-text reader gets wrong.
+
+## `compare.py` — ask both kinds of bot the same questions
+
+```
+MCP_AUTH_TOKEN=... python3 dev/compare.py alice bravo
+```
+
+Both must already be in the same world. A position, a distance, a world tick and a tool only one
+kind has written differ for reasons, and are listed. Anything else is a finding, and so is a
+rendered `null`: that means a bot did not send a field under the name the catalogue uses.
+
+Run it against two bots of the same kind first. That should produce no findings at all, and it is
+what says the suite itself is right before it is pointed at two kinds.
+
 ## `sweep.py` — call all 64 tools once
 
 ```
