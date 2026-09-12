@@ -1,0 +1,9 @@
+{
+  "tool": "drop-held-item",
+  "note": "the slot named was already empty",
+  "data": {
+    "slot": 9,
+    "dropped": null
+  },
+  "text": "Slot 9 was empty, so there was nothing to drop."
+}

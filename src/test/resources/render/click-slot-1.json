@@ -1,0 +1,13 @@
+{
+  "tool": "click-slot",
+  "note": "a left click picked the stack up",
+  "data": {
+    "slot": 0,
+    "button": "left",
+    "shift": false,
+    "before": {"name": "diamond_sword", "count": 1, "label": "Excalibur", "lore": ["A sword a server named"]},
+    "after": null,
+    "cursor": {"name": "diamond_sword", "count": 1, "label": "Excalibur", "lore": ["A sword a server named"]}
+  },
+  "text": "Left-clicked slot 0.\n  slot 0: Excalibur [diamond_sword] x1 -> empty\n  cursor: Excalibur [diamond_sword] x1"
+}

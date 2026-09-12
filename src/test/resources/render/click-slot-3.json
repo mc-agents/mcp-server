@@ -1,0 +1,13 @@
+{
+  "tool": "click-slot",
+  "note": "a plugin cancelled the click, which is the case a sentence naming only the slot could not tell from one that worked",
+  "data": {
+    "slot": 26,
+    "button": "right",
+    "shift": false,
+    "before": {"name": "emerald", "count": 3, "label": null, "lore": []},
+    "after": {"name": "emerald", "count": 3, "label": null, "lore": []},
+    "cursor": null
+  },
+  "text": "Right-clicked slot 26.\n  slot 26: emerald x3 -> emerald x3\n  cursor: empty"
+}

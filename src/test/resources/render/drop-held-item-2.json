@@ -1,0 +1,9 @@
+{
+  "tool": "drop-held-item",
+  "note": "a slot was named",
+  "data": {
+    "slot": 4,
+    "dropped": {"name": "cooked_beef", "count": 12, "label": null, "lore": []}
+  },
+  "text": "Dropped cooked_beef x12 from slot 4."
+}

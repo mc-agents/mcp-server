@@ -1,0 +1,9 @@
+{
+  "tool": "drop-held-item",
+  "note": "nothing to drop, which is a state and not a refusal",
+  "data": {
+    "slot": null,
+    "dropped": null
+  },
+  "text": "The cursor was empty, so there was nothing to drop."
+}

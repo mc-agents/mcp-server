@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "2.4.0",
+  "catalogVersion": "2.5.0",
   "protocol": 1,
   "tools": [
     {
@@ -3537,7 +3537,7 @@
       ],
       "exclusive": true,
       "untrusted": false,
-      "structured": false,
+      "structured": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -3600,7 +3600,135 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:9cde0759c81827ad3102a860df9e2cae1fa5b7debc27cef6f1a83d1b3e7a37de"
+      "wireSchemaHash": "sha256:9cde0759c81827ad3102a860df9e2cae1fa5b7debc27cef6f1a83d1b3e7a37de",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "type": "integer"
+          },
+          "button": {
+            "type": "string",
+            "enum": [
+              "left",
+              "right"
+            ]
+          },
+          "shift": {
+            "type": "boolean"
+          },
+          "before": {
+            "description": "What the slot held before the click, null when it was empty",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              },
+              "label": {
+                "description": "The custom name the server gave it, if any",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lore": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "count",
+              "label",
+              "lore",
+              "name"
+            ]
+          },
+          "after": {
+            "description": "What the slot holds now, null when the click emptied it",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              },
+              "label": {
+                "description": "The custom name the server gave it, if any",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lore": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "count",
+              "label",
+              "lore",
+              "name"
+            ]
+          },
+          "cursor": {
+            "description": "What the cursor holds after the click, null when it holds nothing",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              },
+              "label": {
+                "description": "The custom name the server gave it, if any",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lore": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "count",
+              "label",
+              "lore",
+              "name"
+            ]
+          }
+        },
+        "required": [
+          "after",
+          "before",
+          "button",
+          "cursor",
+          "shift",
+          "slot"
+        ]
+      }
     },
     {
       "name": "drop-held-item",
@@ -3613,7 +3741,7 @@
       ],
       "exclusive": true,
       "untrusted": false,
-      "structured": false,
+      "structured": true,
       "defaultDeadlineMs": 5000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -3649,7 +3777,57 @@
           "slot"
         ]
       },
-      "wireSchemaHash": "sha256:75939f2efaf6239b49c458120d06cea9f954bfeecb0716a73ef98feb7f1c4c4f"
+      "wireSchemaHash": "sha256:75939f2efaf6239b49c458120d06cea9f954bfeecb0716a73ef98feb7f1c4c4f",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "description": "The slot that was emptied, null when the cursor was",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "dropped": {
+            "description": "What went on the ground, null when there was nothing to drop",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              },
+              "label": {
+                "description": "The custom name the server gave it, if any",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lore": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "count",
+              "label",
+              "lore",
+              "name"
+            ]
+          }
+        },
+        "required": [
+          "dropped",
+          "slot"
+        ]
+      }
     },
     {
       "name": "open-container",
@@ -4587,5 +4765,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:f976e0f0ef2c2bc9795238617f34426b779dae55b78da8b939a60d150ff88034"
+  "catalogHash": "sha256:d35f76d72d26380ca71b15062572232c456ba1f5f803c2003c377215ca4d60d9"
 }

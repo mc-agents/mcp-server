@@ -1,0 +1,9 @@
+{
+  "tool": "drop-held-item",
+  "note": "the cursor held something",
+  "data": {
+    "slot": null,
+    "dropped": {"name": "diamond_sword", "count": 1, "label": "Excalibur", "lore": []}
+  },
+  "text": "Dropped Excalibur [diamond_sword] x1 from the cursor."
+}
