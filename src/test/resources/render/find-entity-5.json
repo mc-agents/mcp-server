@@ -1,0 +1,34 @@
+{
+  "tool": "find-entity",
+  "note": "an NPC whose nameplate carries a rank glyph, which flattening to a string loses",
+  "data": {
+    "query": "villager",
+    "maxDistance": 16,
+    "entities": [
+      {
+        "label": "Shopkeeper",
+        "type": "villager",
+        "position": {
+          "x": 5,
+          "y": -60,
+          "z": 5
+        },
+        "distance": 4.2,
+        "labelComponent": {
+          "text": "",
+          "extra": [
+            {
+              "text": "",
+              "font": "hyperfarm:nametag/icons"
+            },
+            {
+              "text": "Shopkeeper",
+              "font": "hyperfarm:nametag/label"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "text": "Found 1 entity/entities:\n- [nametag/label] Shopkeeper (villager) at (5, -60, 5), 4.2 blocks away"
+}

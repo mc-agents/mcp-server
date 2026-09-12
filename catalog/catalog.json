@@ -528,10 +528,15 @@
                   "items": {
                     "type": "string"
                   }
+                },
+                "lineComponents": {
+                  "description": "The components the lines were written as, in the same order. Read by position, so a shorter list simply leaves the rest read the way they already were.",
+                  "type": "array"
                 }
               },
               "required": [
                 "face",
+                "lineComponents",
                 "lines"
               ],
               "additionalProperties": false
@@ -1304,11 +1309,21 @@
                 },
                 "distance": {
                   "type": "number"
+                },
+                "labelComponent": {
+                  "description": "The component the name the server gave it was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.",
+                  "type": [
+                    "object",
+                    "array",
+                    "string",
+                    "null"
+                  ]
                 }
               },
               "required": [
                 "distance",
                 "label",
+                "labelComponent",
                 "position",
                 "type"
               ],
@@ -1821,9 +1836,27 @@
                 },
                 "self": {
                   "type": "boolean"
+                },
+                "displayName": {
+                  "description": "What the tab list draws for this player, which is where a server puts a rank. Null when it set none and the username is what shows.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "displayNameComponent": {
+                  "description": "The component that name was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.",
+                  "type": [
+                    "object",
+                    "array",
+                    "string",
+                    "null"
+                  ]
                 }
               },
               "required": [
+                "displayName",
+                "displayNameComponent",
                 "gameMode",
                 "name",
                 "ping",
@@ -1920,19 +1953,39 @@
                     },
                     "score": {
                       "type": "integer"
+                    },
+                    "nameComponent": {
+                      "description": "The component the entry's name was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.",
+                      "type": [
+                        "object",
+                        "array",
+                        "string",
+                        "null"
+                      ]
                     }
                   },
                   "required": [
                     "name",
+                    "nameComponent",
                     "score"
                   ],
                   "additionalProperties": false
                 }
+              },
+              "titleComponent": {
+                "description": "The component the title was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
               }
             },
             "required": [
               "entries",
-              "title"
+              "title",
+              "titleComponent"
             ],
             "additionalProperties": false
           }
@@ -5005,5 +5058,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:3ab3fe0177612dca09929fca0e8ae0413bd27cdae7750ec5870fddc65482b7ed"
+  "catalogHash": "sha256:afce6ab365fbeff4dd4d63a10eadf23e9373af1444700375801b73ef4515d3ac"
 }

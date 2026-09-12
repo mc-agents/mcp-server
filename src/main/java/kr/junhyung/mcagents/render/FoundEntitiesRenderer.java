@@ -1,10 +1,12 @@
 package kr.junhyung.mcagents.render;
 
 import java.util.List;
+import tools.jackson.databind.JsonNode;
 
 public final class FoundEntitiesRenderer implements Renderer<FoundEntitiesRenderer.View> {
 
-    public record Entity(String label, String type, Point position, double distance) {}
+    public record Entity(String label, String type, Point position, double distance,
+        JsonNode labelComponent) {}
 
     public record View(String query, double maxDistance, List<Entity> entities) {}
 
@@ -14,7 +16,8 @@ public final class FoundEntitiesRenderer implements Renderer<FoundEntitiesRender
      * exists for.
      */
     private static String line(Entity one) {
-        String named = one.label().equals(one.type()) ? one.label() : one.label() + " (" + one.type() + ")";
+        String read = Flatten.read(one.label(), one.labelComponent());
+        String named = read.equals(one.type()) ? read : read + " (" + one.type() + ")";
 
         return "- " + named + " at " + one.position() + ", " + Text.oneDecimal(one.distance()) + " blocks away";
     }

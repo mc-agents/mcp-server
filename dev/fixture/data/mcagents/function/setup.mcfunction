@@ -8,11 +8,17 @@
 
 # --- scoreboard: read-scoreboard ---
 scoreboard objectives remove mcagents
-scoreboard objectives add mcagents dummy {"text":"Probe Stats","color":"gold","bold":true}
+# The title is stacked pieces in the pack's own font, which is how a real server draws a sidebar:
+# an icon glyph and a label, each in its own font. Flattened to a string the icon is gone and the
+# words touch, so this is the case a plain-text reader loses.
+scoreboard objectives add mcagents dummy {"text":"","extra":[{"text":"","font":"hyperfarm:sidebar/icons"},{"text":"Probe Stats","font":"hyperfarm:sidebar/title"}]}
 scoreboard objectives setdisplay sidebar mcagents
 scoreboard players set Coins mcagents 1200
 scoreboard players set Level mcagents 42
 scoreboard players set Deaths mcagents 3
+# An entry with a name of its own. The owner is the key a server scores against -- a uuid on the
+# ones that use one -- and the display is what the sidebar draws.
+scoreboard players display name Level mcagents {"text":"Level","color":"green","font":"hyperfarm:sidebar/label"}
 
 # --- boss bar: read-boss-bars ---
 bossbar remove minecraft:mcagents
@@ -31,7 +37,9 @@ setblock 3 -60 0 air
 # messages holds components, not JSON strings. Quoting them makes the sign literally read
 # {"text":"Welcome"}, which is what it did -- and a bot that parses any string looking like JSON
 # hid that while the client drew the braces.
-setblock 3 -60 0 oak_sign[rotation=8]{front_text:{messages:[{text:"Welcome",color:"yellow"},{text:"to the shop"},{text:""},{text:"line four"}]},back_text:{messages:[{text:"back side"},{text:""},{text:""},{text:"four again"}]}}
+# The price line is drawn in the pack's own font, with an icon glyph in front of it, the same as
+# the sidebar above: a sign is where a server writes into the world and it writes in its own font.
+setblock 3 -60 0 oak_sign[rotation=8]{front_text:{messages:[{text:"Welcome",color:"yellow"},{text:"",extra:[{text:"",font:"hyperfarm:gui/icons"},{text:"12 coins",font:"hyperfarm:gui/price"}]},{text:""},{text:"line four"}]},back_text:{messages:[{text:"back side"},{text:""},{text:""},{text:"four again"}]}}
 
 # --- a hologram: read-displays ---
 # text and CustomName hold components, not JSON strings, the same as the sign's messages above. A
@@ -43,7 +51,9 @@ summon text_display 3 -58 3 {Tags:["mcagents"],billboard:"center",text:{text:"Ho
 
 # --- an entity to find and interact with: find-entity, attack-entity, interact-entity ---
 kill @e[type=cow,tag=mcagents]
-summon cow 5 -60 5 {Tags:["mcagents"],CustomName:{text:"Probe Cow"},CustomNameVisible:1b,NoAI:1b,Silent:1b}
+# The nameplate carries a rank glyph in front of the name, which is what an NPC looks like on a
+# server that draws with a resource pack.
+summon cow 5 -60 5 {Tags:["mcagents"],CustomName:{text:"",extra:[{text:"",font:"hyperfarm:nametag/icons"},{text:"Probe Cow",font:"hyperfarm:nametag/label"}]},CustomNameVisible:1b,NoAI:1b,Silent:1b}
 
 # --- a container with custom names and lore: open-container, read-window ---
 setblock 1 -60 3 air
@@ -51,7 +61,10 @@ setblock 1 -60 3 air
 # land in slot 0 and only the last survives -- a chest that looks filled and holds one thing.
 # custom_name and lore hold components too. Quoting them put the braces in the item's name, and a
 # reader lenient enough to parse any string that looks like JSON hid it.
-setblock 1 -60 3 chest{Items:[{Slot:0b,id:"minecraft:diamond_sword",count:1,components:{"minecraft:custom_name":{text:"Excalibur",color:"aqua",italic:false},"minecraft:lore":[{text:"A sword a server named",color:"gray"},{text:"Second line of lore",color:"dark_gray"}]}},{Slot:4b,id:"minecraft:cooked_beef",count:12},{Slot:26b,id:"minecraft:emerald",count:3}]}
+# The paper in slot 8 is a menu button as a plugin writes one: the name is an icon glyph and a
+# label in the pack's own fonts, and the lore has a blank line for spacing. Both are lost by a
+# reader that flattens the name to a string, and the blank line is where a menu's spacing lives.
+setblock 1 -60 3 chest{Items:[{Slot:0b,id:"minecraft:diamond_sword",count:1,components:{"minecraft:custom_name":{text:"Excalibur",color:"aqua",italic:false},"minecraft:lore":[{text:"A sword a server named",color:"gray"},{text:"Second line of lore",color:"dark_gray"}]}},{Slot:4b,id:"minecraft:cooked_beef",count:12},{Slot:8b,id:"minecraft:paper",count:1,components:{"minecraft:custom_name":{text:"",extra:[{text:"",font:"hyperfarm:gui/icons"},{text:"Mana Potion",font:"hyperfarm:gui/label"}]},"minecraft:lore":[{text:"Restores ",extra:[{text:"50",color:"aqua"},{text:" mana"}]},{text:""},{text:"Right-click to drink",color:"dark_gray"}]}},{Slot:26b,id:"minecraft:emerald",count:3}]}
 
 # --- a furnace with fuel and input: smelt-item ---
 setblock 1 -60 5 air

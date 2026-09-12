@@ -322,6 +322,12 @@ those names in the resource pack's own glyphs, so an item label is a HUD in the 
 bar is. `read-window`, `open-container`, `wait-for-window`, `click-slot` and `drop-held-item` all
 send them, from the one place in each bot that describes a stack.
 
+The same goes for everything else a server writes and a bot used to flatten on its own: a sign
+face sends `lineComponents`, an entity sends `labelComponent` for its nameplate, a scoreboard
+sends `titleComponent` and a `nameComponent` per entry, and the tab list sends `displayName` with
+its component beside the username. The username stays because it is the identity every other tool
+takes; the drawn name is where a server puts a rank.
+
 **A blank lore line is a line.** It is where a menu puts its spacing, and the line below it sits
 where the server put it -- the same reason a blank sign face line is reported rather than dropped.
 One kind of bot used to drop them and the other kept them, so an item with a spacer read as two

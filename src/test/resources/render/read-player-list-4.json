@@ -1,0 +1,29 @@
+{
+  "tool": "read-player-list",
+  "note": "a tab list where the rank is a glyph in front of the name",
+  "data": {
+    "players": [
+      {
+        "name": "alice",
+        "gameMode": "creative",
+        "ping": 12,
+        "self": false,
+        "displayName": "VIP alice",
+        "displayNameComponent": {
+          "text": "",
+          "extra": [
+            {
+              "text": "",
+              "font": "hyperfarm:tab/ranks"
+            },
+            {
+              "text": "VIP alice",
+              "font": "hyperfarm:tab/name"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "text": "1 players online\n  [tab/name] VIP alice (alice): creative, 12ms"
+}

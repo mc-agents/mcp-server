@@ -1,0 +1,47 @@
+{
+  "tool": "read-scoreboard",
+  "note": "a sidebar drawn with the pack's own font, which is the case a plain-text reader loses",
+  "data": {
+    "slot": "sidebar",
+    "board": {
+      "title": "Probe Stats",
+      "titleComponent": {
+        "text": "",
+        "extra": [
+          {
+            "text": "",
+            "font": "hyperfarm:sidebar/icons"
+          },
+          {
+            "text": "Probe Stats",
+            "font": "hyperfarm:sidebar/title"
+          }
+        ]
+      },
+      "entries": [
+        {
+          "name": "Coins",
+          "score": 1200,
+          "nameComponent": {
+            "text": "Coins",
+            "color": "gold"
+          }
+        },
+        {
+          "name": "Level",
+          "score": 42,
+          "nameComponent": {
+            "text": "",
+            "extra": [
+              {
+                "text": "Level",
+                "font": "hyperfarm:sidebar/label"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "text": "scoreboard \"[sidebar/title] Probe Stats\" (sidebar, 2 entries)\n  Coins: 1200\n  [sidebar/label] Level: 42"
+}

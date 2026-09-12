@@ -1,0 +1,16 @@
+{
+  "tool": "read-block-entity",
+  "note": "a block entity a Minecraft client holds decoded, with no tag of its own to write out",
+  "data": {
+    "block": "chest",
+    "position": {
+      "x": 1,
+      "y": -60,
+      "z": 3
+    },
+    "present": true,
+    "signFaces": [],
+    "raw": null
+  },
+  "text": "chest at (1, -60, 3) carries a block entity this bot cannot read."
+}
