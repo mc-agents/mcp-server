@@ -41,13 +41,19 @@ SAMPLES = {
     "type": "minecraft:cow", "entity": "Probe Cow",
     "inputItem": "minecraft:iron_ore", "fuelItem": "minecraft:coal", "timeoutMs": 1500,
     "collectMs": 300, "durationMs": 200, "count": 3, "host": "127.0.0.1",
+    # Nullable and defaulted to null, so this asks set-stance to report the stance without
+    # changing it, which both kinds have to word the same way.
+    "sneak": None, "sprint": None,
 }
 
-# Tools whose answer is about this bot rather than about the world, or which move it.
+# Tools that leave the world different for the bot asked second, so the two answers are about two
+# worlds. Turning, jumping and crouching are not among them: they change nothing a compared tool
+# reports, and their sentences are the bot's own, which is exactly what has to be checked. A tool
+# excluded here is a tool whose wording nothing holds to the other kind's.
 NOT_COMPARABLE = {
     "get-bot-status", "detect-gamemode", "list-bots",  # name the bot, so they cannot match
     "join-server", "leave-server", "restart-bot", "switch-server",  # move the bot out from under
-    "move-to-position", "move-in-direction", "fly-to", "jump", "look-at", "set-stance",
+    "move-to-position", "fly-to", "move-in-direction",  # leave the bot somewhere else
     "dig-block", "place-block", "activate-block", "give-item", "equip-item", "drop-held-item",
     "click-slot", "craft-item", "smelt-item", "attack-entity", "interact-entity", "use-held-item",
     "send-chat", "run-command", "fish",  # change the world, so the second bot sees a different one
