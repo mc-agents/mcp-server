@@ -41,9 +41,14 @@ pieces, which is the case a plain-text reader gets wrong.
 MCP_AUTH_TOKEN=... python3 dev/compare.py alice bravo
 ```
 
-Both must already be in the same world. A position, a distance, a world tick and a tool only one
-kind has written differ for reasons, and are listed. Anything else is a finding, and so is a
-rendered `null`: that means a bot did not send a field under the name the catalogue uses.
+Both must already be in the same world. A distance and a world tick are measurements, so they come
+out of both answers before the comparison; three tools whose whole answer is about the bot that
+answered are excused by name. Anything else is a finding, and so is a rendered `null`: that means a
+bot did not send a field under the name the catalogue uses.
+
+Excusing a sentence rather than normalising a measurement is how the suite goes blind. A blanket
+"blocks away" allowance covered every line that mentioned a distance, and hid the two kinds
+disagreeing about what `find-entity` calls an entity's type for as long as it existed.
 
 Run it against two bots of the same kind first. That should produce no findings at all, and it is
 what says the suite itself is right before it is pointed at two kinds.

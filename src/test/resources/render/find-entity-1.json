@@ -7,7 +7,7 @@
     "entities": [
       {
         "label": "text_display",
-        "type": "other",
+        "type": "text_display",
         "position": {
           "x": -4,
           "y": -58,
@@ -17,5 +17,5 @@
       }
     ]
   },
-  "text": "Found 1 entity/entities:\n- text_display (other) at (-4, -58, 7), 2.0 blocks away"
+  "text": "Found 1 entity/entities:\n- text_display at (-4, -58, 7), 2.0 blocks away"
 }

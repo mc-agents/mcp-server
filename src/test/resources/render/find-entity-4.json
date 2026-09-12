@@ -1,0 +1,21 @@
+{
+  "tool": "find-entity",
+  "note": "a custom name hides what a thing is, which is what the id in brackets is for",
+  "data": {
+    "query": "cow",
+    "maxDistance": 8,
+    "entities": [
+      {
+        "label": "Probe Cow",
+        "type": "cow",
+        "position": {
+          "x": 5,
+          "y": -60,
+          "z": 5
+        },
+        "distance": 3.24
+      }
+    ]
+  },
+  "text": "Found 1 entity/entities:\n- Probe Cow (cow) at (5, -60, 5), 3.2 blocks away"
+}

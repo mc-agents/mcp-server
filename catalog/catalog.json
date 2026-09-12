@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "2.5.0",
+  "catalogVersion": "2.6.0",
   "protocol": 1,
   "tools": [
     {
@@ -1249,10 +1249,11 @@
               "type": "object",
               "properties": {
                 "label": {
-                  "description": "Username, else entity name, else its type",
+                  "description": "What a reader sees: the username, else the name the server gave it, else its id",
                   "type": "string"
                 },
                 "type": {
+                  "description": "The entity's registry id without the namespace, for example cow or armor_stand. A custom name hides what a thing is, and this is what says it. Feeding it back as the filter finds the same kind again.",
                   "type": "string"
                 },
                 "position": {
@@ -4765,5 +4766,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:d35f76d72d26380ca71b15062572232c456ba1f5f803c2003c377215ca4d60d9"
+  "catalogHash": "sha256:94d339e73197c9180e01fa0c9c2e8ca4de50eaa6f98fe1b079511198e5a7521c"
 }

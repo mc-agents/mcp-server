@@ -10,8 +10,10 @@ is a renderer that only one kind reaches, a DTO field one kind leaves out, and a
 "not supported" on a bot the catalogue says supports it. What it cannot find is two bots that are
 wrong in the same way; for that there is a real server on the other end.
 
-Differences are expected in a few places and listed rather than hidden: a position is where that
-bot is standing, an elapsed time is a measurement. Anything else is a finding.
+A measurement -- a distance, a timestamp, the world tick -- is taken out of both answers before
+they are compared, because it is a fact about when the call happened and not about the world. Only
+three tools are excused wholesale, and they are the ones whose whole answer is about the bot that
+answered. Anything else is a finding.
 """
 
 import json
@@ -56,22 +58,35 @@ NOT_COMPARABLE = {
 NOT_COMPARABLE |= {name for name in (tool["name"] for tool in CATALOG["tools"])
                    if name.startswith("wait-")}
 
-# A feed entry is stamped with when it arrived, and two bots never receive the same broadcast at
-# the same millisecond. What is being compared is what they made of it, so the stamp comes out
-# before the comparison rather than being excused after one.
-TIMESTAMP = re.compile(r"\[\d{4}-\d{2}-\d{2}T[\d:.]+Z\]")
+# A measurement is a fact about when or where the call happened rather than about the world, and
+# two bots never take the same one. It comes out before the comparison rather than being excused
+# after: an excuse covers the whole answer, and an answer says more than the measurement in it. A
+# blanket "blocks away" excuse hid the two kinds disagreeing about what find-entity calls an
+# entity's type, on the same line, for as long as it existed.
+NOISE = [
+    (re.compile(r"\[\d{4}-\d{2}-\d{2}T[\d:.]+Z\]"), "[when]"),
+    (re.compile(r"-?\d+(?:\.\d+)? blocks away"), "<distance> blocks away"),
+    (re.compile(r"tick \d+ of the day"), "tick <n> of the day"),
+]
 
 
 def settled(text):
-    return TIMESTAMP.sub("[when]", text)
+    for pattern, instead in NOISE:
+        text = pattern.sub(instead, text)
+    return text
 
 
-# Sentences that legitimately differ, and why. Anything not matched here is a finding.
+# Tools whose whole answer is about the bot that answered, and so cannot match. Naming the tool
+# rather than matching a sentence keeps the allowance from spreading to answers that merely mention
+# a coordinate: the ones the caller asked about are the same on both bots and have to match.
+ABOUT_THE_BOT = {
+    "get-position": "where that bot is standing",
+    "get-player-state": "where that bot is standing",
+    "read-player-list": "the list marks the caller",
+}
+
+# Refusals that can land on any tool, and are the two kinds of bot agreeing about a gap.
 EXPECTED = [
-    (re.compile(r"^Position: |^position: |\nposition: "), "where that bot is standing"),
-    (re.compile(r"\(this bot\)"), "the player list marks the caller"),
-    (re.compile(r"blocks away|within \d+ blocks"), "measured from where that bot is standing"),
-    (re.compile(r"tick \d+ of the day"), "the world ticked between the two calls"),
     (re.compile(r"is not supported by bot"), "both refused it, naming the bot that was asked"),
     (re.compile(r"does not implement"), "one kind has not written it yet, which is allowed"),
 ]
@@ -120,9 +135,11 @@ def call(headers, tool, args):
 BROKEN = re.compile(r"\bnull\b|\bundefined\b|\bNaN\b")
 
 
-def explained(left, right):
+def explained(tool, left, right):
     if BROKEN.search(left) or BROKEN.search(right):
         return None
+    if tool in ABOUT_THE_BOT:
+        return ABOUT_THE_BOT[tool]
     for pattern, why in EXPECTED:
         if pattern.search(left) or pattern.search(right):
             return why
@@ -157,7 +174,7 @@ def main(first, second):
             same += 1
             continue
 
-        why = explained(left[1], right[1])
+        why = explained(name, left[1], right[1])
         if why is not None:
             expected.append((name, why))
             continue
