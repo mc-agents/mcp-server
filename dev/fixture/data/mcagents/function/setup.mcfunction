@@ -34,18 +34,24 @@ setblock 3 -60 0 air
 setblock 3 -60 0 oak_sign[rotation=8]{front_text:{messages:[{text:"Welcome",color:"yellow"},{text:"to the shop"},{text:""},{text:"line four"}]},back_text:{messages:[{text:"back side"},{text:""},{text:""},{text:"four again"}]}}
 
 # --- a hologram: read-displays ---
+# text and CustomName hold components, not JSON strings, the same as the sign's messages above. A
+# quoted one makes the hologram literally read {"text":"Hologram line"}, and mineflayer's lenient
+# parsing hid that while making the fabric bot -- which reads the component the client was given --
+# look like the one at fault.
 kill @e[type=text_display,tag=mcagents]
-summon text_display 3 -58 3 {Tags:["mcagents"],billboard:"center",text:'{"text":"Hologram line","color":"aqua"}'}
+summon text_display 3 -58 3 {Tags:["mcagents"],billboard:"center",text:{text:"Hologram line",color:"aqua"}}
 
 # --- an entity to find and interact with: find-entity, attack-entity, interact-entity ---
 kill @e[type=cow,tag=mcagents]
-summon cow 5 -60 5 {Tags:["mcagents"],CustomName:'{"text":"Probe Cow"}',CustomNameVisible:1b,NoAI:1b,Silent:1b}
+summon cow 5 -60 5 {Tags:["mcagents"],CustomName:{text:"Probe Cow"},CustomNameVisible:1b,NoAI:1b,Silent:1b}
 
 # --- a container with custom names and lore: open-container, read-window ---
 setblock 1 -60 3 air
 # Slot is a byte and capitalised. Lower-case "slot" is accepted and ignored, so all three items
 # land in slot 0 and only the last survives -- a chest that looks filled and holds one thing.
-setblock 1 -60 3 chest{Items:[{Slot:0b,id:"minecraft:diamond_sword",count:1,components:{"minecraft:custom_name":'{"text":"Excalibur","color":"aqua","italic":false}',"minecraft:lore":['{"text":"A sword a server named","color":"gray"}','{"text":"Second line of lore","color":"dark_gray"}']}},{Slot:4b,id:"minecraft:cooked_beef",count:12},{Slot:26b,id:"minecraft:emerald",count:3}]}
+# custom_name and lore hold components too. Quoting them put the braces in the item's name, and a
+# reader lenient enough to parse any string that looks like JSON hid it.
+setblock 1 -60 3 chest{Items:[{Slot:0b,id:"minecraft:diamond_sword",count:1,components:{"minecraft:custom_name":{text:"Excalibur",color:"aqua",italic:false},"minecraft:lore":[{text:"A sword a server named",color:"gray"},{text:"Second line of lore",color:"dark_gray"}]}},{Slot:4b,id:"minecraft:cooked_beef",count:12},{Slot:26b,id:"minecraft:emerald",count:3}]}
 
 # --- a furnace with fuel and input: smelt-item ---
 setblock 1 -60 5 air
@@ -53,5 +59,14 @@ setblock 1 -60 5 furnace[facing=north]
 
 # --- the blocks find-blocks is asked for, in a known place ---
 fill 7 -60 -2 9 -60 0 minecraft:diamond_block
+
+# --- the same inventory for everyone: list-inventory and find-item ---
+# Without this the comparison is about what each bot has happened to pick up. Dropped items go too,
+# or a run that tested drop-held-item leaves the next one reading a different floor.
+clear @a
+give @a minecraft:diamond 3
+give @a minecraft:oak_planks 24
+give @a minecraft:bow 1
+kill @e[type=item]
 
 say mc-agents fixture is in place

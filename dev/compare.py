@@ -46,6 +46,14 @@ SAMPLES = {
     "sneak": None, "sprint": None,
 }
 
+# Where one sample coordinate is not the right one. The shared x/y/z points at the sign, because
+# most of the block tools are asked about it; a container tool asked about a sign only ever gets a
+# refusal, and refusals matching is a weaker thing to know than contents matching.
+AIMED_AT = {
+    "open-container": {"x": 1, "y": -60, "z": 3},
+    "wait-for-window": {"titlePattern": "Chest"},
+}
+
 # Tools that leave the world different for the bot asked second, so the two answers are about two
 # worlds. Turning, jumping and crouching are not among them: they change nothing a compared tool
 # reports, and their sentences are the bot's own, which is exactly what has to be checked. A tool
@@ -72,7 +80,11 @@ NOT_COMPARABLE |= {name for name in (tool["name"] for tool in CATALOG["tools"])
 NOISE = [
     (re.compile(r"\[\d{4}-\d{2}-\d{2}T[\d:.]+Z\]"), "[when]"),
     (re.compile(r"-?\d+(?:\.\d+)? blocks away"), "<distance> blocks away"),
-    (re.compile(r"tick \d+ of the day"), "tick <n> of the day"),
+    (re.compile(r"time: \d+:\d+ \(tick \d+ of the day"), "time: <clock> (tick <n> of the day"),
+    # The catalogue says doDaylightCycle is null when the bot cannot tell, and a Minecraft client
+    # cannot: it is told the time, never the game rule. So the two kinds are meant to differ here,
+    # and this line is the whole of it.
+    (re.compile(r"daylight cycle: .*"), "daylight cycle: <state>"),
 ]
 
 
@@ -89,6 +101,11 @@ ABOUT_THE_BOT = {
     "get-position": "where that bot is standing",
     "get-player-state": "where that bot is standing",
     "read-player-list": "the list marks the caller",
+    # A sound or particle is sent to a client because of where that client is and what moved near
+    # it, so the newest one is a fact about that bot: two bots standing together still hear each
+    # other's footsteps in a different order. What they made of a feed entry is covered by the four
+    # feeds that are compared, and those are the ones a server writes deliberately.
+    "read-effects": "each bot heard something different last",
 }
 
 # Refusals that can land on any tool, and are the two kinds of bot agreeing about a gap.
@@ -162,12 +179,18 @@ def main(first, second):
         if name in NOT_COMPARABLE or tool["route"] == "orchestrate":
             continue
 
+        properties = tool["inputSchema"].get("properties") or {}
         required = tool["inputSchema"].get("required") or []
         if any(field not in SAMPLES for field in required):
             print("skip %-22s no sample for %s" % (name, [f for f in required if f not in SAMPLES]))
             continue
 
-        args = {field: SAMPLES[field] for field in required}
+        # Every argument there is a sample for, not only the required ones. The samples are aimed at
+        # the fixture, so an optional filter left out is a tool pointed at the whole world: with no
+        # type, find-entity answered with the other bot standing next to it, and that difference
+        # cannot be anything but the one thing the two can never agree about.
+        args = {field: SAMPLES[field] for field in properties if field in SAMPLES and field != "bot"}
+        args.update(AIMED_AT.get(name, {}))
         # One line of a feed, not the history: the two bots joined at different times, so the
         # depth of what they have seen is a fact about when they arrived and not about the world.
         if name.startswith("read-") and "count" in (tool["inputSchema"].get("properties") or {}):
