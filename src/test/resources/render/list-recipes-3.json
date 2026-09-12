@@ -5,7 +5,8 @@
     "item": null,
     "tableInReach": false,
     "stoppedAt": null,
-    "recipes": []
+    "recipes": [],
+    "onlyWhatTheBotKnows": false
   },
   "text": "Nothing in the inventory is enough for any recipe."
 }

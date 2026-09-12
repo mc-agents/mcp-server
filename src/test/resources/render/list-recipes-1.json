@@ -52,7 +52,8 @@
         ],
         "requiresTable": false
       }
-    ]
+    ],
+    "onlyWhatTheBotKnows": false
   },
   "text": "Recipes for torch:\n- torch x4 <- charcoal x1, stick x1 [missing charcoal x1]\n- torch x4 <- coal x1, stick x1 [missing coal x1]"
 }

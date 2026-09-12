@@ -5,7 +5,8 @@
     "item": "bedrock",
     "tableInReach": false,
     "stoppedAt": null,
-    "recipes": []
+    "recipes": [],
+    "onlyWhatTheBotKnows": false
   },
   "text": "No recipe produces bedrock."
 }

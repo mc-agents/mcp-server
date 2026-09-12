@@ -20,7 +20,8 @@
         "missing": [],
         "requiresTable": true
       }
-    ]
+    ],
+    "onlyWhatTheBotKnows": false
   },
   "text": "Craftable right now (a crafting table is in reach):\n- chest x1 <- oak_planks x8 [craftable, needs a crafting table]\n(stopped at 100 entries)"
 }

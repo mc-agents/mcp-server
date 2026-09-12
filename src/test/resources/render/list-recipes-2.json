@@ -62,7 +62,8 @@
         "missing": [],
         "requiresTable": false
       }
-    ]
+    ],
+    "onlyWhatTheBotKnows": false
   },
   "text": "Craftable right now (no crafting table in reach):\n- crafting_table x1 <- oak_planks x4 [craftable]\n- oak_button x1 <- oak_planks x1 [craftable]\n- oak_pressure_plate x1 <- oak_planks x2 [craftable]\n- stick x4 <- oak_planks x2 [craftable]"
 }

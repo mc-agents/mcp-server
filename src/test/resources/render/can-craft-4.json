@@ -1,0 +1,13 @@
+{
+  "tool": "can-craft",
+  "note": "a client was never taught the recipe, which is not the same as there not being one",
+  "data": {
+    "item": "piston",
+    "craftable": false,
+    "hasRecipe": false,
+    "missing": [],
+    "needsTable": false,
+    "onlyWhatTheBotKnows": true
+  },
+  "text": "This bot has not been taught a recipe for piston. A Minecraft client only knows the recipes the server has unlocked for it, so this is not the same as there being none."
+}

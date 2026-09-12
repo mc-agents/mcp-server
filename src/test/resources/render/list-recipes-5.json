@@ -1,0 +1,19 @@
+{
+  "tool": "list-recipes",
+  "note": "a short list from a client is a short list of what it has been told",
+  "data": {
+    "item": null,
+    "tableInReach": false,
+    "stoppedAt": null,
+    "onlyWhatTheBotKnows": true,
+    "recipes": [
+      {
+        "result": {"name": "stick", "count": 4},
+        "ingredients": [{"name": "oak_planks", "count": 2}],
+        "missing": [],
+        "requiresTable": false
+      }
+    ]
+  },
+  "text": "Craftable right now (no crafting table in reach):\n- stick x4 <- oak_planks x2 [craftable]\n(only the recipes the server has taught this bot)"
+}

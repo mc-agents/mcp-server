@@ -248,7 +248,8 @@
         ],
         "requiresTable": false
       }
-    ]
+    ],
+    "onlyWhatTheBotKnows": false
   },
   "text": "Recipes for stick:\n- stick x4 <- oak_planks x2 [craftable]\n- stick x4 <- cherry_planks x2 [missing cherry_planks x2]\n- stick x4 <- bamboo_planks x2 [missing bamboo_planks x2]\n- stick x4 <- mangrove_planks x2 [missing mangrove_planks x2]\n- stick x4 <- warped_planks x2 [missing warped_planks x2]\n- stick x4 <- crimson_planks x2 [missing crimson_planks x2]\n- stick x4 <- pale_oak_planks x2 [missing pale_oak_planks x2]\n- stick x4 <- dark_oak_planks x2 [missing dark_oak_planks x2]\n- stick x4 <- acacia_planks x2 [missing acacia_planks x2]\n- stick x4 <- jungle_planks x2 [missing jungle_planks x2]\n- stick x4 <- birch_planks x2 [missing birch_planks x2]\n- stick x4 <- spruce_planks x2 [missing spruce_planks x2]\n- stick x1 <- bamboo x2 [missing bamboo x2]"
 }

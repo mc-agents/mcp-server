@@ -6,7 +6,8 @@
     "craftable": true,
     "hasRecipe": true,
     "missing": [],
-    "needsTable": false
+    "needsTable": false,
+    "onlyWhatTheBotKnows": false
   },
   "text": "Yes, stick can be crafted now."
 }

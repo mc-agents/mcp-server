@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "2.6.0",
+  "catalogVersion": "2.7.0",
   "protocol": 1,
   "tools": [
     {
@@ -714,6 +714,10 @@
           "needsTable": {
             "description": "That recipe needs a crafting table and none is in reach",
             "type": "boolean"
+          },
+          "onlyWhatTheBotKnows": {
+            "description": "True when the answer covers only the recipes the server has taught this bot. A Minecraft client is sent a recipe as it unlocks it and is never told the whole set, so a fabric bot answers about what it can place right now; a mineflayer bot reads the game's own table and answers about the game.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -721,7 +725,8 @@
           "hasRecipe",
           "item",
           "missing",
-          "needsTable"
+          "needsTable",
+          "onlyWhatTheBotKnows"
         ],
         "additionalProperties": false
       }
@@ -924,10 +929,15 @@
               ],
               "additionalProperties": false
             }
+          },
+          "onlyWhatTheBotKnows": {
+            "description": "True when the answer covers only the recipes the server has taught this bot. A Minecraft client is sent a recipe as it unlocks it and is never told the whole set, so a fabric bot answers about what it can place right now; a mineflayer bot reads the game's own table and answers about the game.",
+            "type": "boolean"
           }
         },
         "required": [
           "item",
+          "onlyWhatTheBotKnows",
           "recipes",
           "stoppedAt",
           "tableInReach"
@@ -1075,10 +1085,15 @@
               ],
               "additionalProperties": false
             }
+          },
+          "onlyWhatTheBotKnows": {
+            "description": "True when the answer covers only the recipes the server has taught this bot. A Minecraft client is sent a recipe as it unlocks it and is never told the whole set, so a fabric bot answers about what it can place right now; a mineflayer bot reads the game's own table and answers about the game.",
+            "type": "boolean"
           }
         },
         "required": [
           "item",
+          "onlyWhatTheBotKnows",
           "recipes",
           "stoppedAt",
           "tableInReach"
@@ -4766,5 +4781,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:94d339e73197c9180e01fa0c9c2e8ca4de50eaa6f98fe1b079511198e5a7521c"
+  "catalogHash": "sha256:aaa8347cb0eb3e7f33a959cf33525d7cebd2270c88b208a96a5e00f2cad1d2d8"
 }

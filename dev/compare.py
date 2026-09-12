@@ -101,6 +101,11 @@ ABOUT_THE_BOT = {
     "get-position": "where that bot is standing",
     "get-player-state": "where that bot is standing",
     "read-player-list": "the list marks the caller",
+    # A client is sent a recipe as the server unlocks it and is never told the whole set, which the
+    # catalogue says outright: these two list what the bot knows, and the two kinds know different
+    # things. can-craft is left compared on purpose -- for a recipe both have, it has to agree.
+    "get-recipe": "a client lists only the recipes it has been taught",
+    "list-recipes": "a client lists only the recipes it has been taught",
     # A sound or particle is sent to a client because of where that client is and what moved near
     # it, so the newest one is a fact about that bot: two bots standing together still hear each
     # other's footsteps in a different order. What they made of a feed entry is covered by the four

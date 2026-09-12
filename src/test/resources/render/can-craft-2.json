@@ -6,7 +6,8 @@
     "craftable": false,
     "hasRecipe": false,
     "missing": [],
-    "needsTable": false
+    "needsTable": false,
+    "onlyWhatTheBotKnows": false
   },
   "text": "No recipe produces beacon."
 }

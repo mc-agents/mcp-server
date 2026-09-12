@@ -11,7 +11,8 @@ public final class RecipeListRenderer implements Renderer<RecipeListRenderer.Vie
      * {@code item} names the one item that was asked about; without it this is the scan of everything the
      * inventory reaches, which is the only mode that can run out of room.
      */
-    public record View(String item, boolean tableInReach, Integer stoppedAt, List<Recipe> recipes) {}
+    public record View(String item, boolean tableInReach, Integer stoppedAt, List<Recipe> recipes,
+        boolean onlyWhatTheBotKnows) {}
 
     @Override
     public String render(View view) {
@@ -19,20 +20,31 @@ public final class RecipeListRenderer implements Renderer<RecipeListRenderer.Vie
 
         if (view.item() != null) {
             if (view.recipes().isEmpty()) {
-                return "No recipe produces " + view.item() + ".";
+                return view.onlyWhatTheBotKnows()
+                    ? "This bot has not been taught a recipe for " + view.item()
+                        + ". A Minecraft client only knows the recipes the server has unlocked for"
+                        + " it, so this is not the same as there being none."
+                    : "No recipe produces " + view.item() + ".";
             }
 
-            return Text.withLines("Recipes for " + view.item() + ":", lines);
+            return Text.withLines("Recipes for " + view.item() + ":", lines) + taught(view);
         }
 
         if (view.recipes().isEmpty()) {
-            return "Nothing in the inventory is enough for any recipe.";
+            return "Nothing in the inventory is enough for any recipe." + taught(view);
         }
 
         String table = view.tableInReach() ? " (a crafting table is in reach)" : " (no crafting table in reach)";
         String suffix = view.stoppedAt() == null ? "" : "\n(stopped at " + view.stoppedAt() + " entries)";
 
-        return Text.withLines("Craftable right now" + table + ":", lines) + suffix;
+        return Text.withLines("Craftable right now" + table + ":", lines) + suffix + taught(view);
+    }
+
+    /** Named where it matters: a short list from a client is a short list of what it has been told. */
+    private static String taught(View view) {
+        return view.onlyWhatTheBotKnows()
+            ? "\n(only the recipes the server has taught this bot)"
+            : "";
     }
 
     private static String recipe(Recipe recipe) {

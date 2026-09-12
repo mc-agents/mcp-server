@@ -25,7 +25,8 @@
         ],
         "requiresTable": false
       }
-    ]
+    ],
+    "onlyWhatTheBotKnows": false
   },
   "text": "Recipes for diamond:\n- diamond x9 <- diamond_block x1 [missing diamond_block x1]"
 }
