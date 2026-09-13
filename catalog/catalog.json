@@ -5110,6 +5110,173 @@
       }
     },
     {
+      "name": "read-stats",
+      "group": "hud",
+      "description": "Read the bot's statistics as the server counts them: kills per mob, blocks mined, items crafted and used, distance walked, time played, deaths. The client only holds the statistics it was last sent, so this asks the server and reads its answer, never an older copy. Without type or target the general statistics (minecraft:custom) are listed, with how many of each other type are nonzero; a kill or mining quest is checked with both, such as type minecraft:killed and target minecraft:zombie. Distances are kept in centimetres and times in ticks, and those are shown in their unit as well.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 10000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "type": {
+            "description": "Only this statistic type, such as \"minecraft:killed\", \"minecraft:mined\", \"minecraft:crafted\" or \"minecraft:custom\"; the namespace may be left off (default: minecraft:custom with the other types summarised, or every type when a target is given)",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "target": {
+            "description": "Only this target, such as \"minecraft:zombie\" for kills or \"minecraft:jump\" for a custom statistic. Given with type, that one statistic is answered even when it is zero; without type, every type counting it is listed (default: any target)",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "count": {
+            "description": "How many to return, highest value first (default: 30)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "Only this statistic type, such as \"minecraft:killed\", \"minecraft:mined\", \"minecraft:crafted\" or \"minecraft:custom\"; the namespace may be left off (default: minecraft:custom with the other types summarised, or every type when a target is given)",
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 256,
+            "default": null
+          },
+          "target": {
+            "description": "Only this target, such as \"minecraft:zombie\" for kills or \"minecraft:jump\" for a custom statistic. Given with type, that one statistic is answered even when it is zero; without type, every type counting it is listed (default: any target)",
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 256,
+            "default": null
+          },
+          "count": {
+            "description": "How many to return, highest value first (default: 30)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "default": 30
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "count",
+          "target",
+          "type"
+        ]
+      },
+      "wireSchemaHash": "sha256:571e9c076689a55d2f803704710b59dbf81ddfc27cc2dd3af919f34982502a55",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "The type asked for, with its namespace, or null when none was",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "target": {
+            "description": "The target asked for, with its namespace, or null when none was",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "matched": {
+            "description": "How many matched before count cut the list short",
+            "type": "integer"
+          },
+          "stats": {
+            "description": "Nonzero only, highest value first, except that one statistic asked for by type and target is there at zero",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "target": {
+                  "type": "string"
+                },
+                "value": {
+                  "description": "The number the server keeps, which is what a statistic scoreboard objective reads: centimetres for a distance, ticks for a time",
+                  "type": "integer"
+                },
+                "formatted": {
+                  "description": "The value in the unit the statistics screen shows, such as \"1.52 km\" or \"3.5 h\". Null for a plain count",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "formatted",
+                "target",
+                "type",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "otherTypes": {
+            "description": "Only when neither type nor target was given: every other type with something nonzero in it, by id",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "nonZero": {
+                  "description": "How many of its statistics are nonzero",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "nonZero",
+                "type"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "matched",
+          "otherTypes",
+          "stats",
+          "target",
+          "type"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "read-title",
       "group": "hud",
       "description": "Read the titles and subtitles the server has thrown across the screen, which is where servers put things the player must not miss. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
@@ -7379,5 +7546,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:48bc310edac6647e3428969adfec3256875310aee73368ba89140647941315ac"
+  "catalogHash": "sha256:051d7dbc461a69f8afd632d7f4ed942d2289a07e9bcf7836739eab41ba195ebd"
 }

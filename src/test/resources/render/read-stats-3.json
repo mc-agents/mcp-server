@@ -1,0 +1,15 @@
+{
+  "tool": "read-stats",
+  "note": "a target without a type, counted by more than one type, so each line names its type",
+  "data": {
+    "type": null,
+    "target": "minecraft:zombie",
+    "matched": 2,
+    "stats": [
+      { "type": "minecraft:killed", "target": "minecraft:zombie", "value": 7, "formatted": null },
+      { "type": "minecraft:killed_by", "target": "minecraft:zombie", "value": 1, "formatted": null }
+    ],
+    "otherTypes": []
+  },
+  "text": "2 nonzero statistics for minecraft:zombie:\n  minecraft:killed minecraft:zombie: 7\n  minecraft:killed_by minecraft:zombie: 1"
+}

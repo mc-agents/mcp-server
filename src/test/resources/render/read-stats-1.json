@@ -1,0 +1,20 @@
+{
+  "tool": "read-stats",
+  "note": "nothing asked for: the general statistics, cut short by count, with units where they have one and the other types named",
+  "data": {
+    "type": null,
+    "target": null,
+    "matched": 5,
+    "stats": [
+      { "type": "minecraft:custom", "target": "minecraft:play_time", "value": 72000, "formatted": "1.00 h" },
+      { "type": "minecraft:custom", "target": "minecraft:walk_one_cm", "value": 152340, "formatted": "1.52 km" },
+      { "type": "minecraft:custom", "target": "minecraft:jump", "value": 41, "formatted": null },
+      { "type": "minecraft:custom", "target": "minecraft:mob_kills", "value": 3, "formatted": null }
+    ],
+    "otherTypes": [
+      { "type": "minecraft:killed", "nonZero": 2 },
+      { "type": "minecraft:mined", "nonZero": 12 }
+    ]
+  },
+  "text": "5 nonzero statistics in minecraft:custom, the 4 highest:\n  minecraft:play_time: 72000 (1.00 h)\n  minecraft:walk_one_cm: 152340 (1.52 km)\n  minecraft:jump: 41\n  minecraft:mob_kills: 3\nNonzero in other types, listed by passing type: minecraft:killed (2), minecraft:mined (12)"
+}
