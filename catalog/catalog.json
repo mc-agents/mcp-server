@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "3.7.0",
+  "catalogVersion": "3.8.0",
   "protocol": 1,
   "tools": [
     {
@@ -293,7 +293,7 @@
     {
       "name": "click-slot",
       "group": "slot",
-      "description": "Click one slot of the window that is currently open.",
+      "description": "Click one slot of the window that is currently open, or press a key over it the way a player does: a number key, the offhand key, drop, a double-click or a creative middle-click.",
       "route": "rpc",
       "kinds": [
         "fabric"
@@ -317,7 +317,7 @@
             "description": "Slot number as listed by the window contents"
           },
           "button": {
-            "description": "Which mouse button to press (default: 'left')",
+            "description": "Which mouse button to press for a click (default: 'left')",
             "type": "string",
             "enum": [
               "left",
@@ -325,8 +325,27 @@
             ]
           },
           "shift": {
-            "description": "Shift-click, which moves the whole stack across the window (default: false)",
+            "description": "Shift-click, which moves the whole stack across the window. Only a click takes it (default: false)",
             "type": "boolean"
+          },
+          "mode": {
+            "description": "What the player does to the slot (default: 'click'). 'click' is a mouse click, shaped by button and shift. 'swap-hotbar' is a number key, trading the slot with the hotbar slot named by hotbar; 'swap-offhand' is the offhand key. 'throw-one' is the drop key and 'throw-stack' the same with control held, both straight from the slot without the cursor. 'pickup-all' is the second half of a double-click: pick a stack up with a click first, and pickup-all on the slot it came from gathers every matching stack in the window onto the cursor. 'clone' is a creative middle-click, which puts a full stack of what the slot holds on an empty cursor.",
+            "type": "string",
+            "enum": [
+              "click",
+              "swap-hotbar",
+              "swap-offhand",
+              "throw-one",
+              "throw-stack",
+              "pickup-all",
+              "clone"
+            ]
+          },
+          "hotbar": {
+            "description": "The number key for swap-hotbar, 1 being the leftmost hotbar slot. Only swap-hotbar takes it.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9
           }
         },
         "required": [
@@ -343,7 +362,7 @@
             "description": "Slot number as listed by the window contents"
           },
           "button": {
-            "description": "Which mouse button to press (default: 'left')",
+            "description": "Which mouse button to press for a click (default: 'left')",
             "type": "string",
             "enum": [
               "left",
@@ -352,19 +371,45 @@
             "default": "left"
           },
           "shift": {
-            "description": "Shift-click, which moves the whole stack across the window (default: false)",
+            "description": "Shift-click, which moves the whole stack across the window. Only a click takes it (default: false)",
             "type": "boolean",
             "default": false
+          },
+          "mode": {
+            "description": "What the player does to the slot (default: 'click'). 'click' is a mouse click, shaped by button and shift. 'swap-hotbar' is a number key, trading the slot with the hotbar slot named by hotbar; 'swap-offhand' is the offhand key. 'throw-one' is the drop key and 'throw-stack' the same with control held, both straight from the slot without the cursor. 'pickup-all' is the second half of a double-click: pick a stack up with a click first, and pickup-all on the slot it came from gathers every matching stack in the window onto the cursor. 'clone' is a creative middle-click, which puts a full stack of what the slot holds on an empty cursor.",
+            "type": "string",
+            "enum": [
+              "click",
+              "swap-hotbar",
+              "swap-offhand",
+              "throw-one",
+              "throw-stack",
+              "pickup-all",
+              "clone"
+            ],
+            "default": "click"
+          },
+          "hotbar": {
+            "description": "The number key for swap-hotbar, 1 being the leftmost hotbar slot. Only swap-hotbar takes it.",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 9,
+            "default": null
           }
         },
         "required": [
           "button",
+          "hotbar",
+          "mode",
           "shift",
           "slot"
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:9cde0759c81827ad3102a860df9e2cae1fa5b7debc27cef6f1a83d1b3e7a37de",
+      "wireSchemaHash": "sha256:e73d8185908341ecc5ec628d7447dc888db0d4753fa468983a53b05c659a0af7",
       "resultSchema": {
         "type": "object",
         "properties": {
@@ -527,6 +572,135 @@
               "loreComponents",
               "name"
             ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "click",
+              "swap-hotbar",
+              "swap-offhand",
+              "throw-one",
+              "throw-stack",
+              "pickup-all",
+              "clone"
+            ]
+          },
+          "hotbar": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "swapped": {
+            "description": "The other side of a swap: the hotbar slot or the offhand, which need not be in the window at all. Null for every mode that is not a swap.",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "before": {
+                "description": "What it held before the swap, null when it was empty",
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "type": "integer"
+                  },
+                  "label": {
+                    "description": "The custom name the server gave it, if any",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lore": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "labelComponent": {
+                    "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                    "type": [
+                      "object",
+                      "array",
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "loreComponents": {
+                    "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "count",
+                  "label",
+                  "labelComponent",
+                  "lore",
+                  "loreComponents",
+                  "name"
+                ]
+              },
+              "after": {
+                "description": "What it holds now, null when the swap emptied it",
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "type": "integer"
+                  },
+                  "label": {
+                    "description": "The custom name the server gave it, if any",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lore": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "labelComponent": {
+                    "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                    "type": [
+                      "object",
+                      "array",
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "loreComponents": {
+                    "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "count",
+                  "label",
+                  "labelComponent",
+                  "lore",
+                  "loreComponents",
+                  "name"
+                ]
+              }
+            },
+            "required": [
+              "after",
+              "before"
+            ]
           }
         },
         "required": [
@@ -534,8 +708,11 @@
           "before",
           "button",
           "cursor",
+          "hotbar",
+          "mode",
           "shift",
-          "slot"
+          "slot",
+          "swapped"
         ]
       }
     },
@@ -866,6 +1043,316 @@
         "additionalProperties": false
       },
       "wireSchemaHash": "sha256:745bc34ffa94b53097b81ff9cabd6d41db733664935cd5c7d7a9a090cc329c65"
+    },
+    {
+      "name": "drag-slots",
+      "group": "slot",
+      "description": "Drag the stack on the cursor across several slots of the open window, the way a player spreads items by holding a mouse button down.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "slots": {
+            "description": "The slots to drag across, in the order the mouse passes over them. A slot the cursor has too few items left for is passed over, the way the client does.",
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "button": {
+            "description": "Which mouse button drags (default: 'left'). 'left' shares the stack evenly, 'right' puts one in each slot, 'middle' fills each slot with a full stack and needs creative.",
+            "type": "string",
+            "enum": [
+              "left",
+              "right",
+              "middle"
+            ]
+          }
+        },
+        "required": [
+          "slots"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "slots": {
+            "description": "The slots to drag across, in the order the mouse passes over them. A slot the cursor has too few items left for is passed over, the way the client does.",
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "button": {
+            "description": "Which mouse button drags (default: 'left'). 'left' shares the stack evenly, 'right' puts one in each slot, 'middle' fills each slot with a full stack and needs creative.",
+            "type": "string",
+            "enum": [
+              "left",
+              "right",
+              "middle"
+            ],
+            "default": "left"
+          }
+        },
+        "required": [
+          "button",
+          "slots"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:070f5bff43a38bd50f828b7577c9c1f19f685436a95291782fac2304b200fcf1",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "button": {
+            "type": "string",
+            "enum": [
+              "left",
+              "right",
+              "middle"
+            ]
+          },
+          "slots": {
+            "description": "Every slot that was asked for, in the order given, including the ones the drag passed over",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "slot": {
+                  "type": "integer"
+                },
+                "before": {
+                  "description": "What the slot held before the drag, null when it was empty",
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "label": {
+                      "description": "The custom name the server gave it, if any",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "lore": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "labelComponent": {
+                      "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                      "type": [
+                        "object",
+                        "array",
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "loreComponents": {
+                      "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "count",
+                    "label",
+                    "labelComponent",
+                    "lore",
+                    "loreComponents",
+                    "name"
+                  ]
+                },
+                "after": {
+                  "description": "What the slot holds now, null when it is empty",
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "label": {
+                      "description": "The custom name the server gave it, if any",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "lore": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "labelComponent": {
+                      "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                      "type": [
+                        "object",
+                        "array",
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "loreComponents": {
+                      "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "count",
+                    "label",
+                    "labelComponent",
+                    "lore",
+                    "loreComponents",
+                    "name"
+                  ]
+                }
+              },
+              "required": [
+                "after",
+                "before",
+                "slot"
+              ]
+            }
+          },
+          "carried": {
+            "description": "What the cursor held before the drag, null when it held nothing",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              },
+              "label": {
+                "description": "The custom name the server gave it, if any",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lore": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "labelComponent": {
+                "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              },
+              "loreComponents": {
+                "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                "type": "array"
+              }
+            },
+            "required": [
+              "count",
+              "label",
+              "labelComponent",
+              "lore",
+              "loreComponents",
+              "name"
+            ]
+          },
+          "cursor": {
+            "description": "What the cursor holds after the drag, null when it holds nothing",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              },
+              "label": {
+                "description": "The custom name the server gave it, if any",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lore": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "labelComponent": {
+                "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              },
+              "loreComponents": {
+                "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                "type": "array"
+              }
+            },
+            "required": [
+              "count",
+              "label",
+              "labelComponent",
+              "lore",
+              "loreComponents",
+              "name"
+            ]
+          }
+        },
+        "required": [
+          "button",
+          "carried",
+          "cursor",
+          "slots"
+        ]
+      }
     },
     {
       "name": "drop-held-item",
@@ -6522,5 +7009,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:f76a28549471ed87cb6544c94dc85e7abf649f0cb2ed00d91dec5c063cecfaa5"
+  "catalogHash": "sha256:bd816ebd26fb277ea3544f19a789d33519c3ffb39620a096807e084512866a95"
 }

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -661,6 +662,79 @@ class BotEndToEndTest {
         assertTrue(options.contains("  1. previous page, unavailable"), options);
         assertTrue(pressed.startsWith("Pressed \"page 3\" (button 102)"), pressed);
         assertTrue(book.contains("open at page 3"), book);
+    }
+
+    /**
+     * A number key sends the Inventory index, not the key and not a window slot: the "1" key is
+     * index 0. Sending the key's own number trades with the hotbar slot next door, and the client's
+     * prediction shows the swap it asked for either way, so this asks the server where the sword is.
+     */
+    @Test
+    void aNumberKeyTradesWithTheHotbarSlotItNames() {
+        world.run("function mcagents:setup");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "diamond x3", "timeoutMs", 10000));
+        agent.mustCall("open-container", Map.of("bot", BotWorld.BOT, "x", 1, "y", -60, "z", 3));
+
+        agent.mustCall("click-slot",
+            Map.of("bot", BotWorld.BOT, "slot", 0, "mode", "swap-hotbar", "hotbar", 1));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+
+        String chest = world.run("data get block 1 -60 3 Items[{Slot:0b}].id");
+        String hotbar = world.run("data get entity " + BotWorld.BOT + " Inventory[{Slot:0b}].id");
+        world.run("function mcagents:setup");
+
+        assertTrue(chest.contains("minecraft:diamond\""), chest);
+        assertTrue(hotbar.contains("minecraft:diamond_sword"), hotbar);
+    }
+
+    /**
+     * Drop takes 0 for one item and 1 for the stack, the other way round from what "left" and
+     * "right" would suggest. Swapped, control-drop leaves eleven in the chest and one on the floor.
+     */
+    @Test
+    void controlDropThrowsTheWholeStack() {
+        world.run("function mcagents:setup");
+        agent.mustCall("open-container", Map.of("bot", BotWorld.BOT, "x", 1, "y", -60, "z", 3));
+
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 4, "mode", "throw-stack"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+
+        String chest = world.run("data get block 1 -60 3 Items[{Slot:4b}]");
+        String ground = world.run(
+            "execute if entity @e[type=item,nbt={Item:{id:\"minecraft:cooked_beef\",count:12}}]");
+        world.run("function mcagents:setup");
+
+        assertTrue(chest.startsWith("Found no elements"), chest);
+        assertTrue(ground.startsWith("Test passed"), ground);
+    }
+
+    /**
+     * A drag's button is the phase and the kind packed into one number, and a wrong packing is not
+     * refused anywhere: the menu resets and nothing moves. The client predicts the drag too, so
+     * only the server's chest says whether the planks were really shared out.
+     */
+    @Test
+    void aDragSharesTheCursorAcrossTheSlotsTheServerHolds() {
+        world.run("function mcagents:setup");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "oak_planks x24", "timeoutMs", 10000));
+        agent.mustCall("open-container", Map.of("bot", BotWorld.BOT, "x", 1, "y", -60, "z", 3));
+
+        /* The second hotbar slot, 55 in a single chest: 27 of chest, 27 of inventory, then the hotbar. */
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 55));
+        agent.mustCall("drag-slots", Map.of("bot", BotWorld.BOT, "slots", List.of(1, 2, 3)));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+
+        String first = world.run("data get block 1 -60 3 Items[{Slot:1b}].count");
+        String second = world.run("data get block 1 -60 3 Items[{Slot:2b}].count");
+        String third = world.run("data get block 1 -60 3 Items[{Slot:3b}].count");
+        world.run("function mcagents:setup");
+
+        assertTrue(first.endsWith(": 8"), first);
+        assertTrue(second.endsWith(": 8"), second);
+        assertTrue(third.endsWith(": 8"), third);
     }
 
     /** The reason this kind of bot exists: a frame of what is actually on the screen. */

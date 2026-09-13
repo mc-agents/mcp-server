@@ -321,8 +321,8 @@ that a JSON-shaped reader skipped. Four, in one day, against one real server.
 The stacks in a window carry it as well: `labelComponent` beside `label`, and `loreComponents`
 beside `lore`, paired by position. A plugin draws a screen out of custom-named items and writes
 those names in the resource pack's own glyphs, so an item label is a HUD in the same way an action
-bar is. `read-window`, `open-container`, `wait-for-window`, `click-slot` and `drop-held-item` all
-send them, from the one place in each bot that describes a stack.
+bar is. `read-window`, `open-container`, `wait-for-window`, `click-slot`, `drag-slots` and
+`drop-held-item` all send them, from the one place in each bot that describes a stack.
 
 The same goes for everything else a server writes and a bot used to flatten on its own: a window
 sends `titleComponent` for its header and `close-window` for the one it closed, a sign face sends

@@ -1,0 +1,16 @@
+{
+  "tool": "click-slot",
+  "note": "control and drop threw the whole stack straight from the slot, so the cursor never held it",
+  "data": {
+    "slot": 4,
+    "button": "left",
+    "shift": false,
+    "mode": "throw-stack",
+    "hotbar": null,
+    "before": {"name": "cooked_beef", "count": 12, "label": null, "lore": []},
+    "after": null,
+    "cursor": null,
+    "swapped": null
+  },
+  "text": "Pressed drop with control over slot 4.\n  slot 4: cooked_beef x12 -> empty\n  cursor: empty"
+}

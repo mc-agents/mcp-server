@@ -1,5 +1,6 @@
 package kr.junhyung.mcagents.render;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -9,19 +10,45 @@ import java.util.List;
  * the click moved anything: a plugin that cancels the click leaves both unchanged, and a sentence
  * saying only which slot was clicked cannot tell that from a click that worked. Without this the
  * caller had to follow every click with read-window to find out.
+ *
+ * <p>The header says what was pressed and never what it achieved, for the same reason. A swap adds
+ * the line for the stack on the other side, which is the half a cancelled swap is noticed by when
+ * the slot in the window was empty to begin with.
  */
 public final class ClickedSlotRenderer implements Renderer<ClickedSlotRenderer.View> {
 
-    public record View(int slot, String button, boolean shift, Held before, Held after, Held cursor) {}
+    public record View(int slot, String button, boolean shift, String mode, Integer hotbar,
+        Held before, Held after, Held cursor, Swapped swapped) {}
+
+    public record Swapped(Held before, Held after) {}
 
     @Override
     public String render(View view) {
-        String header = capitalised((view.shift() ? "shift-" : "") + view.button()) + "-clicked slot "
-            + view.slot() + ".";
+        List<String> lines = new ArrayList<>();
+        lines.add("  slot " + view.slot() + ": " + Held.describe(view.before()) + " -> " + Held.describe(view.after()));
 
-        return Text.withLines(header, List.of(
-            "  slot " + view.slot() + ": " + Held.describe(view.before()) + " -> " + Held.describe(view.after()),
-            "  cursor: " + Held.describe(view.cursor())));
+        if (view.swapped() != null) {
+            String other = view.hotbar() == null ? "offhand" : "hotbar " + view.hotbar();
+            lines.add("  " + other + ": " + Held.describe(view.swapped().before()) + " -> "
+                + Held.describe(view.swapped().after()));
+        }
+        lines.add("  cursor: " + Held.describe(view.cursor()));
+
+        return Text.withLines(header(view), lines);
+    }
+
+    private static String header(View view) {
+        return switch (view.mode()) {
+            case "click" -> capitalised((view.shift() ? "shift-" : "") + view.button()) + "-clicked slot "
+                + view.slot() + ".";
+            case "swap-hotbar" -> "Pressed hotbar key " + view.hotbar() + " over slot " + view.slot() + ".";
+            case "swap-offhand" -> "Pressed the offhand key over slot " + view.slot() + ".";
+            case "throw-one" -> "Pressed drop over slot " + view.slot() + ".";
+            case "throw-stack" -> "Pressed drop with control over slot " + view.slot() + ".";
+            case "pickup-all" -> "Double-clicked slot " + view.slot() + ".";
+            case "clone" -> "Middle-clicked slot " + view.slot() + ".";
+            default -> throw new IllegalArgumentException("unknown mode " + view.mode());
+        };
     }
 
     private static String capitalised(String opening) {

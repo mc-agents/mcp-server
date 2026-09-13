@@ -1,0 +1,15 @@
+{
+  "tool": "drag-slots",
+  "note": "a left drag shared the cursor's stack evenly across three empty slots",
+  "data": {
+    "button": "left",
+    "slots": [
+      {"slot": 1, "before": null, "after": {"name": "oak_planks", "count": 8, "label": null, "lore": []}},
+      {"slot": 2, "before": null, "after": {"name": "oak_planks", "count": 8, "label": null, "lore": []}},
+      {"slot": 3, "before": null, "after": {"name": "oak_planks", "count": 8, "label": null, "lore": []}}
+    ],
+    "carried": {"name": "oak_planks", "count": 24, "label": null, "lore": []},
+    "cursor": null
+  },
+  "text": "Left-dragged across slots 1, 2, 3.\n  slot 1: empty -> oak_planks x8\n  slot 2: empty -> oak_planks x8\n  slot 3: empty -> oak_planks x8\n  cursor: oak_planks x24 -> empty"
+}

@@ -5,9 +5,12 @@
     "slot": 4,
     "button": "left",
     "shift": true,
+    "mode": "click",
+    "hotbar": null,
     "before": {"name": "cooked_beef", "count": 12, "label": null, "lore": []},
     "after": null,
-    "cursor": null
+    "cursor": null,
+    "swapped": null
   },
   "text": "Shift-left-clicked slot 4.\n  slot 4: cooked_beef x12 -> empty\n  cursor: empty"
 }

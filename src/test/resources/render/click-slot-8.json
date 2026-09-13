@@ -1,0 +1,16 @@
+{
+  "tool": "click-slot",
+  "note": "the second half of a double-click gathered matching stacks onto the cursor from elsewhere in the window",
+  "data": {
+    "slot": 55,
+    "button": "left",
+    "shift": false,
+    "mode": "pickup-all",
+    "hotbar": null,
+    "before": null,
+    "after": null,
+    "cursor": {"name": "oak_planks", "count": 40, "label": null, "lore": []},
+    "swapped": null
+  },
+  "text": "Double-clicked slot 55.\n  slot 55: empty -> empty\n  cursor: oak_planks x40"
+}
