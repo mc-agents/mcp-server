@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "3.6.0",
+  "catalogVersion": "3.7.0",
   "protocol": 1,
   "tools": [
     {
@@ -3262,6 +3262,70 @@
       "wireSchemaHash": "sha256:1d8ac28736965a5135225168273bdababada6360c320eed181f50e766f6d5797"
     },
     {
+      "name": "press-container-button",
+      "group": "window",
+      "description": "Press a button that an open menu draws for itself rather than keeps in a slot: one of an enchanting table's three offers, a stonecutter result, a loom pattern, or a lectern's page turns. Choose it by name; read-container-options lists the names, and a name that matches nothing is refused with the list. click-slot cannot reach these, and neither can press-dialog-button.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "needsWorld": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "option": {
+            "description": "What to press, by name: an enchantment as the table shows it (\"Unbreaking III\"), a stonecutter result (\"stone_brick_slab\" or \"Stone Brick Slab\"), a loom pattern, or on a lectern \"previous page\", \"next page\", \"page 3\" or \"take book\". Part of a name is enough when only one option contains it. Give this or button, not both.",
+            "type": "string",
+            "minLength": 1
+          },
+          "button": {
+            "description": "The raw button number, for a menu whose options have no names here. Its meaning is the menu's own and differs on every one. Give this or option, not both.",
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "option": {
+            "description": "What to press, by name: an enchantment as the table shows it (\"Unbreaking III\"), a stonecutter result (\"stone_brick_slab\" or \"Stone Brick Slab\"), a loom pattern, or on a lectern \"previous page\", \"next page\", \"page 3\" or \"take book\". Part of a name is enough when only one option contains it. Give this or button, not both.",
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "default": null
+          },
+          "button": {
+            "description": "The raw button number, for a menu whose options have no names here. Its meaning is the menu's own and differs on every one. Give this or option, not both.",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "default": null
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "button",
+          "option"
+        ]
+      },
+      "wireSchemaHash": "sha256:d7d1b6d413cf434807e2697461b939f43f9e1a268472d271c3b75ef988d6ae11"
+    },
+    {
       "name": "press-dialog-button",
       "group": "screen",
       "description": "Press a button on the dialog the server has opened. Identify it by its label. Reading a dialog is not enough to carry a conversation forward; this is what answers it.",
@@ -3696,6 +3760,163 @@
             "maximum": 200
           }
         },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "read-container-options",
+      "group": "window",
+      "description": "Read what the open menu offers to press rather than click: an enchanting table's three offers with their cost, a stonecutter's results, a loom's patterns, a lectern's page turns. read-window shows slots and none of these are in one. Answers that nothing is open rather than failing.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "required": []
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "window": {
+            "description": "null when nothing is open, which is a state and not a failure",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "title": {
+                "description": "Plain text, with colour codes and glyphs already taken out",
+                "type": "string"
+              },
+              "titleComponent": {
+                "description": "The component the window's title was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              },
+              "type": {
+                "description": "Registry id of the menu",
+                "type": "string"
+              },
+              "options": {
+                "description": "Everything there is to press, in button order. Empty on a menu that has nothing but slots.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "button": {
+                      "description": "The number the menu reads this as. press-container-button takes it when a name will not do.",
+                      "type": "integer"
+                    },
+                    "name": {
+                      "description": "Registry id without its namespace: the enchantment, the result item, the banner pattern. On a lectern, the words that press it. Null when the table hides which enchantment it is offering.",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "label": {
+                      "description": "What the game calls it in the bot's language, when that is not the name: \"Unbreaking III\", \"Stone Brick Slab\"",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "count": {
+                      "description": "How many a stonecutter result makes; null on every other menu",
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "levels": {
+                      "description": "Experience levels an enchantment offer asks for; null on every other menu",
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "lapis": {
+                      "description": "Lapis lazuli an enchantment offer uses; null on every other menu",
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "available": {
+                      "description": "Whether pressing it now would do anything: an offer the bot cannot pay for, or a page turn past the end of the book, is false",
+                      "type": "boolean"
+                    },
+                    "selected": {
+                      "description": "Whether this is the stonecutter result or loom pattern already chosen",
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "available",
+                    "button",
+                    "count",
+                    "label",
+                    "lapis",
+                    "levels",
+                    "name",
+                    "selected"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "page": {
+                "description": "The page a lectern is open at, counting from 1; null on every other menu",
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "pageCount": {
+                "description": "How many pages the lectern's book has; null on every other menu",
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "options",
+              "page",
+              "pageCount",
+              "title",
+              "titleComponent",
+              "type"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "window"
+        ],
         "additionalProperties": false
       }
     },
@@ -6301,5 +6522,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:a6d9e18e5e12b9c871df8843a6270b1a6067c99ea001af03b69b00591ab531bb"
+  "catalogHash": "sha256:f76a28549471ed87cb6544c94dc85e7abf649f0cb2ed00d91dec5c063cecfaa5"
 }

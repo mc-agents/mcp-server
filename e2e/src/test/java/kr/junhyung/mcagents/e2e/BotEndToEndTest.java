@@ -7,6 +7,8 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -454,6 +456,8 @@ class BotEndToEndTest {
      */
     @Test
     void writingOnASignInTheWorld() {
+        /* The editor opens on the face that was clicked, so the bot has to stand in front of it. */
+        world.run("tp " + BotWorld.BOT + " 2 -59 0");
         world.run("setblock 2 -60 2 oak_sign[rotation=8]");
         /* An empty hand, or the right-click places what is being held instead of opening the sign. */
         world.run("clear " + BotWorld.BOT);
@@ -471,6 +475,7 @@ class BotEndToEndTest {
         world.run("tp " + BotWorld.BOT + " 2 -59 0");
         world.run("function mcagents:setup");
 
+        assertTrue(written.startsWith("wrote the front of the sign"), written);
         assertTrue(written.contains("\"Shop\" / \"\" / \"Open\" / \"\""), written);
         assertTrue(sign.contains("front_text: Shop / (blank) / Open / (blank)"), sign);
     }
@@ -548,6 +553,114 @@ class BotEndToEndTest {
 
         assertTrue(inventory.contains("[gui/label] Map Fragment [paper]"), inventory);
         assertTrue(!inventory.contains("emerald"), inventory);
+    }
+
+    /**
+     * A stonecutter's results are drawn by the screen and sent as a number that means whichever
+     * recipe the list happens to put there. Nothing reached them before: they are not slots, and
+     * they are not widgets either.
+     */
+    @Test
+    void aStonecutterResultIsChosenByName() {
+        world.run("clear " + BotWorld.BOT);
+        world.run("give " + BotWorld.BOT + " stone 4");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "stone", "timeoutMs", 10000));
+        /* open-container is for blocks that hold items; a menu with no inventory opens like any other block. */
+        agent.mustCall("activate-block", Map.of("bot", BotWorld.BOT, "x", -1, "y", -60, "z", 5));
+        agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "timeoutMs", 10000));
+        /* The first hotbar slot is 29 on a stonecutter, and a shift-click sends stone to the input. */
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 29, "shift", true));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String options = agent.mustCall("read-container-options", Map.of("bot", BotWorld.BOT));
+        String ambiguous = agent.refusal("press-container-button",
+            Map.of("bot", BotWorld.BOT, "option", "stone brick"));
+        String pressed = agent.mustCall("press-container-button",
+            Map.of("bot", BotWorld.BOT, "option", "stone bricks"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String window = agent.mustCall("read-window", Map.of("bot", BotWorld.BOT));
+
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        world.run("function mcagents:setup");
+
+        assertTrue(options.contains("Stone Bricks [stone_bricks], x1"), options);
+        assertTrue(ambiguous.contains("\"Stone Brick Slab\""), ambiguous);
+        assertTrue(pressed.startsWith("Pressed \"Stone Bricks\""), pressed);
+        assertTrue(window.contains("  1: stone_bricks x1"), window);
+    }
+
+    /**
+     * An enchanting table's offers are three numbers the server pushes into the menu, and which
+     * enchantment each is changes with the seed. So the offer is read first and pressed by the name
+     * it was read as, and the lapis it cost is what says the server took the press.
+     */
+    @Test
+    void anEnchantmentOfferIsPressedByTheNameItIsShownAs() {
+        /*
+        Survival, because creative enchants for free: the table takes no lapis from a player with
+        infinite materials, and the lapis it takes is how this case knows the server accepted the
+        press rather than only that the bot sent one.
+        */
+        world.run("gamemode survival " + BotWorld.BOT);
+        world.run("clear " + BotWorld.BOT);
+        world.run("experience set " + BotWorld.BOT + " 30 levels");
+        world.run("give " + BotWorld.BOT + " iron_pickaxe 1");
+        world.run("give " + BotWorld.BOT + " lapis_lazuli 3");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "lapis", "timeoutMs", 10000));
+        /* open-container is for blocks that hold items; a menu with no inventory opens like any other block. */
+        agent.mustCall("activate-block", Map.of("bot", BotWorld.BOT, "x", -1, "y", -60, "z", 3));
+        agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "timeoutMs", 10000));
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 29, "shift", true));
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 30, "shift", true));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String options = agent.mustCall("read-container-options", Map.of("bot", BotWorld.BOT));
+        String refused = agent.refusal("press-container-button",
+            Map.of("bot", BotWorld.BOT, "option", "Nothing Like It"));
+        Matcher first = Pattern.compile("\n  0\\. (.+?) \\[").matcher(options);
+        assertTrue(first.find(), options);
+
+        String pressed = agent.mustCall("press-container-button",
+            Map.of("bot", BotWorld.BOT, "option", first.group(1)));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String window = agent.mustCall("read-window", Map.of("bot", BotWorld.BOT));
+
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        world.run("experience set " + BotWorld.BOT + " 0 levels");
+        world.run("gamemode creative " + BotWorld.BOT);
+        world.run("function mcagents:setup");
+
+        assertTrue(options.contains("offers 3 options"), options);
+        assertTrue(options.contains("1 lapis") && options.contains("3 lapis"), options);
+        assertTrue(refused.contains("it offers \"" + first.group(1) + "\""), refused);
+        assertTrue(pressed.startsWith("Pressed \"" + first.group(1) + "\" (button 0)"), pressed);
+        assertTrue(window.contains("  1: lapis_lazuli x2"), window);
+    }
+
+    /**
+     * A lectern is drawn by the book screen, which is not a container screen, so everything that
+     * looked for one said nothing was open. Its page turns are buttons the server answers, and the
+     * page the screen shows afterwards is the server's answer.
+     */
+    @Test
+    void aLecternTurnsToThePageItIsAskedFor() {
+        world.run("clear " + BotWorld.BOT);
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("activate-block", Map.of("bot", BotWorld.BOT, "x", 0, "y", -60, "z", 7));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String options = agent.mustCall("read-container-options", Map.of("bot", BotWorld.BOT));
+        String pressed = agent.mustCall("press-container-button", Map.of("bot", BotWorld.BOT, "option", "page 3"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String book = agent.mustCall("read-book", Map.of("bot", BotWorld.BOT));
+
+        agent.call("press-dialog-button", Map.of("bot", BotWorld.BOT, "label", "Done"));
+        world.run("function mcagents:setup");
+
+        assertTrue(options.contains("(type minecraft:lectern) offers 3 options, open at page 1 of 3"), options);
+        assertTrue(options.contains("  1. previous page, unavailable"), options);
+        assertTrue(pressed.startsWith("Pressed \"page 3\" (button 102)"), pressed);
+        assertTrue(book.contains("open at page 3"), book);
     }
 
     /** The reason this kind of bot exists: a frame of what is actually on the screen. */
