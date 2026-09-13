@@ -1,0 +1,15 @@
+{
+  "tool": "get-target-block",
+  "note": "a sign the bot is pointed at; the face is where a block placed from here would go",
+  "data": {
+    "hit": "block",
+    "position": {"x": 3, "y": -60, "z": 0},
+    "block": "oak_sign",
+    "face": "south",
+    "label": null,
+    "type": null,
+    "distance": 3.24,
+    "labelComponent": null
+  },
+  "text": "Looking at oak_sign at (3, -60, 0), its south face, 3.2 blocks away."
+}

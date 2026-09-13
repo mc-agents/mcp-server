@@ -1,0 +1,15 @@
+{
+  "tool": "get-target-block",
+  "note": "the reach runs out before anything is in it, which is a state and not a failure",
+  "data": {
+    "hit": "nothing",
+    "position": null,
+    "block": null,
+    "face": null,
+    "label": null,
+    "type": null,
+    "distance": 0,
+    "labelComponent": null
+  },
+  "text": "The bot is not looking at anything within reach."
+}

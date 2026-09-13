@@ -1,0 +1,15 @@
+{
+  "tool": "get-target-block",
+  "note": "an NPC in the way, named the way find-entity names one",
+  "data": {
+    "hit": "entity",
+    "position": {"x": 5, "y": -60, "z": 5},
+    "block": null,
+    "face": null,
+    "label": "Probe Cow",
+    "type": "cow",
+    "distance": 4.15,
+    "labelComponent": {"text": "", "extra": [{"text": "Probe Cow", "font": "hyperfarm:nametag/label"}]}
+  },
+  "text": "Looking at [nametag/label] Probe Cow (cow) at (5, -60, 5), 4.2 blocks away."
+}

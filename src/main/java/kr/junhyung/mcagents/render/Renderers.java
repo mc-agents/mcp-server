@@ -47,6 +47,7 @@ public final class Renderers {
         Map.entry("get-player-state", entry(PlayerStateRenderer.View.class, new PlayerStateRenderer())),
         Map.entry("get-position", entry(PositionRenderer.View.class, new PositionRenderer())),
         Map.entry("get-recipe", entry(RecipeListRenderer.View.class, new RecipeListRenderer())),
+        Map.entry("get-target-block", entry(TargetRenderer.View.class, new TargetRenderer())),
         Map.entry("get-world-state", entry(WorldStateRenderer.View.class, new WorldStateRenderer())),
         Map.entry("list-inventory", entry(InventoryRenderer.View.class, new InventoryRenderer())),
         Map.entry("list-recipes", entry(RecipeListRenderer.View.class, new RecipeListRenderer())),

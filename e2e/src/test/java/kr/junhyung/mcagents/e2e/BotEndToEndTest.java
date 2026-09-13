@@ -378,6 +378,24 @@ class BotEndToEndTest {
         assertTrue(refused.contains("Probe Stats"), refused);
     }
 
+    /**
+     * A screenshot shows what a place looks like and carries no coordinates. Building anything --
+     * a sign, a marker, an NPC's spot -- means saying where, and this is how a person finds out:
+     * point at the thing and let the game name it.
+     */
+    @Test
+    void whatTheBotIsLookingAt() {
+        /* The fixture's wall, which is three blocks tall and therefore at eye level. */
+        world.run("tp " + BotWorld.BOT + " 11 -60 0");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+        agent.mustCall("look-at", Map.of("bot", BotWorld.BOT, "x", 14, "y", -59, "z", 0));
+
+        String looking = agent.call("get-target-block", Map.of("bot", BotWorld.BOT));
+        world.run("tp " + BotWorld.BOT + " 2 -59 0");
+
+        assertTrue(looking.startsWith("Looking at stone at (14, -59, 0), its west face, "), looking);
+    }
+
     /** The reason this kind of bot exists: a frame of what is actually on the screen. */
     @Test
     void aScreenshotComesBackAsAnImage() {

@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "3.2.0",
+  "catalogVersion": "3.3.0",
   "protocol": 1,
   "tools": [
     {
@@ -2027,6 +2027,116 @@
         ],
         "additionalProperties": false
       }
+    },
+    {
+      "name": "get-target-block",
+      "group": "block",
+      "description": "What the bot is looking at: the block under its crosshair, which face of it, or the entity in the way. A screenshot shows what a place looks like and carries no coordinates; this is how to find out where something is in order to build, dig or place there. Point with look-at first.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "required": []
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "hit": {
+            "description": "What the crosshair is on",
+            "type": "string",
+            "enum": [
+              "block",
+              "entity",
+              "nothing"
+            ]
+          },
+          "position": {
+            "description": "Where the caller asked about",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "block": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "face": {
+            "description": "The side of the block being looked at, where a placed block would go",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "description": "The entity's registry id without the namespace",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "distance": {
+            "type": "number"
+          },
+          "labelComponent": {
+            "description": "The component the entity's name was written as, as Minecraft's own JSON. Null when there is none.",
+            "type": [
+              "object",
+              "array",
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "distance",
+          "hit"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
     },
     {
       "name": "get-world-state",
@@ -5338,5 +5448,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:bab1fbda8ffc90a7134e8a715bbf7df7054e9400c65f51d9bc71fd66e63e1ff5"
+  "catalogHash": "sha256:4fd783209cc778c403f87cbee4242d2178d0d5b9fd426e8cb053cf4ed03e41cc"
 }
