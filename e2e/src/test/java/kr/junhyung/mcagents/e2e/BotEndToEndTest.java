@@ -471,6 +471,35 @@ class BotEndToEndTest {
         assertTrue(sign.contains("front_text: Shop / (blank) / Open / (blank)"), sign);
     }
 
+    /**
+     * A server with something long to say says it in a book, and the client draws one page at a
+     * time. Reading one by screenshotting each page is not reading it: a page is a component, and
+     * the font a server drew it in is the half a picture cannot give back.
+     */
+    @Test
+    void everyPageOfABookAtOnce() {
+        world.run("clear " + BotWorld.BOT);
+        world.run("give " + BotWorld.BOT + " written_book[written_book_content={title:\"Probe Guide\","
+            + "author:\"Probe\",pages:[{text:\"Find the shrine.\"},"
+            + "{text:\"\",extra:[{text:\"12 coins\",font:\"hyperfarm:gui/price\"}]},"
+            + "{text:\"Bring back the relic.\"}]}] 1");
+        agent.mustCall("wait-for-item",
+            Map.of("bot", BotWorld.BOT, "pattern", "written_book", "timeoutMs", 10000));
+        agent.mustCall("equip-item", Map.of("bot", BotWorld.BOT, "itemName", "written_book"));
+        agent.mustCall("use-held-item", Map.of("bot", BotWorld.BOT));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String book = agent.call("read-book", Map.of("bot", BotWorld.BOT));
+
+        agent.mustCall("press-dialog-button", Map.of("bot", BotWorld.BOT, "label", "Done"));
+        world.run("function mcagents:setup");
+
+        assertTrue(book.startsWith("\"Probe Guide\" by Probe in hand, 3 pages, open at page 1"), book);
+        assertTrue(book.contains("1. Find the shrine."), book);
+        assertTrue(book.contains("2. [gui/price] 12 coins"), book);
+        assertTrue(book.contains("3. Bring back the relic."), book);
+    }
+
     /** The reason this kind of bot exists: a frame of what is actually on the screen. */
     @Test
     void aScreenshotComesBackAsAnImage() {

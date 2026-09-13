@@ -53,6 +53,7 @@ public final class Renderers {
         Map.entry("list-recipes", entry(RecipeListRenderer.View.class, new RecipeListRenderer())),
         Map.entry("open-container", entry(WindowRenderer.View.class, new WindowRenderer())),
         Map.entry("read-block-entity", entry(BlockEntityRenderer.View.class, new BlockEntityRenderer())),
+        Map.entry("read-book", entry(BookRenderer.View.class, new BookRenderer())),
         Map.entry("read-boss-bars", entry(BossBarsRenderer.View.class, new BossBarsRenderer())),
         Map.entry("read-displays", entry(DisplaysRenderer.View.class, new DisplaysRenderer())),
         Map.entry("read-player-list", entry(PlayerListRenderer.View.class, new PlayerListRenderer())),

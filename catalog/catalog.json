@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "3.4.0",
+  "catalogVersion": "3.5.0",
   "protocol": 1,
   "tools": [
     {
@@ -3480,6 +3480,92 @@
       }
     },
     {
+      "name": "read-book",
+      "group": "screen",
+      "description": "Read every page of the book that is open, whether it is held or on a lectern. A server with something long to say says it in a book -- a quest log, a rulebook, the guide handed out on join -- and the client draws one page at a time, so a screenshot shows one page and loses the components the rest were written with.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "required": []
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "description": "Where the book is being read from: \"hand\" or \"lectern\"",
+            "type": "string"
+          },
+          "title": {
+            "description": "Null until the book has been signed",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "author": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "generation": {
+            "description": "0 original, 1 copy, 2 copy of a copy, 3 tattered",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "page": {
+            "description": "The page the client is showing, counting from 1",
+            "type": "integer"
+          },
+          "pages": {
+            "description": "Every page, in order",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pageComponents": {
+            "description": "The components the pages were written as, in the same order.",
+            "type": "array"
+          }
+        },
+        "required": [
+          "author",
+          "generation",
+          "page",
+          "pageComponents",
+          "pages",
+          "source",
+          "title"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "read-boss-bars",
       "group": "hud",
       "description": "Read every boss bar the server is showing above the hotbar.",
@@ -4693,7 +4779,7 @@
     {
       "name": "type-text",
       "group": "screen",
-      "description": "Type into a text field on the screen that is open: a dialog's input, an anvil's name box, a sign being edited. A dialog's inputs are not in the packet that opened it, so this is the only way to fill one in before pressing a button. Characters go through the client's own keyboard path, so a field's length limit and the characters it refuses apply as they would to a player. On a sign the editor is closed afterwards, because closing it is what sends the sign to the server.",
+      "description": "Type into a text field on the screen that is open: a dialog's input, an anvil's name box, a sign being edited, a page of a book. A dialog's inputs are not in the packet that opened it, so this is the only way to fill one in before pressing a button. Characters go through the client's own keyboard path, so a field's length limit and the characters it refuses apply as they would to a player. On a sign the editor is closed afterwards, because closing it is what sends the sign to the server; a book stays open, because writing one takes a call per page and then a name.",
       "route": "rpc",
       "kinds": [
         "fabric"
@@ -4716,7 +4802,7 @@
             "type": "string"
           },
           "field": {
-            "description": "Which field to type into, by its label. A number picks by position, and on a sign editor it picks the line, 1 to 4. Omit it when the screen has exactly one field.",
+            "description": "Which field to type into, by its label. A number picks by position; on a sign editor it picks the line, 1 to 4, and in a book it picks the page, which is created if the book does not reach it yet. Omit it when the screen has exactly one field.",
             "type": "string",
             "minLength": 1
           },
@@ -4738,7 +4824,7 @@
             "type": "string"
           },
           "field": {
-            "description": "Which field to type into, by its label. A number picks by position, and on a sign editor it picks the line, 1 to 4. Omit it when the screen has exactly one field.",
+            "description": "Which field to type into, by its label. A number picks by position; on a sign editor it picks the line, 1 to 4, and in a book it picks the page, which is created if the book does not reach it yet. Omit it when the screen has exactly one field.",
             "type": [
               "string",
               "null"
@@ -4759,7 +4845,7 @@
           "text"
         ]
       },
-      "wireSchemaHash": "sha256:35bfd2a2ab758a7d7dc688d32b445c6db79fe838afc31f599b964d19abe9ea6f"
+      "wireSchemaHash": "sha256:0e9e7b2062965b2f74886dc72714f8c7f1e9669e89095061ca988d5720dc25d0"
     },
     {
       "name": "use-held-item",
@@ -5519,5 +5605,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:f90d081dc6e915e231ac8950d6579bf7865baba3a51a66359de37076fb3481f2"
+  "catalogHash": "sha256:0c30d395e3addf03ff516715a327fc7f926daaa4cc4392a9704314f18a2cd43b"
 }
