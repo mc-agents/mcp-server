@@ -83,11 +83,11 @@ went unnoticed until the next time anyone looked. The assertions are against the
 rather than against a second bot, because two implementations agreeing is a weaker thing to know --
 they agreed for a while that a chat line reading "Hello world" was "Hello  | world".
 
-It needs Docker and a bot image, so it is not part of `build`. Which bot and which Minecraft version
-are the build's to say, and CI runs the same cases against every version the mod supports:
+It needs Docker and a bot image, so it is not part of `build`. Which bot to drive is the build's to
+say; the Minecraft version is the one the bots support, 26.1.2:
 
 ```bash
-./gradlew :e2e:test -Pe2e.minecraft.version=26.2 -Pe2e.bot.image=<image>
+./gradlew :e2e:test -Pe2e.bot.image=<image>
 ```
 
 ## Status

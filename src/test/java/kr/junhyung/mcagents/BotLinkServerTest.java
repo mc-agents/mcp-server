@@ -83,7 +83,7 @@ class BotLinkServerTest {
     }
 
     private Messages.Hello hello(String name, String kind, List<Messages.Capability> capabilities) {
-        return new Messages.Hello(List.of(catalog.protocol()), name, kind, "0.1.0", "26.2",
+        return new Messages.Hello(List.of(catalog.protocol()), name, kind, "0.1.0", "26.1.2",
                 catalog.version(), capabilities, List.of("blob", "eventFold"));
     }
 
@@ -164,7 +164,7 @@ class BotLinkServerTest {
     void aBotSpeakingAnotherProtocolIsToldSoAndClosed() throws Exception {
         Socket bot = dial();
         send(bot, new Messages.Hello(List.of(catalog.protocol() + 99), "alice", "fabric",
-                "0.1.0", "26.2", catalog.version(), List.of(), List.of()));
+                "0.1.0", "26.1.2", catalog.version(), List.of(), List.of()));
 
         Messages.Fault fault = assertInstanceOf(Messages.Fault.class, read(bot));
 
