@@ -85,6 +85,14 @@ summon villager 0 -60 -4 {Tags:["mcagents"],NoAI:1b,Silent:1b,Invulnerable:1b,Cu
 setblock -1 -60 7 air
 setblock -1 -60 7 loom
 
+# --- a beacon on a one-level pyramid: read-container-options, set-beacon-effects ---
+# Placed afresh so a case that set an effect leaves none behind. The pyramid is sunk into the
+# ground so nothing stands over the beacon: it counts no levels until its beam reaches the sky,
+# and it only counts every four seconds, so a case waits for the level rather than assuming it.
+setblock 6 -60 10 air
+fill 5 -61 9 7 -61 11 minecraft:iron_block
+setblock 6 -60 10 beacon
+
 # --- a furnace with fuel and input: smelt-item ---
 setblock 1 -60 5 air
 setblock 1 -60 5 furnace[facing=north]

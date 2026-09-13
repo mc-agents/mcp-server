@@ -8,7 +8,8 @@
       "type": "minecraft:cartography_table",
       "options": [],
       "page": null,
-      "pageCount": null
+      "pageCount": null,
+      "beacon": null
     }
   },
   "text": "window \"Cartography Table\" (type minecraft:cartography_table) has nothing to press: its result appears in slot 2 once both inputs are in, and click-slot takes it."

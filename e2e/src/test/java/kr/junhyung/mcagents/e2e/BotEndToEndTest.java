@@ -877,6 +877,137 @@ class BotEndToEndTest {
     }
 
     /**
+     * A beacon's effect buttons are icons with nothing to press by name, and the confirm button sends
+     * both effects at once. What the pyramid is too low for is refused before it is sent -- 26.2
+     * drops a client that sends it, and 26.1.2 quietly applies it -- and what was set is asked of the
+     * beacon, since the window closes on confirm and the bot is left with nothing to read.
+     */
+    @Test
+    void aBeaconIsSetToAnEffectItsPyramidAllows() {
+        world.run("function mcagents:setup");
+        world.run("clear " + BotWorld.BOT);
+        world.run("give " + BotWorld.BOT + " iron_ingot 1");
+        world.run("tp " + BotWorld.BOT + " 6 -60 8");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "iron_ingot", "timeoutMs", 10000));
+        /* open-container is for blocks that hold items; a beacon's menu opens like any other block's. */
+        agent.mustCall("activate-block", Map.of("bot", BotWorld.BOT, "x", 6, "y", -60, "z", 10));
+        agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "timeoutMs", 10000));
+
+        String options = awaitPyramid();
+        String unpaid = agent.refusal("set-beacon-effects", Map.of("bot", BotWorld.BOT, "primary", "speed"));
+        /* The first hotbar slot is 28 on a beacon, and a shift-click sends a single ingot to the payment slot. */
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 28, "shift", true));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String paid = agent.mustCall("read-container-options", Map.of("bot", BotWorld.BOT));
+
+        String tooHigh = agent.refusal("set-beacon-effects", Map.of("bot", BotWorld.BOT, "primary", "Strength"));
+        String noSecondary = agent.refusal("set-beacon-effects",
+            Map.of("bot", BotWorld.BOT, "primary", "speed", "secondary", "regeneration"));
+        String set = agent.mustCall("set-beacon-effects", Map.of("bot", BotWorld.BOT, "primary", "speed"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        /* The server sets an effect only in the same step that takes the payment, so this says both. */
+        String primary = world.run("data get block 6 -60 10 primary_effect");
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        world.run("function mcagents:setup");
+
+        assertTrue(unpaid.contains("payment slot (slot 0) is empty"), unpaid);
+        assertTrue(options.contains("Strength [strength], primary, 3 levels, unavailable"), options);
+        assertTrue(paid.contains("with iron_ingot in the payment slot"), paid);
+        assertTrue(tooHigh.contains("Strength [strength] needs a pyramid of 3 levels, and this beacon's has 1 level"),
+            tooHigh);
+        assertTrue(noSecondary.contains("a secondary effect needs a pyramid of 4 levels"), noSecondary);
+        assertTrue(set.startsWith("Set the beacon's primary effect to Speed [speed] with no secondary effect, "
+            + "paying one iron_ingot"), set);
+        assertTrue(primary.contains("\"minecraft:speed\""), primary);
+    }
+
+    /** A beacon counts its pyramid every four seconds, and a fresh one has counted nothing yet. */
+    private String awaitPyramid() {
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(20));
+        String options = agent.mustCall("read-container-options", Map.of("bot", BotWorld.BOT));
+
+        while (!options.contains("a pyramid of 1 level") && Instant.now().isBefore(deadline)) {
+            sleep(500);
+            options = agent.mustCall("read-container-options", Map.of("bot", BotWorld.BOT));
+        }
+        return options;
+    }
+
+    /**
+     * A bundle gives up its first item to a right click unless another was chosen by scrolling, and
+     * the choice is sent on its own, before the click. Choosing the second and taking one out is
+     * asserted on the bundle the server keeps in the chest, since the client shows its own guess.
+     */
+    @Test
+    void aBundleGivesUpTheItemChosenInIt() {
+        world.run("function mcagents:setup");
+        world.run("item replace block 1 -60 3 container.13 with minecraft:bundle[minecraft:bundle_contents="
+            + "[{id:\"minecraft:arrow\",count:5},{id:\"minecraft:string\",count:2},{id:\"minecraft:feather\",count:3}]]");
+        world.run("tp " + BotWorld.BOT + " 2 -60 2");
+        agent.mustCall("open-container", Map.of("bot", BotWorld.BOT, "x", 1, "y", -60, "z", 3));
+
+        String missing = agent.refusal("select-bundle-item", Map.of("bot", BotWorld.BOT, "slot", 13, "item", "diamond"));
+        String notABundle = agent.refusal("select-bundle-item", Map.of("bot", BotWorld.BOT, "slot", 4, "item", "1"));
+        String selected = agent.mustCall("select-bundle-item",
+            Map.of("bot", BotWorld.BOT, "slot", 13, "item", "string"));
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 13, "button", "right"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+
+        String bundle = world.run("data get block 1 -60 3 Items[{Slot:13b}].components.\"minecraft:bundle_contents\"");
+        world.run("function mcagents:setup");
+
+        assertTrue(missing.contains("It holds 1. arrow x5, 2. string x2, 3. feather x3."), missing);
+        assertTrue(notABundle.contains("slot 4 holds cooked_beef"), notABundle);
+        assertTrue(selected.startsWith("Selected 2. string x2 in the bundle in slot 13."), selected);
+        assertTrue(bundle.contains("minecraft:arrow") && bundle.contains("minecraft:feather"), bundle);
+        assertTrue(!bundle.contains("minecraft:string"), "the server took something other than the string: " + bundle);
+    }
+
+    /**
+     * A middle-click is only a position; the server decides what comes of it. Creative makes the item,
+     * and with Ctrl the block's contents too. Survival only moves one that is already carried onto the
+     * hotbar. The hand is asked of the server, because the client's hand is set by the server's answer
+     * and a read taken before it arrives shows the hand from before.
+     */
+    @Test
+    void aPickedBlockEndsUpInTheHandTheServerSees() {
+        world.run("function mcagents:setup");
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        world.run("clear " + BotWorld.BOT);
+        world.run("tp " + BotWorld.BOT + " 6 -60 -1");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String creative = agent.mustCall("pick-block", Map.of("bot", BotWorld.BOT, "x", 7, "y", -60, "z", -1));
+        String made = world.run("execute if items entity " + BotWorld.BOT + " weapon.mainhand minecraft:diamond_block");
+
+        world.run("gamemode survival " + BotWorld.BOT);
+        world.run("clear " + BotWorld.BOT);
+        world.run("item replace entity " + BotWorld.BOT + " inventory.0 with minecraft:diamond_block 3");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "diamond_block", "timeoutMs", 10000));
+        String survival = agent.mustCall("pick-block", Map.of("bot", BotWorld.BOT, "x", 7, "y", -60, "z", -1));
+        String moved = world.run("execute if items entity " + BotWorld.BOT + " weapon.mainhand minecraft:diamond_block");
+        String left = world.run("execute if items entity " + BotWorld.BOT + " inventory.0 minecraft:diamond_block");
+        String notCarried = agent.refusal("pick-block", Map.of("bot", BotWorld.BOT, "x", 3, "y", -60, "z", 0));
+        world.run("gamemode creative " + BotWorld.BOT);
+
+        agent.mustCall("pick-block", Map.of("bot", BotWorld.BOT, "x", 1, "y", -60, "z", 3, "includeData", true));
+        String withData = world.run("execute if items entity " + BotWorld.BOT
+            + " weapon.mainhand minecraft:chest[minecraft:container]");
+        world.run("function mcagents:setup");
+
+        assertTrue(creative.startsWith("Picked diamond_block from (7, -60, -1); the bot now holds diamond_block x1"),
+            creative);
+        assertTrue(made.startsWith("Test passed"), made);
+        assertTrue(survival.contains("the bot now holds diamond_block x3"), survival);
+        assertTrue(moved.startsWith("Test passed"), moved);
+        assertTrue(left.startsWith("Test failed"), left);
+        assertTrue(notCarried.contains("the bot has no oak_sign"), notCarried);
+        assertTrue(withData.startsWith("Test passed"), withData);
+    }
+
+    /**
      * The creative inventory's slots are an item picker, and on a tab of items a click takes a stack
      * of one. Sending the click as a container packet instead clicked the picker's slot number on the
      * real inventory -- the crafting result, for slot 0 -- and nothing arrived anywhere.
