@@ -73,6 +73,17 @@ setblock 1 -60 3 chest{CustomName:{text:"",extra:[{text:"",font:"hyperfarm:gui/i
 setblock 1 -60 5 air
 setblock 1 -60 5 furnace[facing=north]
 
+# --- menus that are pressed rather than clicked: read-container-options, press-container-button ---
+# No bookshelves round the table, so its offers stay cheap enough for a bot given a few levels.
+setblock -1 -60 3 air
+setblock -1 -60 3 enchanting_table
+setblock -1 -60 5 air
+setblock -1 -60 5 stonecutter
+# A lectern shows the book screen and not a container screen, so it is the case a lookup that only
+# knows container screens reports as nothing open.
+setblock 0 -60 7 air
+setblock 0 -60 7 lectern[has_book=true]{Book:{id:"minecraft:written_book",count:1,components:{"minecraft:written_book_content":{title:"Probe Lectern",author:"Probe",pages:[{text:"first"},{text:"second"},{text:"third"}]}}},Page:0}
+
 # --- the blocks find-blocks is asked for, in a known place ---
 fill 7 -60 -2 9 -60 0 minecraft:diamond_block
 

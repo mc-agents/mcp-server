@@ -7,6 +7,8 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -498,6 +500,103 @@ class BotEndToEndTest {
         assertTrue(book.contains("1. Find the shrine."), book);
         assertTrue(book.contains("2. [gui/price] 12 coins"), book);
         assertTrue(book.contains("3. Bring back the relic."), book);
+    }
+
+    /**
+     * A stonecutter's results are drawn by the screen and sent as a number that means whichever
+     * recipe the list happens to put there. Nothing reached them before: they are not slots, and
+     * they are not widgets either.
+     */
+    @Test
+    void aStonecutterResultIsChosenByName() {
+        world.run("clear " + BotWorld.BOT);
+        world.run("give " + BotWorld.BOT + " stone 4");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "stone", "timeoutMs", 10000));
+        agent.mustCall("open-container", Map.of("bot", BotWorld.BOT, "x", -1, "y", -60, "z", 5));
+        /* The first hotbar slot is 29 on a stonecutter, and a shift-click sends stone to the input. */
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 29, "shift", true));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String options = agent.mustCall("read-container-options", Map.of("bot", BotWorld.BOT));
+        String ambiguous = agent.refusal("press-container-button",
+            Map.of("bot", BotWorld.BOT, "option", "stone brick"));
+        String pressed = agent.mustCall("press-container-button",
+            Map.of("bot", BotWorld.BOT, "option", "stone bricks"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String window = agent.mustCall("read-window", Map.of("bot", BotWorld.BOT));
+
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        world.run("function mcagents:setup");
+
+        assertTrue(options.contains("Stone Bricks [stone_bricks], x1"), options);
+        assertTrue(ambiguous.contains("\"Stone Brick Slab\""), ambiguous);
+        assertTrue(pressed.startsWith("Pressed \"Stone Bricks\""), pressed);
+        assertTrue(window.contains("  1: stone_bricks x1"), window);
+    }
+
+    /**
+     * An enchanting table's offers are three numbers the server pushes into the menu, and which
+     * enchantment each is changes with the seed. So the offer is read first and pressed by the name
+     * it was read as, and the lapis it cost is what says the server took the press.
+     */
+    @Test
+    void anEnchantmentOfferIsPressedByTheNameItIsShownAs() {
+        world.run("clear " + BotWorld.BOT);
+        world.run("experience set " + BotWorld.BOT + " 30 levels");
+        world.run("give " + BotWorld.BOT + " iron_pickaxe 1");
+        world.run("give " + BotWorld.BOT + " lapis_lazuli 3");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "lapis", "timeoutMs", 10000));
+        agent.mustCall("open-container", Map.of("bot", BotWorld.BOT, "x", -1, "y", -60, "z", 3));
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 29, "shift", true));
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 30, "shift", true));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String options = agent.mustCall("read-container-options", Map.of("bot", BotWorld.BOT));
+        String refused = agent.refusal("press-container-button",
+            Map.of("bot", BotWorld.BOT, "option", "Nothing Like It"));
+        Matcher first = Pattern.compile("\n  0\\. (.+?) \\[").matcher(options);
+        assertTrue(first.find(), options);
+
+        String pressed = agent.mustCall("press-container-button",
+            Map.of("bot", BotWorld.BOT, "option", first.group(1)));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String window = agent.mustCall("read-window", Map.of("bot", BotWorld.BOT));
+
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        world.run("experience set " + BotWorld.BOT + " 0 levels");
+        world.run("function mcagents:setup");
+
+        assertTrue(options.contains("offers 3 options"), options);
+        assertTrue(options.contains("1 lapis") && options.contains("3 lapis"), options);
+        assertTrue(refused.contains("it offers \"" + first.group(1) + "\""), refused);
+        assertTrue(pressed.startsWith("Pressed \"" + first.group(1) + "\" (button 0)"), pressed);
+        assertTrue(window.contains("  1: lapis_lazuli x2"), window);
+    }
+
+    /**
+     * A lectern is drawn by the book screen, which is not a container screen, so everything that
+     * looked for one said nothing was open. Its page turns are buttons the server answers, and the
+     * page the screen shows afterwards is the server's answer.
+     */
+    @Test
+    void aLecternTurnsToThePageItIsAskedFor() {
+        world.run("clear " + BotWorld.BOT);
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("activate-block", Map.of("bot", BotWorld.BOT, "x", 0, "y", -60, "z", 7));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String options = agent.mustCall("read-container-options", Map.of("bot", BotWorld.BOT));
+        String pressed = agent.mustCall("press-container-button", Map.of("bot", BotWorld.BOT, "option", "page 3"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String book = agent.mustCall("read-book", Map.of("bot", BotWorld.BOT));
+
+        agent.call("press-dialog-button", Map.of("bot", BotWorld.BOT, "label", "Done"));
+        world.run("function mcagents:setup");
+
+        assertTrue(options.contains("(type minecraft:lectern) offers 3 options, open at page 1 of 3"), options);
+        assertTrue(options.contains("  1. previous page, unavailable"), options);
+        assertTrue(pressed.startsWith("Pressed \"page 3\" (button 102)"), pressed);
+        assertTrue(book.contains("open at page 3"), book);
     }
 
     /** The reason this kind of bot exists: a frame of what is actually on the screen. */

@@ -1,0 +1,8 @@
+{
+  "tool": "read-container-options",
+  "note": "nothing open, which is a state",
+  "data": {
+    "window": null
+  },
+  "text": "No window is open. Run whatever opens the menu first, then wait-for-window."
+}

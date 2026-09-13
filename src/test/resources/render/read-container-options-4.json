@@ -1,0 +1,15 @@
+{
+  "tool": "read-container-options",
+  "note": "a cartography table, which looks like it has a choice and has none",
+  "data": {
+    "window": {
+      "title": "Cartography Table",
+      "titleComponent": null,
+      "type": "minecraft:cartography_table",
+      "options": [],
+      "page": null,
+      "pageCount": null
+    }
+  },
+  "text": "window \"Cartography Table\" (type minecraft:cartography_table) has nothing to press: its result appears in slot 2 once both inputs are in, and click-slot takes it."
+}
