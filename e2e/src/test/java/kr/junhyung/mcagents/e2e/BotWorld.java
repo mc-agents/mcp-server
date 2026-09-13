@@ -87,7 +87,12 @@ final class BotWorld implements AutoCloseable {
             .withCreateContainerCmdModifier(command -> command.getHostConfig()
                 .withBinds(com.github.dockerjava.api.model.Bind.parse(assets(botImage) + ":/mc")))
             .withNetwork(network)
-            .waitingFor(Wait.forLogMessage(".*dialling.*\\n", 1).withStartupTimeout(BOT_LINK));
+            /*
+            "dialling" and not "tools ready": the mod says the first once the client has finished
+            loading, which on a machine without a graphics card is a minute and a half after the
+            process starts.
+            */
+            .waitingFor(Wait.forLogMessage(".*dialling .*\\n", 1).withStartupTimeout(BOT_LINK));
     }
 
     private static String assets(String botImage) {
