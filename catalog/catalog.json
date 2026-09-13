@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "3.3.0",
+  "catalogVersion": "3.4.0",
   "protocol": 1,
   "tools": [
     {
@@ -4691,6 +4691,77 @@
       "wireSchemaHash": "sha256:00d3e77dd497e1df245c1cdcdd76472db66e5cb0e54f8989559990cbdf3340b5"
     },
     {
+      "name": "type-text",
+      "group": "screen",
+      "description": "Type into a text field on the screen that is open: a dialog's input, an anvil's name box, a sign being edited. A dialog's inputs are not in the packet that opened it, so this is the only way to fill one in before pressing a button. Characters go through the client's own keyboard path, so a field's length limit and the characters it refuses apply as they would to a player. On a sign the editor is closed afterwards, because closing it is what sends the sign to the server.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "needsWorld": true,
+      "defaultDeadlineMs": 10000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "text": {
+            "description": "Text to type. A newline starts the next line in a multi-line field and on a sign; a one-line field refuses it.",
+            "type": "string"
+          },
+          "field": {
+            "description": "Which field to type into, by its label. A number picks by position, and on a sign editor it picks the line, 1 to 4. Omit it when the screen has exactly one field.",
+            "type": "string",
+            "minLength": 1
+          },
+          "replace": {
+            "description": "Clear the field first, rather than typing onto the end of what is already there (default: true)",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "description": "Text to type. A newline starts the next line in a multi-line field and on a sign; a one-line field refuses it.",
+            "type": "string"
+          },
+          "field": {
+            "description": "Which field to type into, by its label. A number picks by position, and on a sign editor it picks the line, 1 to 4. Omit it when the screen has exactly one field.",
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "default": null
+          },
+          "replace": {
+            "description": "Clear the field first, rather than typing onto the end of what is already there (default: true)",
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "field",
+          "replace",
+          "text"
+        ]
+      },
+      "wireSchemaHash": "sha256:35bfd2a2ab758a7d7dc688d32b445c6db79fe838afc31f599b964d19abe9ea6f"
+    },
+    {
       "name": "use-held-item",
       "group": "world",
       "description": "Right-click with the item the bot is holding, optionally holding the button down for a while.",
@@ -5448,5 +5519,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:4fd783209cc778c403f87cbee4242d2178d0d5b9fd426e8cb053cf4ed03e41cc"
+  "catalogHash": "sha256:f90d081dc6e915e231ac8950d6579bf7865baba3a51a66359de37076fb3481f2"
 }

@@ -1,0 +1,46 @@
+{
+  "type": "minecraft:multi_action",
+  "title": "Name the probe",
+  "external_title": "Name the probe",
+  "can_close_with_escape": true,
+  "body": [
+    {
+      "type": "minecraft:plain_message",
+      "contents": "A dialog that asks for something rather than offering a choice."
+    }
+  ],
+  "inputs": [
+    {
+      "key": "who",
+      "type": "minecraft:text",
+      "label": "Name",
+      "width": 200,
+      "max_length": 32,
+      "initial": "unnamed"
+    },
+    {
+      "key": "note",
+      "type": "minecraft:text",
+      "label": "Note",
+      "width": 200,
+      "max_length": 64,
+      "multiline": {
+        "max_lines": 3
+      }
+    }
+  ],
+  "columns": 1,
+  "actions": [
+    {
+      "label": "Set",
+      "action": {
+        "type": "minecraft:dynamic/run_command",
+        "template": "scoreboard players set $(who) mcagents 7"
+      },
+      "tooltip": "scores whatever was typed into Name, which is how the server sees it"
+    }
+  ],
+  "exit_action": {
+    "label": "Close"
+  }
+}

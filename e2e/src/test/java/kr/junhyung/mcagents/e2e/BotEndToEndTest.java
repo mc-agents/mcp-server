@@ -298,15 +298,15 @@ class BotEndToEndTest {
     void somethingWrittenInChatCanBePressed() {
         /* A command the client runs outright: one that sends chat as the player it will not. */
         world.run("""
-            tellraw @a ["Quest: ",{"text":"[Accept]","color":"green","click_event":{"action":"run_command","command":"/time query daytime"}}]""");
+            tellraw @a ["Quest: ",{"text":"[Accept]","color":"green","click_event":{"action":"run_command","command":"/difficulty"}}]""");
         agent.mustCall("wait-for-chat", Map.of("bot", BotWorld.BOT, "pattern", "Accept", "timeoutMs", 10000));
 
         String clicked = agent.call("click-chat", Map.of("bot", BotWorld.BOT, "match", "[Accept]"));
 
         assertTrue(clicked.startsWith("clicked \"[Accept]\" (run_command)"), clicked);
-        assertTrue(agent.call("wait-for-chat",
-            Map.of("bot", BotWorld.BOT, "pattern", "time is", "timeoutMs", 10000))
-            .contains("time is"), "the command the click ran produced nothing: " + clicked);
+        assertTrue(agent.mustCall("wait-for-chat",
+            Map.of("bot", BotWorld.BOT, "pattern", "difficulty is", "timeoutMs", 10000))
+            .contains("difficulty is"), "the command the click ran produced nothing: " + clicked);
     }
 
     /**
@@ -343,7 +343,7 @@ class BotEndToEndTest {
             world.run("scoreboard players set Progress mcagents 7");
         }).start();
 
-        String matched = agent.call("wait-for-scoreboard",
+        String matched = agent.mustCall("wait-for-scoreboard",
             Map.of("bot", BotWorld.BOT, "pattern", "Progress: 7", "timeoutMs", 20000));
         world.run("scoreboard players reset Progress mcagents");
 
@@ -360,7 +360,7 @@ class BotEndToEndTest {
             world.run("give " + BotWorld.BOT + " minecraft:emerald 7");
         }).start();
 
-        String matched = agent.call("wait-for-item",
+        String matched = agent.mustCall("wait-for-item",
             Map.of("bot", BotWorld.BOT, "pattern", "emerald x7", "timeoutMs", 20000));
         /* The fixture owns what a bot carries, so it puts it back. */
         world.run("function mcagents:setup");
@@ -394,6 +394,81 @@ class BotEndToEndTest {
         world.run("tp " + BotWorld.BOT + " 2 -59 0");
 
         assertTrue(looking.startsWith("Looking at stone at (14, -59, 0), its west face, "), looking);
+    }
+
+    /**
+     * The half of a dialog that pressing a button cannot reach. A dialog's text inputs are not in
+     * the packet that opened it -- the feed can say a dialog has two of them and not what they say
+     * -- so until something could put a value in one, a dialog that asks a question could be read
+     * and never answered. The scoreboard is the proof: what was typed is what the server scored.
+     */
+    @Test
+    void whatIsTypedIntoADialogIsWhatTheServerGets() {
+        world.run("scoreboard players reset Snowball mcagents");
+        world.run("dialog show " + BotWorld.BOT + " mcagents:name");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        /* The field starts out reading "unnamed", so this also says the old value was cleared. */
+        String typed = agent.mustCall("type-text",
+            Map.of("bot", BotWorld.BOT, "field", "Name", "text", "Snowball"));
+
+        assertTrue(typed.contains("typed into \"Name\""), typed);
+        assertTrue(typed.contains("which now reads \"Snowball\""), typed);
+
+        agent.mustCall("press-dialog-button", Map.of("bot", BotWorld.BOT, "label", "Set"));
+
+        /* mustCall, because a wait that expires answers with the pattern in it and would pass. */
+        String board = agent.mustCall("wait-for-scoreboard",
+            Map.of("bot", BotWorld.BOT, "pattern", "Snowball: 7", "timeoutMs", 10000));
+        world.run("scoreboard players reset Snowball mcagents");
+
+        assertTrue(board.contains("Snowball: 7"), board);
+    }
+
+    /**
+     * Which field, when there is more than one. A one-line box carries its label as its own
+     * message and a multi-line box carries an empty one, so the second label has to be read off
+     * the widget beside it -- and a screen where only half the fields can be named by name is one
+     * an agent has to guess its way around.
+     */
+    @Test
+    void aScreenWithTwoFieldsNamesBothOfThem() {
+        world.run("dialog show " + BotWorld.BOT + " mcagents:name");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String refused = agent.refusal("type-text", Map.of("bot", BotWorld.BOT, "text", "Snowball"));
+
+        agent.mustCall("press-dialog-button", Map.of("bot", BotWorld.BOT, "label", "Close"));
+
+        assertTrue(refused.contains("2 text fields and none was asked for"), refused);
+        assertTrue(refused.contains("\"Name\", \"Note\""), refused);
+    }
+
+    /**
+     * A sign is the one screen with text on it that is not a widget, and its text leaves the client
+     * only when the editor closes: typing and stopping there writes a sign nobody else ever sees.
+     */
+    @Test
+    void writingOnASignInTheWorld() {
+        world.run("setblock 2 -60 2 oak_sign[rotation=8]");
+        /* An empty hand, or the right-click places what is being held instead of opening the sign. */
+        world.run("clear " + BotWorld.BOT);
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("activate-block", Map.of("bot", BotWorld.BOT, "x", 2, "y", -60, "z", 2));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String written = agent.call("type-text", Map.of("bot", BotWorld.BOT, "text", "Shop\n\nOpen"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        /* Read back from the world, which is the only place that says the sign was really sent. */
+        String sign = agent.call("read-block-entity", Map.of("bot", BotWorld.BOT, "x", 2, "y", -60, "z", 2));
+
+        world.run("setblock 2 -60 2 air");
+        world.run("tp " + BotWorld.BOT + " 2 -59 0");
+        world.run("function mcagents:setup");
+
+        assertTrue(written.contains("\"Shop\" / \"\" / \"Open\" / \"\""), written);
+        assertTrue(sign.contains("front_text: Shop / (blank) / Open / (blank)"), sign);
     }
 
     /** The reason this kind of bot exists: a frame of what is actually on the screen. */
