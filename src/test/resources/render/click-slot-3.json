@@ -5,9 +5,12 @@
     "slot": 26,
     "button": "right",
     "shift": false,
+    "mode": "click",
+    "hotbar": null,
     "before": {"name": "emerald", "count": 3, "label": null, "lore": []},
     "after": {"name": "emerald", "count": 3, "label": null, "lore": []},
-    "cursor": null
+    "cursor": null,
+    "swapped": null
   },
   "text": "Right-clicked slot 26.\n  slot 26: emerald x3 -> emerald x3\n  cursor: empty"
 }

@@ -5,6 +5,8 @@
     "slot": 11,
     "button": "left",
     "shift": false,
+    "mode": "click",
+    "hotbar": null,
     "before": {
       "name": "paper",
       "count": 1,
@@ -33,7 +35,8 @@
         ]
       },
       "loreComponents": []
-    }
+    },
+    "swapped": null
   },
   "text": "Left-clicked slot 11.\n  slot 11: [gui/label] Mana Potion [paper] x1 -> empty\n  cursor: [gui/label] Mana Potion [paper] x1"
 }

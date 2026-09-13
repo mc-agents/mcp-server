@@ -1,0 +1,19 @@
+{
+  "tool": "click-slot",
+  "note": "a plugin cancelled an offhand swap into an empty slot, which only the offhand line shows",
+  "data": {
+    "slot": 3,
+    "button": "left",
+    "shift": false,
+    "mode": "swap-offhand",
+    "hotbar": null,
+    "before": null,
+    "after": null,
+    "cursor": null,
+    "swapped": {
+      "before": {"name": "shield", "count": 1, "label": null, "lore": []},
+      "after": {"name": "shield", "count": 1, "label": null, "lore": []}
+    }
+  },
+  "text": "Pressed the offhand key over slot 3.\n  slot 3: empty -> empty\n  offhand: shield x1 -> shield x1\n  cursor: empty"
+}

@@ -1,0 +1,19 @@
+{
+  "tool": "click-slot",
+  "note": "a number key traded the chest slot with the first hotbar slot, and both sides are shown",
+  "data": {
+    "slot": 0,
+    "button": "left",
+    "shift": false,
+    "mode": "swap-hotbar",
+    "hotbar": 1,
+    "before": {"name": "diamond_sword", "count": 1, "label": "Excalibur", "lore": ["A sword a server named"]},
+    "after": {"name": "diamond", "count": 3, "label": null, "lore": []},
+    "cursor": null,
+    "swapped": {
+      "before": {"name": "diamond", "count": 3, "label": null, "lore": []},
+      "after": {"name": "diamond_sword", "count": 1, "label": "Excalibur", "lore": ["A sword a server named"]}
+    }
+  },
+  "text": "Pressed hotbar key 1 over slot 0.\n  slot 0: Excalibur [diamond_sword] x1 -> diamond x3\n  hotbar 1: diamond x3 -> Excalibur [diamond_sword] x1\n  cursor: empty"
+}

@@ -5,9 +5,12 @@
     "slot": 0,
     "button": "left",
     "shift": false,
+    "mode": "click",
+    "hotbar": null,
     "before": {"name": "diamond_sword", "count": 1, "label": "Excalibur", "lore": ["A sword a server named"]},
     "after": null,
-    "cursor": {"name": "diamond_sword", "count": 1, "label": "Excalibur", "lore": ["A sword a server named"]}
+    "cursor": {"name": "diamond_sword", "count": 1, "label": "Excalibur", "lore": ["A sword a server named"]},
+    "swapped": null
   },
   "text": "Left-clicked slot 0.\n  slot 0: Excalibur [diamond_sword] x1 -> empty\n  cursor: Excalibur [diamond_sword] x1"
 }

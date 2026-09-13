@@ -1,0 +1,15 @@
+{
+  "tool": "drag-slots",
+  "note": "a right drag passed over a slot holding something else, which stays in the list unchanged",
+  "data": {
+    "button": "right",
+    "slots": [
+      {"slot": 1, "before": null, "after": {"name": "diamond", "count": 1, "label": null, "lore": []}},
+      {"slot": 4, "before": {"name": "cooked_beef", "count": 12, "label": null, "lore": []}, "after": {"name": "cooked_beef", "count": 12, "label": null, "lore": []}},
+      {"slot": 5, "before": null, "after": {"name": "diamond", "count": 1, "label": null, "lore": []}}
+    ],
+    "carried": {"name": "diamond", "count": 3, "label": null, "lore": []},
+    "cursor": {"name": "diamond", "count": 1, "label": null, "lore": []}
+  },
+  "text": "Right-dragged across slots 1, 4, 5.\n  slot 1: empty -> diamond x1\n  slot 4: cooked_beef x12 -> cooked_beef x12\n  slot 5: empty -> diamond x1\n  cursor: diamond x3 -> diamond x1"
+}

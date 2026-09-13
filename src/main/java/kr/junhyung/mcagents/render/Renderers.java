@@ -39,6 +39,7 @@ public final class Renderers {
         Map.entry("click-slot", entry(ClickedSlotRenderer.View.class, new ClickedSlotRenderer())),
         Map.entry("close-window", entry(ClosedWindowRenderer.View.class, new ClosedWindowRenderer())),
         Map.entry("complete-command", entry(CompletionsRenderer.View.class, new CompletionsRenderer())),
+        Map.entry("drag-slots", entry(DraggedSlotsRenderer.View.class, new DraggedSlotsRenderer())),
         Map.entry("drop-held-item", entry(DroppedItemRenderer.View.class, new DroppedItemRenderer())),
         Map.entry("find-blocks", entry(FoundBlocksRenderer.View.class, new FoundBlocksRenderer())),
         Map.entry("find-entity", entry(FoundEntitiesRenderer.View.class, new FoundEntitiesRenderer())),
