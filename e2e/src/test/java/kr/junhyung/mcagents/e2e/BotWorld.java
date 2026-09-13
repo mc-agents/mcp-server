@@ -128,7 +128,25 @@ final class BotWorld implements AutoCloseable {
      */
     String logs(int lines) {
         return "--- minecraft\n" + tail(server.getLogs(), lines)
-            + "\n--- bot\n" + tail(bot.getLogs(), lines);
+            + "\n--- bot\n" + tail(bot.getLogs(), lines)
+            + "\n--- crash\n" + crash();
+    }
+
+    /**
+     * The crash report, when the client left one.
+     *
+     * <p>A client that dies takes the link with it, and what mcp-server can say about that is
+     * "the link to the bot closed". The reason is in a file inside the container, and the tail of
+     * the log is the middle of the report's mod list -- which says nothing at all.
+     */
+    private String crash() {
+        try {
+            return bot.execInContainer("sh", "-c",
+                "head -40 \"$(ls -t ${BOT_WORK_DIR:-/data}/crash-reports/*.txt 2>/dev/null | head -1)\""
+                    + " 2>/dev/null || echo none").getStdout();
+        } catch (IOException | InterruptedException unreadable) {
+            return "(could not be read: " + unreadable.getMessage() + ")";
+        }
     }
 
     private static String tail(String log, int lines) {
