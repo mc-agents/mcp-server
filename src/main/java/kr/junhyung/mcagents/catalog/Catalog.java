@@ -69,7 +69,8 @@ public final class Catalog {
                     node.get("defaultDeadlineMs").asInt(),
                     mapper.convertValue(node.get("inputSchema"), SCHEMA),
                     node.has("wireSchema") ? mapper.convertValue(node.get("wireSchema"), SCHEMA) : null,
-                    node.has("wireSchemaHash") ? node.get("wireSchemaHash").asString() : null);
+                    node.has("wireSchemaHash") ? node.get("wireSchemaHash").asString() : null,
+                    node.has("watches") ? node.get("watches").asString() : null);
 
             if (parsed.put(name, spec) != null) {
                 throw new IllegalStateException("the catalogue declares \"%s\" twice".formatted(name));

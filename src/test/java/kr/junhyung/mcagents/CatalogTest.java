@@ -40,7 +40,12 @@ class CatalogTest {
         for (ToolSpec tool : catalog.all()) {
             boolean reachesABot = tool.route() == ToolSpec.Route.RPC || tool.route() == ToolSpec.Route.COMPOSE;
 
-            if (reachesABot) {
+            /*
+            Except a wait, which sends a bot nothing of its own: it polls another tool, and that
+            tool's schema is the one that crosses the wire. A wire schema here would be a shape
+            nothing ever sends.
+            */
+            if (reachesABot && tool.watches() == null) {
                 assertNotNull(tool.wireSchema(), tool.name() + " goes to a bot without a wire schema");
                 assertNotNull(tool.wireSchemaHash(), tool.name() + " goes to a bot without a hash");
             }

@@ -2,6 +2,7 @@ package kr.junhyung.mcagents.tool;
 
 import kr.junhyung.mcagents.bot.BotSession;
 import kr.junhyung.mcagents.bot.FeedEntry;
+import kr.junhyung.mcagents.catalog.Catalog;
 import kr.junhyung.mcagents.catalog.ToolSpec;
 import kr.junhyung.mcagents.protocol.Messages;
 import kr.junhyung.mcagents.render.Renderers;
@@ -18,6 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import org.springframework.stereotype.Component;
 
 /** Tools a bot answers. */
@@ -26,8 +29,18 @@ public class RemoteTools {
 
     private static final JsonMapper MAPPER = JsonMapper.builder().build();
 
+    /** Between two polls of a waited-on tool. A tick is 50ms and nothing here changes that fast. */
+    private static final int POLL_MS = 500;
+
     /** One walk at a time per bot: two of them cancel each other and then both report success. */
     private final Map<String, Set<String>> busy = new ConcurrentHashMap<>();
+
+    /** A wait polls another tool, and the catalogue is where it says which. */
+    private final Catalog catalog;
+
+    public RemoteTools(Catalog catalog) {
+        this.catalog = catalog;
+    }
 
     public McpSchema.CallToolResult call(ToolSpec spec, BotSession bot, Map<String, Object> arguments) {
         return call(spec, bot, arguments, true);
@@ -79,6 +92,10 @@ public class RemoteTools {
      * thread in arrival order, which is what makes "after" mean anything.
      */
     public McpSchema.CallToolResult compose(ToolSpec spec, BotSession bot, Map<String, Object> arguments) {
+        if (spec.watches() != null) {
+            return awaitMatch(spec, bot, arguments);
+        }
+
         long from = bot.feed("chat").nextSeq();
 
         /*
@@ -122,6 +139,75 @@ public class RemoteTools {
 
         return ToolDispatcher.text("%s The server replied %s:\n%s"
                 .formatted(textOf(answer), Trust.NOTICE, lines));
+    }
+
+    /**
+     * Wait for a reading tool to answer something a pattern matches.
+     *
+     * <p>Four feeds are pushed by the bot and can be waited on where they are kept. The rest of
+     * what a server changes -- a sidebar counting a quest up, a boss bar, a hologram, the tab list
+     * -- is state a tool reads when asked, with nothing to wake a waiter, so this asks again until
+     * the answer says what the caller is waiting for.
+     *
+     * <p>Polling and not a subscription, because the alternative is every bot pushing every piece
+     * of state it holds on the chance somebody waits for it. The cost is one cheap call a poll,
+     * which is what a caller would otherwise write as a loop.
+     */
+    private McpSchema.CallToolResult awaitMatch(ToolSpec spec, BotSession bot, Map<String, Object> arguments) {
+        ToolSpec watched = catalog.require(spec.watches());
+        Pattern pattern = compile(arguments == null ? null : arguments.get("pattern"));
+
+        if (pattern == null) {
+            return ToolDispatcher.failure("%s needs a pattern to wait for.".formatted(spec.name()));
+        }
+
+        int timeoutMs = Math.clamp(intOf(arguments == null ? null : arguments.get("timeoutMs"), 10_000),
+                100, 120_000);
+        Map<String, Object> passed = withoutWaitArguments(arguments);
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        McpSchema.CallToolResult last = null;
+
+        while (System.currentTimeMillis() < deadline) {
+            last = call(watched, bot, passed, watched.untrusted());
+
+            if (last.isError()) {
+                return last;
+            }
+            if (pattern.matcher(textOf(last)).find()) {
+                return last;
+            }
+            sleep(POLL_MS);
+        }
+
+        /* What it last said, because "nothing matched" on its own sends a caller back to guess. */
+        return ToolDispatcher.failure("nothing %s answered matched /%s/ within %dms. It last said: %s"
+                .formatted(watched.name(), pattern.pattern(), timeoutMs,
+                        last == null ? "nothing" : textOf(last)));
+    }
+
+    /** Everything the watched tool might want, which is whatever the wait itself does not. */
+    private static Map<String, Object> withoutWaitArguments(Map<String, Object> arguments) {
+        if (arguments == null) {
+            return Map.of();
+        }
+
+        Map<String, Object> passed = new java.util.LinkedHashMap<>(arguments);
+        passed.remove("pattern");
+        passed.remove("timeoutMs");
+
+        return passed;
+    }
+
+    private static Pattern compile(Object raw) {
+        if (!(raw instanceof String source) || source.isBlank()) {
+            return null;
+        }
+        try {
+            return Pattern.compile(source);
+        } catch (PatternSyntaxException broken) {
+            throw new IllegalArgumentException("the pattern /%s/ is not a regular expression: %s"
+                    .formatted(source, broken.getDescription()));
+        }
     }
 
     /**

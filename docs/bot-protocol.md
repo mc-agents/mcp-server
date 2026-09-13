@@ -357,6 +357,14 @@ named a place, a date and a channel side by side, and joined into one string it 
 `read-displays` also sends `glyphPieces`, because a display drawn only from glyphs is an icon --
 something is there and there is nothing to read -- which is not the same as an empty display.
 
+**A wait on state nothing pushes is the server polling a tool.** Four feeds are pushed by the bot
+and waited on where they are kept; a sidebar counting a quest up, a boss bar, a hologram, the tab
+list and what the bot is carrying are state a tool reads when asked, with nothing to wake a waiter.
+Those waits carry `watches` in the catalogue, naming the reading tool they poll until its answer
+matches, and nothing of them reaches a bot -- so they have no wire schema and a bot does not report
+them as capabilities. The alternative was every bot pushing every piece of state it holds on the
+chance somebody waits for it.
+
 **The dialog feed carries the dialog, not a description of it.** `event.data` on a `dialog` line is
 the dialog as the game serialises it -- `title`, `body`, `actions`/`yes`/`no`/`action`/`exit_action`,
 `inputs` -- and the server reads the parts worth reading and writes the line. A dialog is not one

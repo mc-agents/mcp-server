@@ -17,6 +17,8 @@ import java.util.Map;
  *                  same state differently
  * @param inputSchema what MCP advertises, including the optional {@code bot}
  * @param wireSchema  what a bot receives: no {@code bot}, nothing optional, already clamped
+ * @param watches   the reading tool this one polls until its answer matches, for a wait on state
+ *                  the bot pushes no feed for. Null for everything else
  */
 public record ToolSpec(
         String name,
@@ -31,7 +33,8 @@ public record ToolSpec(
         int defaultDeadlineMs,
         Map<String, Object> inputSchema,
         Map<String, Object> wireSchema,
-        String wireSchemaHash) {
+        String wireSchemaHash,
+        String watches) {
 
     public enum Route {
         LOCAL, RPC, COMPOSE, ORCHESTRATE;

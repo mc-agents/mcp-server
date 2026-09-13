@@ -119,6 +119,14 @@ class BotEndToEndTest {
         throw new IllegalStateException("the bot never linked within " + LINK + "\n" + world.logs(LOG_TAIL));
     }
 
+    private static void sleep(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     @AfterAll
     void leave() {
         if (agent != null) {
@@ -267,8 +275,9 @@ class BotEndToEndTest {
         world.run("dialog show " + BotWorld.BOT + " mcagents:check");
         agent.call("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
 
-        assertEquals("pressed \"Confirm\"",
-            agent.call("press-dialog-button", Map.of("bot", BotWorld.BOT, "label", "Confirm")));
+        /* The client confirms a command that needs elevated permissions, and yes is pressed. */
+        assertTrue(agent.call("press-dialog-button", Map.of("bot", BotWorld.BOT, "label", "Confirm"))
+            .startsWith("pressed \"Confirm\""));
 
         world.run("dialog show " + BotWorld.BOT + " mcagents:check");
         agent.call("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
@@ -277,6 +286,96 @@ class BotEndToEndTest {
             Map.of("bot", BotWorld.BOT, "label", "Cancel"));
 
         assertTrue(refused.contains("asks the client to run a command and it will not"), refused);
+    }
+
+    /**
+     * A quest's choices, a shop's items and half of a server's menus are chat lines with a click
+     * event on them. The component that carries the event has been on the wire for a while and
+     * there was no way to answer one, so a flow a player drives by clicking could only be driven
+     * by guessing the command behind it.
+     */
+    @Test
+    void somethingWrittenInChatCanBePressed() {
+        /* A command the client runs outright: one that sends chat as the player it will not. */
+        world.run("""
+            tellraw @a ["Quest: ",{"text":"[Accept]","color":"green","click_event":{"action":"run_command","command":"/time query daytime"}}]""");
+        agent.mustCall("wait-for-chat", Map.of("bot", BotWorld.BOT, "pattern", "Accept", "timeoutMs", 10000));
+
+        String clicked = agent.call("click-chat", Map.of("bot", BotWorld.BOT, "match", "[Accept]"));
+
+        assertTrue(clicked.startsWith("clicked \"[Accept]\" (run_command)"), clicked);
+        assertTrue(agent.call("wait-for-chat",
+            Map.of("bot", BotWorld.BOT, "pattern", "time is", "timeoutMs", 10000))
+            .contains("time is"), "the command the click ran produced nothing: " + clicked);
+    }
+
+    /**
+     * A click that would leave the game is not this bot's to make, and the refusal says which kind
+     * it was: a server writing a link where it meant a command is a thing worth being told.
+     */
+    @Test
+    void aChatClickThatLeavesTheGameIsRefused() {
+        world.run("""
+            tellraw @a [{"text":"[Website]","click_event":{"action":"open_url","url":"https://example.invalid/"}}]""");
+        agent.mustCall("wait-for-chat", Map.of("bot", BotWorld.BOT, "pattern", "Website", "timeoutMs", 10000));
+
+        String refused = agent.refusal("click-chat", Map.of("bot", BotWorld.BOT, "match", "[Website]"));
+
+        assertTrue(refused.contains("open_url"), refused);
+    }
+
+    /**
+     * A quest counts up on the sidebar, on a boss bar or in the inventory, and nothing pushes any
+     * of those: the bot holds them and answers when asked. The waits poll, so an agent writes one
+     * call rather than a loop -- and a loop written by an agent is a loop that either polls too
+     * fast or gives up too early.
+     */
+    @Test
+    void waitingOnStateTheBotIsNotPushing() {
+        /* An entry of its own, put back afterwards: the fixture's three are asserted elsewhere. */
+        world.run("scoreboard players set Progress mcagents 1");
+        agent.mustCall("wait-for-scoreboard",
+            Map.of("bot", BotWorld.BOT, "pattern", "Progress: 1", "timeoutMs", 10000));
+
+        /* Set after the wait starts, which is the case a wait is for. */
+        new Thread(() -> {
+            sleep(1500);
+            world.run("scoreboard players set Progress mcagents 7");
+        }).start();
+
+        String matched = agent.call("wait-for-scoreboard",
+            Map.of("bot", BotWorld.BOT, "pattern", "Progress: 7", "timeoutMs", 20000));
+        world.run("scoreboard players reset Progress mcagents");
+
+        assertTrue(matched.contains("Progress: 7"), matched);
+    }
+
+    /** The condition half of most quests: collect ten of these, be given that. */
+    @Test
+    void waitingUntilTheBotIsCarryingSomething() {
+        world.run("clear " + BotWorld.BOT);
+
+        new Thread(() -> {
+            sleep(1500);
+            world.run("give " + BotWorld.BOT + " minecraft:emerald 7");
+        }).start();
+
+        String matched = agent.call("wait-for-item",
+            Map.of("bot", BotWorld.BOT, "pattern", "emerald x7", "timeoutMs", 20000));
+        /* The fixture owns what a bot carries, so it puts it back. */
+        world.run("function mcagents:setup");
+
+        assertTrue(matched.contains("emerald x7"), matched);
+    }
+
+    /** A wait that expires says what it last saw, which is where a caller looks next. */
+    @Test
+    void aWaitThatExpiresSaysWhatItLastSaw() {
+        String refused = agent.refusal("wait-for-scoreboard",
+            Map.of("bot", BotWorld.BOT, "pattern", "never-appears-on-any-sidebar", "timeoutMs", 2000));
+
+        assertTrue(refused.contains("It last said"), refused);
+        assertTrue(refused.contains("Probe Stats"), refused);
     }
 
     /** The reason this kind of bot exists: a frame of what is actually on the screen. */
