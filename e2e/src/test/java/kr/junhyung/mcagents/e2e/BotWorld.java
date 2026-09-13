@@ -40,7 +40,7 @@ final class BotWorld implements AutoCloseable {
     private final GenericContainer<?> server;
     private final GenericContainer<?> bot;
 
-    BotWorld(Path fixture, String minecraftVersion, String botImage, int linkPort) {
+    BotWorld(Path fixture, String minecraftVersion, String botImage, String botKind, int linkPort) {
         /*
         The bot dials this process, which is not in a container. Host networking would do it on a
         Linux runner and not on a Mac, where a container's localhost is the virtual machine's;
@@ -78,14 +78,6 @@ final class BotWorld implements AutoCloseable {
             .withEnv("MCP_SERVER_PORT", String.valueOf(linkPort))
             .withEnv("BOT_NAME", BOT)
             .withEnv("MC_VERSION", minecraftVersion)
-            /*
-            Kept between runs, because filling it is a 500MB download and what is in it does not
-            change. Named after the image rather than the version: a client's LWJGL natives are
-            built for one architecture, so an arm64 image filling a volume an amd64 one then reads
-            leaves the client loading natives it cannot run, and the link dies during the join.
-            */
-            .withCreateContainerCmdModifier(command -> command.getHostConfig()
-                .withBinds(com.github.dockerjava.api.model.Bind.parse(assets(botImage) + ":/mc")))
             .withNetwork(network)
             /*
             "dialling" and not "tools ready": the mod says the first once the client has finished
@@ -93,6 +85,18 @@ final class BotWorld implements AutoCloseable {
             process starts.
             */
             .waitingFor(Wait.forLogMessage(".*dialling .*\\n", 1).withStartupTimeout(BOT_LINK));
+
+        /*
+        Kept between runs, because filling it is a 500MB download and what is in it does not
+        change. Named after the image rather than the version: a client's LWJGL natives are built
+        for one architecture, so an arm64 image filling a volume an amd64 one then reads leaves the
+        client loading natives it cannot run, and the link dies during the join. An azalea bot has
+        no client jar and no assets to keep.
+        */
+        if ("fabric".equals(botKind)) {
+            bot.withCreateContainerCmdModifier(command -> command.getHostConfig()
+                .withBinds(com.github.dockerjava.api.model.Bind.parse(assets(botImage) + ":/mc")));
+        }
     }
 
     private static String assets(String botImage) {

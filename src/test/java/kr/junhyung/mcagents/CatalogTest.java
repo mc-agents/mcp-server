@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import kr.junhyung.mcagents.catalog.Catalog;
 import kr.junhyung.mcagents.catalog.ToolSpec;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /** Loaded from the shipped catalogue, so these assert the contract rather than a fixture. */
@@ -84,18 +85,19 @@ class CatalogTest {
 
     /*
     The kinds list and the sentence that names them have to agree, so the sentence is generated --
-    and it is generated against the kinds the catalogue has rather than against a count. There is
-    one kind now, so nothing is distinguished and nothing is said; a second would bring the
-    sentence back on every tool that only one of them could run.
+    and it is generated against the kinds the catalogue has rather than against a count. A tool every
+    kind runs says nothing, and one only fabric runs says so, which is what tells an agent holding an
+    azalea bot not to ask it for a screenshot.
     */
     @Test
-    void withOneKindNoToolSaysWhichKindsSupportIt() {
+    void aToolEveryKindRunsSaysNothingAndOneThatOnlySomeRunSaysWhich() {
+        ToolSpec position = catalog.require("get-position");
         ToolSpec screenshot = catalog.require("screenshot");
 
-        assertEquals(List.of("fabric"), screenshot.kinds());
-        assertEquals(screenshot.description(), screenshot.advertisedDescription(catalog.kinds()));
-        assertTrue(screenshot.supportedBy("fabric"));
-        assertFalse(screenshot.supportedBy("some-other-kind"));
+        assertEquals(Set.of("fabric", "azalea"), catalog.kinds());
+        assertEquals(position.description(), position.advertisedDescription(catalog.kinds()));
+        assertTrue(screenshot.advertisedDescription(catalog.kinds()).endsWith("Supported by bots of kind: fabric."));
+        assertFalse(screenshot.supportedBy("azalea"));
     }
 
     @Test

@@ -133,7 +133,8 @@ def hello_first(link, hello):
             return "hello has no %s" % field
     if not isinstance(hello["protocols"], list) or not hello["protocols"]:
         return "protocols is not a list of at least one version"
-    if hello["kind"] != "fabric":
+    kinds = {kind for tool in CATALOG["tools"] for kind in tool["kinds"]}
+    if hello["kind"] not in kinds:
         return "kind is %r, which no catalogue tool lists" % hello["kind"]
     return None
 
@@ -237,7 +238,8 @@ def two_in_flight(link, hello):
 
 @check("every blob it names arrives before the result that names it")
 def blobs_first(link, hello):
-    if hello["kind"] != "fabric":
+    # By what the bot offered, not by its kind: a kind that cannot take a screenshot sends no blobs.
+    if "screenshot" not in {capability["tool"] for capability in hello["capabilities"]}:
         return None
 
     with link.lock:
@@ -317,7 +319,7 @@ def main(port):
         "t": "helloOk", "protocol": CATALOG["protocol"], "sessionId": str(uuid.uuid4()),
         "heartbeatMs": 5000, "repeatFlushMs": 1000,
         "limits": {"maxFrameBytes": 2 * 1024 * 1024, "maxInFlight": 8},
-        "events": {"chat": True, "actionBar": True, "title": True, "dialog": True, "effect": True},
+        "events": {"chat": True, "actionBar": True, "title": True, "dialog": True, "effect": True, "toast": True},
         "acceptedTools": [c["tool"] for c in hello["capabilities"]], "rejectedTools": [],
     })
 

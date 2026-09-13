@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "3.13.0",
+  "catalogVersion": "3.14.0",
   "protocol": 1,
   "tools": [
     {
@@ -2178,7 +2178,8 @@
       "description": "Report connection state, position and health for one bot, and whether it is dead.",
       "route": "local",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -2339,7 +2340,8 @@
       "description": "Report the block position the bot currently stands on.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -2875,7 +2877,8 @@
       "description": "Send a bot into a Minecraft server and wait until it has spawned. A bot already running under this name is used as it is; otherwise one is started, which in a cluster means the operator creates it and takes a few seconds longer. A failure says how far it got, because a bot that never started and a server that refused the login have different fixes.",
       "route": "orchestrate",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -2913,14 +2916,15 @@
             "type": "string"
           },
           "kind": {
-            "description": "Which kind of bot to start when none by this name is running. One kind exists: a real Minecraft client. (default: fabric)",
+            "description": "Which kind of bot to start when none by this name is running. \"fabric\" is a real Minecraft client: every tool, a screenshot, dialogs, books and the creative inventory, at about 1.7GiB and a minute and a half to link. \"azalea\" is a headless client in a few megabytes that joins in under a second, for many bots at once or a fast loop, and runs only the tools whose descriptions do not say otherwise. (default: fabric)",
             "type": "string",
             "enum": [
-              "fabric"
+              "fabric",
+              "azalea"
             ]
           },
           "minecraftVersion": {
-            "description": "Minecraft version for a bot that has to be started. A fabric client is built against one version. (default: 26.1.2)",
+            "description": "Minecraft version for a bot that has to be started. Both kinds are built for one version. (default: 26.1.2)",
             "type": "string",
             "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"
           }
@@ -2970,7 +2974,8 @@
       "description": "Take a bot out of the world it is in. The process stays up and linked, ready for the next join-server, so leaving and rejoining is cheap.",
       "route": "orchestrate",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -2994,7 +2999,8 @@
       "description": "List every bot this server currently holds, including bots joined by other agents.",
       "route": "local",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -3778,7 +3784,8 @@
       "description": "Send a Minecraft server list ping and report version, protocol, player count and MOTD. Use it to check a server is up and speaks a version we can join before spending a bot slot.",
       "route": "local",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -4571,7 +4578,8 @@
       "description": "Read recent chat and system messages the bot received.",
       "route": "local",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -5954,7 +5962,8 @@
       "description": "Put a bot back on the server it is on, under the same name. Use it after redeploying a plugin: the bot is still connected and still holding whatever the previous build gave it, and a stale inventory or scoreboard looks exactly like a bug in the new one.",
       "route": "orchestrate",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -6577,7 +6586,8 @@
       "description": "Say something in chat as the bot. Use run-command for slash commands.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -7165,7 +7175,8 @@
       "description": "Wait until a message matching a regular expression arrives. Only messages received after the call count.",
       "route": "local",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -7460,7 +7471,8 @@
       "description": "Wait until a Minecraft server answers a server list ping and reports it can be joined. Use it after restarting a server so the next join-server does not race the boot.",
       "route": "local",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -7773,7 +7785,8 @@
       "description": "Wait a number of server ticks so the server has time to apply a change.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -7818,5 +7831,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:518ef5a8b899d6f027318dc8f6db54c4f38250246314ab13e0345d7ae26921dc"
+  "catalogHash": "sha256:99e8d787b85d7faea9eff6d78482fd23c3a4aafa4db16f53a383be90329e1eb2"
 }

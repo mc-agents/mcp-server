@@ -80,10 +80,11 @@ class BotEndToEndTest {
             Path.of(System.getProperty("e2e.fixture")),
             System.getProperty("e2e.minecraft.version"),
             System.getProperty("e2e.bot.image"),
+            System.getProperty("e2e.bot.kind"),
             server.linkPort());
         world.start();
 
-        agent = new Agent(server.mcpPort());
+        agent = new Agent(server.mcpPort(), System.getProperty("e2e.bot.kind"));
 
         /* A setup that failed silently left every case after it reporting an empty world. */
         try {
@@ -108,7 +109,9 @@ class BotEndToEndTest {
      */
     @BeforeEach
     void standWhereEveryCaseStarts() {
-        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        if (agent.runs("close-window")) {
+            agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        }
         world.run("gamemode creative " + BotWorld.BOT);
         world.run("tp " + BotWorld.BOT + " 2 -59 0");
         agent.call("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
@@ -1179,6 +1182,37 @@ class BotEndToEndTest {
         assertTrue(seen.contains("1b"), "the server never showed the credits: " + seen);
         assertEquals("Closed the end credits.", closed);
         assertTrue(dimension.contains("minecraft:overworld"), "the bot is still in the End: " + dimension);
+    }
+
+    /**
+     * The block a bot stands in, on the negative side of an axis. Truncating towards zero names the
+     * block next door there and only there, which is how one kind of bot reported a position a block
+     * away from where the server had put it.
+     */
+    @Test
+    void aBotIsInTheBlockTheServerPutItIn() {
+        /* Dry ground: the fixture's fishing pool is further along the negative axes, and a bot in water sinks. */
+        world.run("tp " + BotWorld.BOT + " -1.5 -60 1.5");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String position = agent.mustCall("get-position", Map.of("bot", BotWorld.BOT));
+
+        assertEquals("Position: (-2, -60, 1)", position);
+    }
+
+    /**
+     * What a bot says reaches the server as that player's chat, and comes back on the feed attributed
+     * to it. Both halves are the bot's: sending it, and naming who a line came from rather than
+     * where the client drew it.
+     */
+    @Test
+    void whatABotSaysIsHeardAsThatPlayer() {
+        String said = agent.mustCall("send-chat", Map.of("bot", BotWorld.BOT, "message", "probe says hello"));
+        String heard = agent.mustCall("wait-for-chat",
+            Map.of("bot", BotWorld.BOT, "pattern", "probe says hello", "timeoutMs", 10000));
+
+        assertEquals("Sent as " + BotWorld.BOT + ": probe says hello", said);
+        assertTrue(heard.contains(BotWorld.BOT), heard);
     }
 
     /** The reason this kind of bot exists: a frame of what is actually on the screen. */

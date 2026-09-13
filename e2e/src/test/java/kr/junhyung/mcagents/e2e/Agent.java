@@ -7,6 +7,8 @@ import io.modelcontextprotocol.spec.McpSchema;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.Assumptions;
 
 /**
  * What an agent sees.
@@ -22,8 +24,10 @@ final class Agent implements AutoCloseable {
     private static final Duration PATIENCE = Duration.ofMinutes(3);
 
     private final McpSyncClient client;
+    private final String kind;
+    private final Map<String, List<?>> kinds;
 
-    Agent(int port) {
+    Agent(int port, String kind) {
         client = McpClient.sync(HttpClientStreamableHttpTransport
                 .builder("http://127.0.0.1:" + port)
                 .endpoint("/mcp")
@@ -31,10 +35,34 @@ final class Agent implements AutoCloseable {
             .requestTimeout(PATIENCE)
             .build();
         client.initialize();
+
+        this.kind = kind;
+        this.kinds = client.listTools().tools().stream().collect(Collectors.toMap(
+            McpSchema.Tool::name,
+            tool -> tool.meta() == null ? List.of() : (List<?>) tool.meta().getOrDefault("mcAgents/kinds", List.of())));
+    }
+
+    /** Whether the catalogue gives this tool to the kind of bot being driven. */
+    boolean runs(String tool) {
+        return kinds.getOrDefault(tool, List.of()).contains(kind);
+    }
+
+    /**
+     * A case that needs a tool this kind of bot does not have is skipped, not failed.
+     *
+     * <p>The catalogue is what says which kind runs what, so the suite asks it rather than every case
+     * listing the tools it needs: a tool that gains a kind turns on every case that uses it, and
+     * nothing here has to be edited for that to happen.
+     */
+    private void require(String tool) {
+        if (!runs(tool)) {
+            Assumptions.abort("a " + kind + " bot does not run " + tool);
+        }
     }
 
     /** The text an agent is shown, with the blob parts left out. */
     String call(String tool, Map<String, Object> args) {
+        require(tool);
         McpSchema.CallToolResult answer = client.callTool(McpSchema.CallToolRequest.builder(tool).arguments(args).build());
 
         return text(answer);
@@ -49,6 +77,7 @@ final class Agent implements AutoCloseable {
      * why.
      */
     String mustCall(String tool, Map<String, Object> args) {
+        require(tool);
         McpSchema.CallToolResult answer = client.callTool(
             McpSchema.CallToolRequest.builder(tool).arguments(args).build());
 
@@ -60,6 +89,7 @@ final class Agent implements AutoCloseable {
 
     /** The same, for a tool expected to refuse: the message is the answer. */
     String refusal(String tool, Map<String, Object> args) {
+        require(tool);
         McpSchema.CallToolResult answer = client.callTool(McpSchema.CallToolRequest.builder(tool).arguments(args).build());
 
         if (!Boolean.TRUE.equals(answer.isError())) {
@@ -70,6 +100,7 @@ final class Agent implements AutoCloseable {
 
     /** How many parts of the answer were not text, which is how a screenshot arrives. */
     int blobs(String tool, Map<String, Object> args) {
+        require(tool);
         McpSchema.CallToolResult answer = client.callTool(McpSchema.CallToolRequest.builder(tool).arguments(args).build());
 
         return (int) answer.content().stream().filter(part -> !(part instanceof McpSchema.TextContent)).count();
