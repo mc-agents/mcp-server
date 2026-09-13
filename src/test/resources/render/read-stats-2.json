@@ -1,0 +1,14 @@
+{
+  "tool": "read-stats",
+  "note": "one statistic by type and target, never earned, which is a zero and not an empty list",
+  "data": {
+    "type": "minecraft:killed",
+    "target": "minecraft:zombie",
+    "matched": 1,
+    "stats": [
+      { "type": "minecraft:killed", "target": "minecraft:zombie", "value": 0, "formatted": null }
+    ],
+    "otherTypes": []
+  },
+  "text": "Statistic minecraft:killed minecraft:zombie: 0"
+}

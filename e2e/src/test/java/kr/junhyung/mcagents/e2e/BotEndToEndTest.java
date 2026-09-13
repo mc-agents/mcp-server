@@ -1055,6 +1055,132 @@ class BotEndToEndTest {
             "the ninth hotbar slot does not hold what slot 0 offered (" + offered.group(1) + "): " + hotbar);
     }
 
+    /**
+     * The client holds the statistics it was last sent, and it is sent them only when it asks, so
+     * reading what it holds answers a quest check with the count from before the kill being checked.
+     * Read, kill, read, kill, read: each read has to be the number the server has after the kill,
+     * and the server's number is a scoreboard objective counting the same statistic.
+     */
+    @Test
+    void aKillIsReadAsTheServerCountsItAfterwards() {
+        world.run("function mcagents:setup");
+        world.run("tp " + BotWorld.BOT + " 4 -60 -8");
+        world.run("scoreboard objectives remove mcagents_kills");
+        world.run("scoreboard objectives add mcagents_kills minecraft.killed:minecraft.chicken");
+        Map<String, Object> chickens = Map.of("bot", BotWorld.BOT, "type", "killed", "target", "minecraft:chicken");
+
+        String before = agent.mustCall("read-stats", chickens);
+        int counted = Integer.parseInt(before.substring(before.lastIndexOf(' ') + 1));
+
+        killAChicken(counted + 1);
+        String once = agent.mustCall("read-stats", chickens);
+        killAChicken(counted + 2);
+        String twice = agent.mustCall("read-stats", chickens);
+        String general = agent.mustCall("read-stats", Map.of("bot", BotWorld.BOT));
+
+        world.run("scoreboard objectives remove mcagents_kills");
+        world.run("kill @e[type=chicken,tag=mcagents]");
+        world.run("tp " + BotWorld.BOT + " 2 -59 0");
+        world.run("function mcagents:setup");
+
+        assertTrue(before.startsWith("Statistic minecraft:killed minecraft:chicken: "), before);
+        assertEquals("Statistic minecraft:killed minecraft:chicken: " + (counted + 1), once);
+        assertEquals("Statistic minecraft:killed minecraft:chicken: " + (counted + 2), twice);
+        assertTrue(general.contains("\n  minecraft:mob_kills: "), general);
+        assertTrue(general.contains("minecraft:killed ("), "the kills per mob went unmentioned: " + general);
+    }
+
+    /** One chicken, dead by the bot's hand, and not returning until the server has counted it. */
+    private void killAChicken(int expected) {
+        world.run("summon chicken 6 -60 -8 {Tags:[\"mcagents\"],NoAI:1b,Silent:1b,Health:1f}");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("attack-entity", Map.of("bot", BotWorld.BOT, "name", "chicken"));
+
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(10));
+        String score = "";
+
+        while (Instant.now().isBefore(deadline)) {
+            score = world.run("scoreboard players get " + BotWorld.BOT + " mcagents_kills");
+            if (score.contains("has " + expected + " ")) {
+                return;
+            }
+            sleep(250);
+        }
+        throw new AssertionError("the server never counted kill " + expected + ": " + score);
+    }
+
+    /**
+     * A command block's editor is a text field, a mode that cycles and a Done button, the same
+     * pieces a dialog is made of. It is read back from the block, because the editor shows what was
+     * typed whether or not the server took it.
+     */
+    @Test
+    void aCommandBlockIsSetFromItsEditor() {
+        world.run("function mcagents:setup");
+        world.run("tp " + BotWorld.BOT + " 4 -60 -8");
+        world.run("setblock 4 -60 -10 command_block{Command:\"say before\"}");
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        agent.mustCall("activate-block", Map.of("bot", BotWorld.BOT, "x", 4, "y", -60, "z", -10));
+        /*
+        The editor opens before the server sends the block's command, and the command overwrites the
+        field when it lands. type-text refuses until then; this waits so the case is about the editor.
+        */
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String typed = agent.mustCall("type-text",
+            Map.of("bot", BotWorld.BOT, "field", "Console Command", "text", "say from the editor"));
+        String mode = agent.mustCall("press-dialog-button", Map.of("bot", BotWorld.BOT, "label", "Impulse"));
+        agent.mustCall("press-dialog-button", Map.of("bot", BotWorld.BOT, "label", "Done"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String command = world.run("data get block 4 -60 -10 Command");
+        String chain = world.run("execute if block 4 -60 -10 minecraft:chain_command_block");
+        String after = agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+
+        world.run("setblock 4 -60 -10 air");
+        world.run("tp " + BotWorld.BOT + " 2 -59 0");
+        world.run("function mcagents:setup");
+
+        assertTrue(typed.contains("typed into \"Console Command\""), typed);
+        assertTrue(mode.contains("pressed \"Impulse\""), mode);
+        assertTrue(command.contains("\"say from the editor\""), "the block holds something else: " + command);
+        assertTrue(chain.contains("passed"), "the mode did not reach the block: " + chain);
+        assertTrue(after.startsWith("No window was open"), "Done left the editor open: " + after);
+    }
+
+    /**
+     * The end credits are the one screen a player leaves by respawning. Closing it the way Escape
+     * does is what sends the respawn, and the server is the one that says where the bot went.
+     */
+    @Test
+    void theEndCreditsCloseIntoTheOverworld() {
+        world.run("execute in minecraft:the_end run forceload add 0 0");
+        world.run("execute in minecraft:the_end run setblock 0 60 0 minecraft:end_portal");
+        world.run("execute in minecraft:the_end run tp " + BotWorld.BOT + " 0.5 60 0.5");
+
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(20));
+        String seen = "";
+        while (Instant.now().isBefore(deadline) && !seen.contains("1b")) {
+            seen = world.run("data get entity " + BotWorld.BOT + " seenCredits");
+            sleep(250);
+        }
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+
+        String closed = agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 40));
+        String dimension = world.run("data get entity " + BotWorld.BOT + " Dimension");
+
+        world.run("execute in minecraft:the_end run setblock 0 60 0 minecraft:air");
+        world.run("execute in minecraft:the_end run forceload remove 0 0");
+        world.run("tp " + BotWorld.BOT + " 2 -59 0");
+        world.run("function mcagents:setup");
+
+        assertTrue(seen.contains("1b"), "the server never showed the credits: " + seen);
+        assertEquals("Closed the end credits.", closed);
+        assertTrue(dimension.contains("minecraft:overworld"), "the bot is still in the End: " + dimension);
+    }
+
     /** The reason this kind of bot exists: a frame of what is actually on the screen. */
     @Test
     void aScreenshotComesBackAsAnImage() {

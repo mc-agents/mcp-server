@@ -61,6 +61,7 @@ public final class Renderers {
         Map.entry("read-displays", entry(DisplaysRenderer.View.class, new DisplaysRenderer())),
         Map.entry("read-player-list", entry(PlayerListRenderer.View.class, new PlayerListRenderer())),
         Map.entry("read-scoreboard", entry(ScoreboardRenderer.View.class, new ScoreboardRenderer())),
+        Map.entry("read-stats", entry(StatsRenderer.View.class, new StatsRenderer())),
         Map.entry("read-trades", entry(TradesRenderer.View.class, new TradesRenderer())),
         Map.entry("read-window", entry(OpenWindowRenderer.View.class, new OpenWindowRenderer())),
         Map.entry("select-trade", entry(SelectedTradeRenderer.View.class, new SelectedTradeRenderer())),

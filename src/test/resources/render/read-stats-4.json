@@ -1,0 +1,12 @@
+{
+  "tool": "read-stats",
+  "note": "a type with nothing counted in it",
+  "data": {
+    "type": "minecraft:broken",
+    "target": null,
+    "matched": 0,
+    "stats": [],
+    "otherTypes": []
+  },
+  "text": "No statistics in minecraft:broken are nonzero."
+}
