@@ -71,7 +71,7 @@ class BotEndToEndTest {
         Assumptions.assumeTrue(DockerClientFactory.instance().isDockerAvailable(),
             "the end-to-end suite drives real containers");
 
-        server = Server.start(Path.of(System.getProperty("e2e.server.jar")));
+        server = new Server(Path.of(System.getProperty("e2e.server.jar")));
         world = new BotWorld(
             Path.of(System.getProperty("e2e.fixture")),
             System.getProperty("e2e.minecraft.version"),

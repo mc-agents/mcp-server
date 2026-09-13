@@ -1,14 +1,13 @@
 package kr.junhyung.mcagents.e2e;
 
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * mcp-server, as the process a release runs.
@@ -16,51 +15,32 @@ import java.time.Instant;
  * <p>The jar and not a Spring test context, because what is being checked is the thing that ships:
  * the endpoint it serves, the catalogue it loads from its own resources, and the port bots dial.
  * A test context would share this JVM's classpath and could pass while the jar did not.
+ *
+ * <p>Both ports are the server's to choose. Picking a free one here and letting the server bind it
+ * a moment later leaves a gap something else can take, and two runs in a row was enough to hit it;
+ * asking for zero and reading back what it bound has no gap to lose. Nothing needs the numbers
+ * before then -- the bot container is built after this returns.
  */
 final class Server implements AutoCloseable {
 
     private static final Duration BOOT = Duration.ofMinutes(2);
     private static final Duration POLL = Duration.ofMillis(250);
 
-    /**
-     * A port picked here and bound by the server a moment later is a port something else can take
-     * in between, and two runs in a row is enough for that to happen. Once is plenty: the same
-     * collision twice would be something other than luck.
-     */
-    private static final int ATTEMPTS = 2;
+    private static final Pattern HTTP = Pattern.compile("Tomcat started on port (\\d+)");
+    private static final Pattern LINK = Pattern.compile("listening for bots on port (\\d+)");
 
     private final Process process;
     private final Path log;
     private final int mcpPort;
     private final int linkPort;
 
-    static Server start(Path jar) {
-        IllegalStateException taken = null;
-
-        for (int attempt = 0; attempt < ATTEMPTS; attempt++) {
-            try {
-                return new Server(jar);
-            } catch (IllegalStateException failed) {
-                if (failed.getMessage() == null || !failed.getMessage().contains("already in use")) {
-                    throw failed;
-                }
-                taken = failed;
-            }
-        }
-
-        throw taken;
-    }
-
-    private Server(Path jar) {
-        mcpPort = freePort();
-        linkPort = freePort();
-
+    Server(Path jar) {
         try {
-            log = java.nio.file.Files.createTempFile("mcp-server", ".log");
+            log = Files.createTempFile("mcp-server", ".log");
             process = new ProcessBuilder(
                     javaBinary(), "-jar", jar.toString(),
-                    "--server.port=" + mcpPort,
-                    "--mcagents.bot-link.port=" + linkPort,
+                    "--server.port=0",
+                    "--mcagents.bot-link.port=0",
                     /* A bot that is already linked is the one join-server uses; nothing to create. */
                     "--mcagents.bots.provision=never")
                 .redirectErrorStream(true)
@@ -71,24 +51,20 @@ final class Server implements AutoCloseable {
             throw new IllegalStateException("could not start " + jar, failed);
         }
 
-        awaitHealth();
+        mcpPort = await(HTTP, "an HTTP port");
+        linkPort = await(LINK, "a port for bots");
     }
 
     int mcpPort() {
         return mcpPort;
     }
 
-    /** Where a bot dials. A container is told this before the server is up, so it is picked first. */
+    /** Where a bot dials. */
     int linkPort() {
         return linkPort;
     }
 
-    private void awaitHealth() {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest liveness = HttpRequest.newBuilder()
-            .uri(URI.create("http://127.0.0.1:" + mcpPort + "/actuator/health/liveness"))
-            .timeout(Duration.ofSeconds(2))
-            .build();
+    private int await(Pattern pattern, String what) {
         Instant deadline = Instant.now().plus(BOOT);
 
         while (Instant.now().isBefore(deadline)) {
@@ -96,23 +72,22 @@ final class Server implements AutoCloseable {
                 throw new IllegalStateException(
                     "the server exited with " + process.exitValue() + "\n" + read());
             }
-            try {
-                if (client.send(liveness, HttpResponse.BodyHandlers.ofString()).statusCode() == 200) {
-                    return;
-                }
-            } catch (IOException | InterruptedException notYet) {
-                /* Still booting. */
+
+            Matcher found = pattern.matcher(read());
+
+            if (found.find()) {
+                return Integer.parseInt(found.group(1));
             }
             sleep();
         }
 
         throw new IllegalStateException(
-            "the server did not report itself live within " + BOOT + "\n" + read());
+            "the server did not report " + what + " within " + BOOT + "\n" + read());
     }
 
     private String read() {
         try {
-            return java.nio.file.Files.readString(log);
+            return Files.readString(log);
         } catch (IOException unreadable) {
             return "(its log could not be read: " + unreadable.getMessage() + ")";
         }
@@ -127,19 +102,6 @@ final class Server implements AutoCloseable {
         }
     }
 
-    /**
-     * A port nothing is on. Racy in principle and not in practice: the server takes it within
-     * seconds, and the alternative is asking the server what it chose, which a bot container has
-     * to be told before the server starts.
-     */
-    private static int freePort() {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
-        } catch (IOException failed) {
-            throw new IllegalStateException("no free port", failed);
-        }
-    }
-
     private static String javaBinary() {
         return Path.of(System.getProperty("java.home"), "bin", "java").toString();
     }
@@ -149,7 +111,7 @@ final class Server implements AutoCloseable {
         process.destroy();
 
         try {
-            if (!process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)) {
+            if (!process.waitFor(10, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
             }
         } catch (InterruptedException interrupted) {
