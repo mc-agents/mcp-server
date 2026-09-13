@@ -49,7 +49,7 @@ class BotRegistryTest {
             open.add(botSide);
 
             BotLink link = new BotLink(serverSide, JsonMapper.builder().build(), timers);
-            return new BotSession(name, "mineflayer", link, timers);
+            return new BotSession(name, "fabric", link, timers);
         } catch (IOException e) {
             throw new IllegalStateException("could not set up a loopback link for the test", e);
         }

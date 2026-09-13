@@ -133,7 +133,7 @@ def hello_first(link, hello):
             return "hello has no %s" % field
     if not isinstance(hello["protocols"], list) or not hello["protocols"]:
         return "protocols is not a list of at least one version"
-    if hello["kind"] not in ("mineflayer", "fabric"):
+    if hello["kind"] != "fabric":
         return "kind is %r, which no catalogue tool lists" % hello["kind"]
     return None
 

@@ -1,5 +1,6 @@
 package kr.junhyung.mcagents.catalog;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -44,16 +45,22 @@ public record ToolSpec(
         return kinds.contains(kind);
     }
 
-    public boolean isUniversal() {
-        return kinds.size() > 1;
+    /** Whether every kind of bot there is can run it. */
+    public boolean isUniversal(Collection<String> allKinds) {
+        return kinds.containsAll(allKinds);
     }
 
     /**
      * The description MCP shows. A tool not every bot can run says which kinds can, appended here
      * rather than written into the catalogue so the list and the sentence cannot drift apart.
+     *
+     * <p>Against the kinds the catalogue actually has, not against a count. While there were two,
+     * every tool either ran on both or said so; with one there is nothing to distinguish, and
+     * appending "supported by bots of kind: fabric" to all sixty-four descriptions would be that
+     * many lines of an agent's context spent saying nothing.
      */
-    public String advertisedDescription() {
-        if (isUniversal()) {
+    public String advertisedDescription(Collection<String> allKinds) {
+        if (isUniversal(allKinds)) {
             return description;
         }
         return "%s Supported by bots of kind: %s.".formatted(description, String.join(", ", kinds));

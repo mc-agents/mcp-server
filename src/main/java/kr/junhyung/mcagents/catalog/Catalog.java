@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -88,6 +89,13 @@ public final class Catalog {
 
     public int protocol() {
         return protocol;
+    }
+
+    /** Every kind of bot the catalogue knows of, which is what "every kind" means in a description. */
+    public Set<String> kinds() {
+        return tools.values().stream()
+            .flatMap(spec -> spec.kinds().stream())
+            .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new));
     }
 
     public List<ToolSpec> all() {

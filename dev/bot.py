@@ -4,7 +4,7 @@ from pathlib import Path
 HOST = os.environ.get("BOT_LINK_HOST", "127.0.0.1")
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
 NAME = sys.argv[2] if len(sys.argv) > 2 else "alice"
-KIND = sys.argv[3] if len(sys.argv) > 3 else "mineflayer"
+KIND = sys.argv[3] if len(sys.argv) > 3 else "fabric"
 REPO = str(Path(__file__).resolve().parent.parent)
 CATALOG = json.load(open(REPO + "/catalog/catalog.json"))
 

@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "2.13.0",
+  "catalogVersion": "3.0.0",
   "protocol": 1,
   "tools": [
     {
@@ -8,7 +8,6 @@
       "description": "Break the block at a position, walking to it first when out of reach.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": true,
@@ -75,7 +74,6 @@
       "description": "Find nearby blocks of a given type.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -191,7 +189,6 @@
       "description": "Describe the block at a position.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -330,7 +327,6 @@
       "description": "Place the held block at a position, using an adjacent block as reference.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": true,
@@ -423,7 +419,6 @@
       "description": "Read the data a block carries beyond its type: sign text, a container's custom name, a banner's pattern. Signs are the common case, since that is where servers write instructions into the world itself.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -566,7 +561,6 @@
       "description": "Read recent chat and system messages the bot received.",
       "route": "local",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -597,7 +591,6 @@
       "description": "Say something in chat as the bot. Use run-command for slash commands.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -648,7 +641,6 @@
       "description": "Check whether the bot can craft an item right now.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -728,7 +720,7 @@
             "type": "boolean"
           },
           "onlyWhatTheBotKnows": {
-            "description": "True when the answer covers only the recipes the server has taught this bot. A Minecraft client is sent a recipe as it unlocks it and is never told the whole set, so a fabric bot answers about what it can place right now; a mineflayer bot reads the game's own table and answers about the game.",
+            "description": "True when the answer covers only the recipes the server has taught this bot. A Minecraft client is sent a recipe as it unlocks it and is never told the whole set, so a fabric bot answers about what it can place right now rather than about what the game has recipes for.",
             "type": "boolean"
           }
         },
@@ -749,7 +741,6 @@
       "description": "Craft an item, walking to a nearby crafting table when the recipe needs one.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": true,
@@ -812,7 +803,6 @@
       "description": "Show every recipe for an item together with what the bot still needs.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -945,7 +935,7 @@
             }
           },
           "onlyWhatTheBotKnows": {
-            "description": "True when the answer covers only the recipes the server has taught this bot. A Minecraft client is sent a recipe as it unlocks it and is never told the whole set, so a fabric bot answers about what it can place right now; a mineflayer bot reads the game's own table and answers about the game.",
+            "description": "True when the answer covers only the recipes the server has taught this bot. A Minecraft client is sent a recipe as it unlocks it and is never told the whole set, so a fabric bot answers about what it can place right now rather than about what the game has recipes for.",
             "type": "boolean"
           }
         },
@@ -965,7 +955,6 @@
       "description": "List recipes the bot can craft right now with what it carries. Pass outputItem to inspect one item instead of scanning everything.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -1102,7 +1091,7 @@
             }
           },
           "onlyWhatTheBotKnows": {
-            "description": "True when the answer covers only the recipes the server has taught this bot. A Minecraft client is sent a recipe as it unlocks it and is never told the whole set, so a fabric bot answers about what it can place right now; a mineflayer bot reads the game's own table and answers about the game.",
+            "description": "True when the answer covers only the recipes the server has taught this bot. A Minecraft client is sent a recipe as it unlocks it and is never told the whole set, so a fabric bot answers about what it can place right now rather than about what the game has recipes for.",
             "type": "boolean"
           }
         },
@@ -1122,7 +1111,6 @@
       "description": "Read the sounds and particles the server has played near the bot. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
       "route": "local",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -1153,7 +1141,6 @@
       "description": "Wait until a sound or particle whose name matches a regular expression is played. Returns straight away if it already says so.",
       "route": "local",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -1193,7 +1180,6 @@
       "description": "Find nearby entities, optionally filtered by type or name.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -1345,7 +1331,6 @@
       "description": "Read the text floating in the world: holograms, name tags and NPC labels. They are display entities, so find-entity only reports that they exist.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -1504,7 +1489,6 @@
       "description": "Report the health, hunger, experience and position the bot sees for itself.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -1619,7 +1603,6 @@
       "description": "Read the action bar text above the hotbar, which servers use for live status. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
       "route": "local",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -1650,7 +1633,6 @@
       "description": "Read every boss bar the server is showing above the hotbar.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -1755,7 +1737,6 @@
       "description": "Read the dialogs the server has opened on screen, with their title, body and the buttons they offer, and the point at which each was closed again. The bot cannot press those buttons: the packet that answers a dialog is serialised from a definition that does not match 26.1, and a server drops the connection rather than read it. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
       "route": "local",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -1786,7 +1767,6 @@
       "description": "List the players on the tab list, with their game mode and ping.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -1878,7 +1858,6 @@
       "description": "Read the scoreboard the server draws on screen, which most servers use for stats and quest progress.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -2003,7 +1982,6 @@
       "description": "Read the titles and subtitles the server has thrown across the screen, which is where servers put things the player must not miss. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
       "route": "local",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -2034,7 +2012,6 @@
       "description": "Wait until the action bar shows text matching a regular expression. Returns straight away if it already says so.",
       "route": "local",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -2074,7 +2051,6 @@
       "description": "Wait until a dialog whose text matches a regular expression is opened. Returns straight away if it already says so.",
       "route": "local",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -2114,7 +2090,6 @@
       "description": "Wait until a title or subtitle matching a regular expression is shown. Returns straight away if it already says so.",
       "route": "local",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -2154,7 +2129,6 @@
       "description": "Equip an item from the inventory.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -2229,7 +2203,6 @@
       "description": "Look for an item in the bot's inventory by exact or partial name.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -2334,7 +2307,6 @@
       "description": "Put an item straight into the inventory. Creative mode only, which is what makes it useful: a test can start from the state it needs instead of gathering its way there.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -2414,7 +2386,6 @@
       "description": "List every item in the bot's inventory with slot numbers.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -2497,7 +2468,6 @@
       "description": "Fly straight to a position. Requires creative mode.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": true,
@@ -2564,7 +2534,6 @@
       "description": "Report the block position the bot currently stands on.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -2626,7 +2595,6 @@
       "description": "Make the bot jump once.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -2659,7 +2627,6 @@
       "description": "Turn the bot to face a position.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -2726,7 +2693,6 @@
       "description": "Hold a movement key for a while. Use this when pathfinding is not wanted.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": true,
@@ -2799,7 +2765,6 @@
       "description": "Walk the bot to a position using pathfinding.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": true,
@@ -2892,7 +2857,6 @@
       "description": "Hold the bot crouching or sprinting. Both stay on until turned off, so a plugin that only reacts to a crouching player can be reached. Nothing else here changes the stance.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -2953,7 +2917,6 @@
       "description": "Send a Minecraft server list ping and report version, protocol, player count and MOTD. Use it to check a server is up and speaks a version we can join before spending a bot slot.",
       "route": "local",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -2994,7 +2957,6 @@
       "description": "Wait until a Minecraft server answers a server list ping and reports it can be joined. Use it after restarting a server so the next join-server does not race the boot.",
       "route": "local",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -3151,7 +3113,6 @@
       "description": "Ask the server what completes a partial command, which is how to find out what a plugin offers without being told. \"/\" lists every command the bot may run.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -3271,7 +3232,6 @@
       "description": "Report the game mode the server assigned to the bot.",
       "route": "local",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -3296,7 +3256,6 @@
       "description": "Report the in-game time and weather, for a feature that only happens at a certain time of day. This is the clock the world ticks on, not whatever a server may draw on its HUD.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -3347,7 +3306,7 @@
             ]
           },
           "doDaylightCycle": {
-            "description": "null when the bot cannot tell. A mineflayer bot is told the game rule; a Minecraft client is not, and only sees whether the clock moved.",
+            "description": "null when the bot cannot tell. A Minecraft client is not told the game rule and only sees whether the clock moved.",
             "type": [
               "boolean",
               "null"
@@ -3371,7 +3330,6 @@
       "description": "Run a slash command as the bot and return the messages the server sent back.",
       "route": "compose",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -3428,7 +3386,6 @@
       "description": "Send the bot to another backend server through the proxy and wait until it spawns there.",
       "route": "compose",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": true,
@@ -3493,7 +3450,6 @@
       "description": "Wait until a message matching a regular expression arrives. Only messages received after the call count.",
       "route": "local",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -3533,7 +3489,6 @@
       "description": "Wait a number of server ticks so the server has time to apply a change.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -3584,7 +3539,6 @@
       "description": "Report connection state, position and health for one bot.",
       "route": "local",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -3609,7 +3563,6 @@
       "description": "Send a bot into a Minecraft server and wait until it has spawned. A bot already running under this name is used as it is; otherwise one is started, which in a cluster means the operator creates it and takes a few seconds longer. A failure says how far it got, because a bot that never started and a server that refused the login have different fixes.",
       "route": "orchestrate",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -3648,15 +3601,14 @@
             "type": "string"
           },
           "kind": {
-            "description": "Which kind of bot to start when none by this name is running. \"fabric\" is a real Minecraft client: it can take a screenshot and press a dialog button, and costs several times the memory for it. (default: mineflayer)",
+            "description": "Which kind of bot to start when none by this name is running. One kind exists: a real Minecraft client. (default: fabric)",
             "type": "string",
             "enum": [
-              "mineflayer",
               "fabric"
             ]
           },
           "minecraftVersion": {
-            "description": "Minecraft version for a bot that has to be started. A fabric client is built against one version; a mineflayer bot negotiates at runtime and ignores this. (default: 26.1.2)",
+            "description": "Minecraft version for a bot that has to be started. A fabric client is built against one version. (default: 26.1.2)",
             "type": "string",
             "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"
           }
@@ -3674,7 +3626,6 @@
       "description": "Take a bot out of the world it is in. The process stays up and linked, ready for the next join-server, so leaving and rejoining is cheap.",
       "route": "orchestrate",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -3699,7 +3650,6 @@
       "description": "List every bot this server currently holds, including bots joined by other agents.",
       "route": "local",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -3719,7 +3669,6 @@
       "description": "Put a bot back on the server it is on, under the same name. Use it after redeploying a plugin: the bot is still connected and still holding whatever the previous build gave it, and a stale inventory or scoreboard looks exactly like a bug in the new one.",
       "route": "orchestrate",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -3744,7 +3693,6 @@
       "description": "Click one slot of the window that is currently open.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": true,
@@ -3994,7 +3942,6 @@
       "description": "Drop whatever the cursor is holding, or the stack in a given slot. The window stays open.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": true,
@@ -4109,7 +4056,6 @@
       "description": "Open the chest-like block at a position, walking to it first when out of reach, and list what it holds.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": true,
@@ -4282,7 +4228,6 @@
       "description": "Load a furnace, blast furnace or smoker with fuel and input, then optionally wait for the output.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": true,
@@ -4425,7 +4370,6 @@
       "description": "Close the GUI window the bot has open. Answers that there was none rather than failing, because asking to close nothing is a no-op and not a mistake.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -4483,7 +4427,6 @@
       "description": "Read the window that is currently open: its title, its type, and every slot that has something in it. Answers that nothing is open rather than failing, because that is a state worth reporting.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -4631,7 +4574,6 @@
       "description": "Wait until a GUI window opens and return its contents. Returns straight away if a matching window is already open.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -4828,7 +4770,6 @@
       "description": "Right-click the block at a position, walking to it first when out of reach. Presses buttons and levers, opens doors, and triggers custom blocks.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": true,
@@ -4895,7 +4836,6 @@
       "description": "Attack the nearest entity whose name matches, walking to it first when out of reach.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": true,
@@ -4970,7 +4910,6 @@
       "description": "Cast the rod and wait for a bite, then reel in. Equips a fishing rod from the inventory if one is not already in hand. The bot has to be standing within reach of water.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": true,
@@ -5019,7 +4958,6 @@
       "description": "Right-click the nearest entity whose name matches, walking to it first when out of reach. This is what opens an NPC dialogue.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": true,
@@ -5080,7 +5018,6 @@
       "description": "Right-click with the item the bot is holding, optionally holding the button down for a while.",
       "route": "rpc",
       "kinds": [
-        "mineflayer",
         "fabric"
       ],
       "exclusive": false,
@@ -5134,5 +5071,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:f3559e7662875b378c07dbe410b4d5eced9c8100acf596e877d22fef5d9684f4"
+  "catalogHash": "sha256:20dcf22e523ffc03e9fb47bbd506ad4945fbb83cc5340ec91503ae3e03731ed4"
 }

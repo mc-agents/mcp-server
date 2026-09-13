@@ -109,7 +109,7 @@ class BotLinkServerTest {
     @Test
     void aBotThatIntroducesItselfBecomesASessionAnAgentCanSee() throws Exception {
         Socket bot = dial();
-        send(bot, hello("alice", "mineflayer", everything("mineflayer")));
+        send(bot, hello("alice", "fabric", everything("fabric")));
 
         Messages.HelloOk ok = assertInstanceOf(Messages.HelloOk.class, read(bot));
 
@@ -118,7 +118,7 @@ class BotLinkServerTest {
         assertTrue(ok.rejectedTools().isEmpty(), () -> "unexpectedly rejected: " + ok.rejectedTools());
 
         BotSession session = awaitSession("alice");
-        assertEquals("mineflayer", session.kind());
+        assertEquals("fabric", session.kind());
         assertEquals(ok.acceptedTools().size(), session.capabilityCount());
     }
 
@@ -129,7 +129,7 @@ class BotLinkServerTest {
     @Test
     void aToolTheCatalogueDoesNotHaveIsIgnoredRatherThanRejected() throws Exception {
         Socket bot = dial();
-        send(bot, hello("alice", "mineflayer",
+        send(bot, hello("alice", "fabric",
                 List.of(new Messages.Capability("invent-a-tool", "whatever"))));
 
         Messages.HelloOk ok = assertInstanceOf(Messages.HelloOk.class, read(bot));
@@ -145,12 +145,12 @@ class BotLinkServerTest {
     */
     @Test
     void aToolWhoseArgumentsDisagreeIsDisabledOnItsOwn() throws Exception {
-        List<Messages.Capability> reported = new ArrayList<>(everything("mineflayer"));
+        List<Messages.Capability> reported = new ArrayList<>(everything("fabric"));
         Messages.Capability first = reported.get(0);
         reported.set(0, new Messages.Capability(first.tool(), "a-hash-from-another-build"));
 
         Socket bot = dial();
-        send(bot, hello("alice", "mineflayer", reported));
+        send(bot, hello("alice", "fabric", reported));
 
         Messages.HelloOk ok = assertInstanceOf(Messages.HelloOk.class, read(bot));
 
@@ -163,7 +163,7 @@ class BotLinkServerTest {
     @Test
     void aBotSpeakingAnotherProtocolIsToldSoAndClosed() throws Exception {
         Socket bot = dial();
-        send(bot, new Messages.Hello(List.of(catalog.protocol() + 99), "alice", "mineflayer",
+        send(bot, new Messages.Hello(List.of(catalog.protocol() + 99), "alice", "fabric",
                 "0.1.0", "26.2", catalog.version(), List.of(), List.of()));
 
         Messages.Fault fault = assertInstanceOf(Messages.Fault.class, read(bot));
@@ -176,7 +176,7 @@ class BotLinkServerTest {
     @Test
     void aSecondBotUnderTheSameNameIsTurnedAwayAndTheFirstKeepsWorking() throws Exception {
         Socket first = dial();
-        send(first, hello("alice", "mineflayer", List.of()));
+        send(first, hello("alice", "fabric", List.of()));
         assertInstanceOf(Messages.HelloOk.class, read(first));
         awaitSession("alice");
 
@@ -185,7 +185,7 @@ class BotLinkServerTest {
 
         assertEquals("NAME_TAKEN", assertInstanceOf(Messages.Fault.class, read(second)).code());
         assertEquals(1, bots.size());
-        assertEquals("mineflayer", bots.resolve("alice").kind());
+        assertEquals("fabric", bots.resolve("alice").kind());
     }
 
     /*
@@ -204,11 +204,11 @@ class BotLinkServerTest {
     @Test
     void aSecondHelloOnALiveLinkIsAViolation() throws Exception {
         Socket bot = dial();
-        send(bot, hello("alice", "mineflayer", List.of()));
+        send(bot, hello("alice", "fabric", List.of()));
         assertInstanceOf(Messages.HelloOk.class, read(bot));
         awaitSession("alice");
 
-        send(bot, hello("bob", "mineflayer", List.of()));
+        send(bot, hello("bob", "fabric", List.of()));
 
         assertEquals("HELLO_TWICE", assertInstanceOf(Messages.Fault.class, read(bot)).code());
     }
@@ -217,7 +217,7 @@ class BotLinkServerTest {
     @Test
     void aBotThatDropsItsLinkLeavesTheRegistry() throws Exception {
         Socket bot = dial();
-        send(bot, hello("alice", "mineflayer", List.of()));
+        send(bot, hello("alice", "fabric", List.of()));
         assertInstanceOf(Messages.HelloOk.class, read(bot));
         awaitSession("alice");
 
@@ -237,7 +237,7 @@ class BotLinkServerTest {
     @Test
     void aMessageTheServerCannotReadIsAViolationRatherThanADeadThread() throws Exception {
         Socket bot = dial();
-        send(bot, hello("alice", "mineflayer", List.of()));
+        send(bot, hello("alice", "fabric", List.of()));
         assertInstanceOf(Messages.HelloOk.class, read(bot));
         awaitSession("alice");
 
@@ -257,7 +257,7 @@ class BotLinkServerTest {
     @Test
     void eventsFromABotReachTheFeedItsReadingToolsDrawFrom() throws Exception {
         Socket bot = dial();
-        send(bot, hello("alice", "mineflayer", List.of()));
+        send(bot, hello("alice", "fabric", List.of()));
         assertInstanceOf(Messages.HelloOk.class, read(bot));
         BotSession session = awaitSession("alice");
 

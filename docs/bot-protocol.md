@@ -1,7 +1,9 @@
 # Bot protocol
 
-How `mcp-server` talks to a bot. Both `bot-mineflayer` and `bot-fabric` speak this, and the MCP
-surface is identical whichever one answers.
+How `mcp-server` talks to a bot. `bot-fabric` speaks it today; the document is the contract rather
+than a description of that one bot, which is what a second kind of bot would be written against.
+One was, and much of what is explained here is why -- the two disagreeing is how a good deal of it
+was found.
 
 Protocol version: **1**.
 
@@ -329,9 +331,8 @@ sends `titleComponent` for its header and `close-window` for the one it closed, 
 `labelComponent`, and the tab list sends `displayName` with its component beside the username. The username stays because it is the identity every other tool
 takes; the drawn name is where a server puts a rank.
 
-**`join-server` waits three minutes for a spawn.** A mineflayer bot is in the world a second after
-it dials, and a fabric one on a machine with a graphics card is not far behind. Without one it is
-another matter: the client builds every texture atlas in software before it can act, and on a
+**`join-server` waits three minutes for a spawn.** A bot on a machine with a graphics card is in
+the world a few seconds after it dials. Without one it is another matter: the client builds every texture atlas in software before it can act, and on a
 four-core CI runner that took eighty-nine seconds -- so the bot arrived in the world one second
 after its own ninety-second deadline had fired, and disconnected itself on the way in. The number
 is what a client without a card costs, not slack.

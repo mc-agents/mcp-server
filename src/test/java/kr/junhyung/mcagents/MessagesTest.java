@@ -24,7 +24,7 @@ class MessagesTest {
     @Test
     void aHelloRoundTripsWithItsCapabilities() throws Exception {
         String wire = """
-            {"t":"hello","protocols":[1],"botName":"alpha","kind":"mineflayer",
+            {"t":"hello","protocols":[1],"botName":"alpha","kind":"fabric",
              "agentVersion":"0.1.0","mcVersion":"26.1.2","catalogVersion":"1.0.0",
              "capabilities":[{"tool":"dig-block","argsHash":"sha256:abc"}],
              "features":["eventFold"]}

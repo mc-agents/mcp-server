@@ -78,25 +78,27 @@ class CatalogTest {
     }
 
     /*
-    The kinds list and the sentence that names them have to agree, so the sentence is generated.
+    The kinds list and the sentence that names them have to agree, so the sentence is generated --
+    and it is generated against the kinds the catalogue has rather than against a count. There is
+    one kind now, so nothing is distinguished and nothing is said; a second would bring the
+    sentence back on every tool that only one of them could run.
     */
     @Test
-    void aToolOnlyOneKindSupportsSaysSoInItsDescription() {
+    void withOneKindNoToolSaysWhichKindsSupportIt() {
         ToolSpec screenshot = catalog.require("screenshot");
 
         assertEquals(List.of("fabric"), screenshot.kinds());
-        assertTrue(screenshot.advertisedDescription().endsWith("Supported by bots of kind: fabric."),
-                screenshot.advertisedDescription());
-        assertFalse(screenshot.supportedBy("mineflayer"));
+        assertEquals(screenshot.description(), screenshot.advertisedDescription(catalog.kinds()));
+        assertTrue(screenshot.supportedBy("fabric"));
+        assertFalse(screenshot.supportedBy("some-other-kind"));
     }
 
     @Test
-    void aToolEveryBotSupportsSaysNothingExtra() {
-        ToolSpec position = catalog.require("get-position");
+    void aToolOnlySomeKindsSupportSaysSo() {
+        ToolSpec screenshot = catalog.require("screenshot");
 
-        assertEquals(position.description(), position.advertisedDescription());
-        assertTrue(position.supportedBy("mineflayer"));
-        assertTrue(position.supportedBy("fabric"));
+        assertTrue(screenshot.advertisedDescription(List.of("fabric", "another"))
+                .endsWith("Supported by bots of kind: fabric."));
     }
 
     /* find-entity went missing from generated docs once. Naming it here keeps it from happening quietly. */

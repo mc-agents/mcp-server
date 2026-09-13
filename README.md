@@ -3,12 +3,18 @@
 The MCP endpoint for driving Minecraft bots. Speaks Streamable HTTP to agents on one side and the
 [bot protocol](docs/bot-protocol.md) to bots on the other.
 
-It does not know how to play Minecraft. Bots do that, and there are two of them:
-[`bot-mineflayer`](https://github.com/mc-agents/bot-mineflayer) is cheap, and
-[`bot-fabric`](https://github.com/mc-agents/bot-fabric) is a real client: it renders, so it can
-take a screenshot and press a dialog button and costs several times the memory for it. A bot
-announces its kind when it links, and `list-bots` shows it; a tool only one kind can run is
-refused on the other by name, before anything is sent.
+It does not know how to play Minecraft. A bot does that, and there is one:
+[`bot-fabric`](https://github.com/mc-agents/bot-fabric), a real Minecraft client. It renders, so
+it can take a screenshot and press a dialog button, and it follows the game rather than
+reimplementing it.
+
+There was a second kind for a while -- a mineflayer bot, cheap and headless -- and the machinery
+for telling kinds apart is still here: a bot announces its kind when it links, `list-bots` shows
+it, and a tool no bot of that kind can run is refused by name before anything is sent. What the
+second kind cost was every tool implemented twice, and what it could not do was press a dialog
+button, take a screenshot, walk round a wall, or join a server newer than its protocol library.
+The repository is archived and the arrangement is documented in
+[architecture](docs/architecture.md).
 
 > **Local development only.** Bots authenticate offline, so the target server has to run
 > offline-mode.

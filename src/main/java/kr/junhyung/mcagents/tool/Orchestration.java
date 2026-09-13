@@ -225,7 +225,7 @@ public class Orchestration {
                             .formatted(name, name));
         }
 
-        String kind = orDefault(ToolDispatcher.stringArg(arguments, "kind"), "mineflayer");
+        String kind = orDefault(ToolDispatcher.stringArg(arguments, "kind"), "fabric");
         String mcVersion = orDefault(ToolDispatcher.stringArg(arguments, "minecraftVersion"), "26.1.2");
 
         provisioner.request(name, kind, mcVersion, ToolDispatcher.stringArg(arguments, "owner"));

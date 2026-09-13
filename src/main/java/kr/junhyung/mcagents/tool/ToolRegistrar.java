@@ -41,7 +41,7 @@ public class ToolRegistrar {
         McpSchema.Tool tool = new McpSchema.Tool(
                 spec.name(),
                 null,
-                spec.advertisedDescription(),
+                spec.advertisedDescription(catalog.kinds()),
                 schemaOf(spec),
                 null,
                 null,
