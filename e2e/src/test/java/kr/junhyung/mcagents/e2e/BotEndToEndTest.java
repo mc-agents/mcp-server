@@ -203,6 +203,10 @@ class BotEndToEndTest {
      */
     @Test
     void theNearestBlocksComeBackInThatOrder() {
+        /* Nearest is measured from the bot, and a case before this one may have walked it somewhere. */
+        world.run("tp " + BotWorld.BOT + " 2 -59 0");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+
         String found = agent.call("find-blocks",
             Map.of("bot", BotWorld.BOT, "blockType", "minecraft:diamond_block", "maxDistance", 16, "count", 3));
 
@@ -498,6 +502,52 @@ class BotEndToEndTest {
         assertTrue(book.contains("1. Find the shrine."), book);
         assertTrue(book.contains("2. [gui/price] 12 coins"), book);
         assertTrue(book.contains("3. Bring back the relic."), book);
+    }
+
+    /**
+     * A trading screen keeps its trades on the merchant rather than in a slot, so read-window saw
+     * an empty window where a villager had three things to sell. And picking a trade is accepted
+     * whether or not it can be made: the slots it fills are the only thing that says which, so
+     * those are asserted, and the trade is then made to prove that what was picked is what the
+     * server gave.
+     */
+    @Test
+    void aVillagersTradesAndTheOneThatWasPicked() {
+        world.run("clear " + BotWorld.BOT);
+        world.run("give " + BotWorld.BOT + " emerald 3");
+        agent.mustCall("wait-for-item",
+            Map.of("bot", BotWorld.BOT, "pattern", "emerald", "timeoutMs", 10000));
+        agent.mustCall("interact-entity", Map.of("bot", BotWorld.BOT, "name", "villager"));
+        agent.mustCall("wait-for-window",
+            Map.of("bot", BotWorld.BOT, "titlePattern", "Probe Librarian", "timeoutMs", 10000));
+        /* The trades come in a packet of their own, after the screen. */
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String trades = agent.call("read-trades", Map.of("bot", BotWorld.BOT));
+        String soldOut = agent.call("select-trade", Map.of("bot", BotWorld.BOT, "trade", "3"));
+        String picked = agent.call("select-trade", Map.of("bot", BotWorld.BOT, "trade", "Map Fragment"));
+
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 2, "shift", true));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+        String inventory = agent.call("list-inventory", Map.of("bot", BotWorld.BOT));
+
+        world.run("function mcagents:setup");
+
+        assertTrue(trades.startsWith("\"[gui/header] Probe Librarian\" (level 3, 40 xp), 3 trades"), trades);
+        assertTrue(trades.contains("1. emerald x3 -> [gui/label] Map Fragment [paper] x1 (0/4 uses)"), trades);
+        assertTrue(trades.contains("2. emerald x5 + book x1 -> enchanted_book x1 with mending 1 (0/12 uses)"), trades);
+        assertTrue(trades.contains("3. wheat x20 -> emerald x1 (16/16 uses, out of stock)"), trades);
+
+        assertTrue(soldOut.contains("slot 2: empty"), soldOut);
+        assertTrue(soldOut.contains("the trade is out of stock"), soldOut);
+
+        assertTrue(picked.contains("slot 0: emerald x3"), picked);
+        assertTrue(picked.contains("slot 2: [gui/label] Map Fragment [paper] x1"), picked);
+        assertTrue(picked.contains("Take slot 2 with click-slot"), picked);
+
+        assertTrue(inventory.contains("[gui/label] Map Fragment [paper]"), inventory);
+        assertTrue(!inventory.contains("emerald"), inventory);
     }
 
     /** The reason this kind of bot exists: a frame of what is actually on the screen. */

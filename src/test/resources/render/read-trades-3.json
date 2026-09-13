@@ -1,0 +1,14 @@
+{
+  "tool": "read-trades",
+  "note": "read in the tick the screen opened, before the trades packet arrived",
+  "data": {
+    "title": "Farmer",
+    "titleComponent": null,
+    "level": 1,
+    "xp": 0,
+    "showProgressBar": true,
+    "canRestock": true,
+    "trades": []
+  },
+  "text": "\"Farmer\" (level 1, 0 xp) lists no trades yet. They arrive a moment after the screen opens: wait a few ticks and read-trades again."
+}
