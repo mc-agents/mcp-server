@@ -74,7 +74,7 @@ Every JSON frame is a flat object with a `t` discriminator.
 | `hello` | `protocols[]`, `botName`, `kind`, `agentVersion`, `mcVersion`, `catalogVersion`, `capabilities[]`, `features[]` |
 | `result` | `id`, `ok`, `text`, `data?`, `blobs[]?`, `error?`, `elapsedMs` |
 | `event` | `seq`, `kind`, `source`, `text`, `segments[]?`, `component?`, `data?`, `ts`, `firstTs`, `repeats`, `closed` |
-| `status` | `state`, `ts`, and whatever it knows: `address`, `username`, `mcVersion`, `serverBrand`, `gameMode`, `dimension`, `position`, `health`, `food`, `reason`, `lastError` |
+| `status` | `state`, `ts`, and whatever it knows: `address`, `username`, `mcVersion`, `serverBrand`, `gameMode`, `dimension`, `position`, `health`, `food`, `dead`, `causeOfDeath`, `reason`, `lastError` |
 
 `status.state` is one of five:
 
@@ -93,6 +93,14 @@ happened.
 `status.lastError` is a **string**, not a `Failure`. The class-and-code machinery decides what a
 failed *call* does to a session; a status is a report, and a bot that has just been kicked has a
 sentence about it and no call to attach a class to.
+
+**A bot sends `ready` again when it dies and when it comes back.** Death does not end the
+connection, so nothing about `state` changes, and a status that only moved with the state told a
+caller a dead bot was ready: it was sent walking, sent nothing to the server, and the walk timed out
+without a word about why. `dead` is the flag, and `causeOfDeath` is what the death screen said while
+it was up. A bot never respawns by itself -- a server under test may be checking what happens on
+death, and a bot that got up again at once would hide exactly that -- so the flag stays until
+`respawn` is called.
 | `log` | `level`, `message`, `fields?` |
 | `pong` | `nonce` (the integer the `ping` carried), `ts`, `busy` (how many calls are in flight, an integer) |
 
@@ -281,8 +289,8 @@ still see everything.
 
 ## Events
 
-Five feeds: `chat`, `actionBar`, `title`, `dialog`, `effect`. Bots push; they do not wait to be
-asked. `helloOk.events` carries one boolean per feed as a valve, because `effect` on a busy server
+Six feeds: `chat`, `actionBar`, `title`, `dialog`, `effect`, `toast`. Bots push; they do not wait
+to be asked. `helloOk.events` carries one boolean per feed as a valve, because `effect` on a busy server
 is a firehose.
 
 `chat` is never folded — the same line twice is information. The other four are folded by the bot
@@ -376,6 +384,14 @@ A bot that is sent a dialog by registry reference has to resolve it: `/dialog sh
 datapack declared and the packet then carries nothing but an index into the `minecraft:dialog`
 registry. `source` is `dialog` for one being shown and `closed` for it going away, and the sentence
 for the second is the server's.
+
+**A toast is a feed because it does not stay.** An advancement made or a recipe unlocked is up in
+the corner for five seconds; a tool that read the screen would be asking whether the call happened
+to land inside those five seconds, and an agent's round trip is often longer. `source` is
+`advancement` or `recipe`, the component is the title, and `data` carries what the title does not
+show: `id`, `frame`, `description` and `descriptionComponent` for an advancement, `item` for a
+recipe. The id is what a caller can name: a server that grants one when a quest is done draws its
+title in the pack's own font, and a wait written against the id does not care.
 
 **Only `actionBar` and `title` carry segments.** They are the feeds a server draws with stacked
 glyphs, and the pieces are what keep two labels from running together. Chat is prose: splitting it

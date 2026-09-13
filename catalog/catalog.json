@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "3.8.0",
+  "catalogVersion": "3.9.0",
   "protocol": 1,
   "tools": [
     {
@@ -2167,7 +2167,7 @@
     {
       "name": "get-bot-status",
       "group": "sessions",
-      "description": "Report connection state, position and health for one bot.",
+      "description": "Report connection state, position and health for one bot, and whether it is dead.",
       "route": "local",
       "kinds": [
         "fabric"
@@ -2191,7 +2191,7 @@
     {
       "name": "get-player-state",
       "group": "hud",
-      "description": "Report the health, hunger, experience and position the bot sees for itself.",
+      "description": "Report the health, hunger, experience and position the bot sees for itself, and whether it is dead.",
       "route": "rpc",
       "kinds": [
         "fabric"
@@ -2287,9 +2287,32 @@
               "number",
               "null"
             ]
+          },
+          "dead": {
+            "description": "True from the moment the server says the bot died until it respawns. Every tool that acts in the world refuses while this is true.",
+            "type": "boolean"
+          },
+          "causeOfDeath": {
+            "description": "What the death screen says killed the bot. Null while alive, or when the server respawned it without a screen.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "causeOfDeathComponent": {
+            "description": "The component that line was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.",
+            "type": [
+              "object",
+              "array",
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
+          "causeOfDeath",
+          "causeOfDeathComponent",
+          "dead",
           "dimension",
           "experience",
           "food",
@@ -3889,6 +3912,195 @@
       }
     },
     {
+      "name": "read-advancements",
+      "group": "hud",
+      "description": "Read the advancements the server has sent: which are done and when, and how far the rest have got. Vanilla alone has over a hundred, so by default only a server's own are listed -- any namespace but minecraft -- most recently progressed first. Servers track quests as advancements. The server only sends what the player could see in the advancements screen: an unfinished one appears once its parent is done, and a root with nothing finished under it is not sent at all, so a quest missing here may simply not be visible yet.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "prefix": {
+            "description": "Only advancements whose id starts with this, such as \"myserver:quests/\" (default: every namespace except minecraft)",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "status": {
+            "description": "Which to list: done, inProgress (started and not done), or any (default: any)",
+            "type": "string",
+            "enum": [
+              "any",
+              "done",
+              "inProgress"
+            ]
+          },
+          "count": {
+            "description": "How many to return, most recently progressed first (default: 10)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "prefix": {
+            "description": "Only advancements whose id starts with this, such as \"myserver:quests/\" (default: every namespace except minecraft)",
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 256,
+            "default": null
+          },
+          "status": {
+            "description": "Which to list: done, inProgress (started and not done), or any (default: any)",
+            "type": "string",
+            "enum": [
+              "any",
+              "done",
+              "inProgress"
+            ],
+            "default": "any"
+          },
+          "count": {
+            "description": "How many to return, most recently progressed first (default: 10)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 10
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "count",
+          "prefix",
+          "status"
+        ]
+      },
+      "wireSchemaHash": "sha256:a13a1bc55bd4bef96319e778f70a981fbbd4ef5e7d268be0bcb787a4d55f8483",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "prefix": {
+            "description": "The prefix asked for, or null for every namespace except minecraft",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "matched": {
+            "description": "How many matched before count cut the list short",
+            "type": "integer"
+          },
+          "advancements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "description": "Null for an advancement with no display, which a server uses as a hidden trigger",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "titleComponent": {
+                  "description": "The component the title was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.",
+                  "type": [
+                    "object",
+                    "array",
+                    "string",
+                    "null"
+                  ]
+                },
+                "description": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "descriptionComponent": {
+                  "description": "The component the description was written as. Null when there is none.",
+                  "type": [
+                    "object",
+                    "array",
+                    "string",
+                    "null"
+                  ]
+                },
+                "frame": {
+                  "description": "task, goal or challenge. Null with no display",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "done": {
+                  "type": "boolean"
+                },
+                "criteriaDone": {
+                  "type": "integer"
+                },
+                "criteriaTotal": {
+                  "type": "integer"
+                },
+                "lastProgressAt": {
+                  "description": "When the most recent criterion was met, in milliseconds since the epoch. Null when none has been",
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "criteriaDone",
+                "criteriaTotal",
+                "description",
+                "descriptionComponent",
+                "done",
+                "frame",
+                "id",
+                "lastProgressAt",
+                "title",
+                "titleComponent"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "advancements",
+          "matched",
+          "prefix",
+          "status"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "read-block-entity",
       "group": "block",
       "description": "Read the data a block carries beyond its type: sign text, a container's custom name, a banner's pattern. Signs are the common case, since that is where servers write instructions into the world itself.",
@@ -4871,6 +5083,36 @@
       }
     },
     {
+      "name": "read-toasts",
+      "group": "hud",
+      "description": "Read the toasts that popped up in the corner of the screen: an advancement made, with its id, frame and description, and recipes unlocked. A toast is gone within seconds, so these are kept as they arrive rather than read off the screen. A title drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
+      "route": "local",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "count": {
+            "description": "How many recent lines to return (default: 5)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "read-trades",
       "group": "window",
       "description": "Read every trade on the trading screen that is open: what each one costs, what it gives, how many times it can still be made, and the villager's level and experience. The trades are not in any slot, so read-window cannot show them, and they arrive a moment after the screen opens: a screen read in the same tick lists none yet.",
@@ -5300,6 +5542,38 @@
           "window"
         ]
       }
+    },
+    {
+      "name": "respawn",
+      "group": "movement",
+      "description": "Respawn from the death screen and wait until the server has put the bot back in the world, then say where. A bot that is not dead is told so rather than refused. The bot never respawns by itself: a server under test may be checking what happens on death.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "structured": false,
+      "needsWorld": true,
+      "defaultDeadlineMs": 30000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "required": []
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
     },
     {
       "name": "restart-bot",
@@ -6763,6 +7037,45 @@
       }
     },
     {
+      "name": "wait-for-toast",
+      "group": "hud",
+      "description": "Wait until a toast whose text matches a regular expression pops up: an advancement a server grants when a quest is done, or a recipe unlocked. The advancement's id is part of the text, so a pattern can name it. Returns straight away if the latest toast already says so.",
+      "route": "local",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "JavaScript regular expression source"
+          },
+          "timeoutMs": {
+            "description": "How long to wait (default: 10000)",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 120000
+          }
+        },
+        "required": [
+          "pattern"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "wait-for-window",
       "group": "window",
       "description": "Wait until a GUI window opens and return its contents. Returns straight away if a matching window is already open.",
@@ -7009,5 +7322,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:bd816ebd26fb277ea3544f19a789d33519c3ffb39620a096807e084512866a95"
+  "catalogHash": "sha256:94a1467a6c6efcd74c530327afb67131e5c0948c0f77d4514c0a81951060f468"
 }

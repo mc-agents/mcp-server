@@ -737,6 +737,91 @@ class BotEndToEndTest {
         assertTrue(third.endsWith(": 8"), third);
     }
 
+    /**
+     * A dead bot is still a player to the client, so every tool went on acting for it. A walk sent
+     * the server nothing, waited out its whole deadline and reported a timeout, and nothing
+     * anywhere said the bot was lying behind a death screen.
+     */
+    @Test
+    void aDeadBotSaysSoInsteadOfTimingOut() {
+        world.run("kill " + BotWorld.BOT);
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+
+        String refused = agent.refusal("move-to-position",
+            Map.of("bot", BotWorld.BOT, "x", 4, "y", -60, "z", 0, "timeoutMs", 5000));
+        String state = agent.call("get-player-state", Map.of("bot", BotWorld.BOT));
+        String status = agent.call("get-bot-status", Map.of("bot", BotWorld.BOT));
+
+        agent.mustCall("respawn", Map.of("bot", BotWorld.BOT));
+        world.run("tp " + BotWorld.BOT + " 2 -59 0");
+        world.run("function mcagents:setup");
+
+        assertTrue(refused.contains("the bot is dead"), refused);
+        assertTrue(state.startsWith("dead"), state);
+        assertTrue(status.contains("Dead:"), status);
+    }
+
+    /**
+     * Pressing respawn is one packet, and answering there said where the body fell: the server
+     * sends a new player and then where it stands, and the position asked for straight after was
+     * still the old one. Where the server put it is the only answer that counts.
+     */
+    @Test
+    void aRespawnedBotIsWhereTheServerSentIt() {
+        world.run("spawnpoint " + BotWorld.BOT + " 0 -60 10");
+        world.run("tp " + BotWorld.BOT + " 6 -60 -6");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        world.run("kill " + BotWorld.BOT);
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+
+        String respawned = agent.mustCall("respawn", Map.of("bot", BotWorld.BOT));
+        String position = agent.call("get-position", Map.of("bot", BotWorld.BOT));
+
+        world.run("tp " + BotWorld.BOT + " 2 -59 0");
+        world.run("function mcagents:setup");
+
+        assertTrue(respawned.startsWith("Respawned at (0, -60, 10)"), respawned);
+        assertTrue(position.contains("(0, -60, 10)"), position);
+    }
+
+    /**
+     * A server marks a quest done by granting an advancement, and there was no way to see one: the
+     * toast is gone in five seconds, and nothing read the progress the server had sent. The title
+     * is drawn in the pack's own font and the id is on no screen, so both are asserted.
+     */
+    @Test
+    void anAdvancementTheServerGrantsIsSeenAsItHappensAndAfter() {
+        world.run("advancement revoke " + BotWorld.BOT + " only mcagents:quest/first_steps");
+        world.run("advancement revoke " + BotWorld.BOT + " only mcagents:quest/gather");
+
+        /* Granted after the wait starts, so the toast cannot be one left over from another run. */
+        new Thread(() -> {
+            sleep(1500);
+            world.run("advancement grant " + BotWorld.BOT + " only mcagents:quest/first_steps");
+        }).start();
+
+        /* mustCall, because a wait that expires answers with the pattern in it and would pass. */
+        String toast = agent.mustCall("wait-for-toast",
+            Map.of("bot", BotWorld.BOT, "pattern", "mcagents:quest/first_steps", "timeoutMs", 20000));
+
+        world.run("advancement grant " + BotWorld.BOT + " only mcagents:quest/gather wood");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String advancements = agent.call("read-advancements", Map.of("bot", BotWorld.BOT));
+
+        world.run("advancement revoke " + BotWorld.BOT + " only mcagents:quest/first_steps");
+        world.run("advancement revoke " + BotWorld.BOT + " only mcagents:quest/gather");
+
+        assertTrue(toast.contains("[gui/label] First Steps (mcagents:quest/first_steps, goal)"), toast);
+        assertTrue(advancements.contains("mcagents:quest/gather \"Gather Supplies\" (task): 1 of 2 criteria"),
+            advancements);
+        assertTrue(advancements.contains("mcagents:quest/first_steps \"[gui/label] First Steps\" (goal): done at"),
+            advancements);
+        assertTrue(advancements.indexOf("mcagents:quest/gather") < advancements.indexOf("mcagents:quest/first_steps"),
+            "the most recently progressed did not come first: " + advancements);
+        assertTrue(!advancements.contains("minecraft:"), "vanilla was listed without being asked for: " + advancements);
+    }
+
     /** The reason this kind of bot exists: a frame of what is actually on the screen. */
     @Test
     void aScreenshotComesBackAsAnImage() {

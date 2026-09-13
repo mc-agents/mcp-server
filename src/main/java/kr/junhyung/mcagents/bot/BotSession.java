@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 /**
- * One bot: its link, what it can do, what it last told us, and the five feeds it fills.
+ * One bot: its link, what it can do, what it last told us, and the six feeds it fills.
  *
  * <p>The session outlives the game connection. A bot that has been kicked still answers
  * {@code read-chat} with the lines that led up to it, which is usually where the reason is.
@@ -20,7 +20,7 @@ import java.util.function.Predicate;
 public final class BotSession {
 
     /** The feeds a bot fills. Fixed: a tool that reads one of these must not depend on a bot. */
-    public static final List<String> FEEDS = List.of("chat", "actionBar", "title", "dialog", "effect");
+    public static final List<String> FEEDS = List.of("chat", "actionBar", "title", "dialog", "effect", "toast");
 
     private final String name;
     private final String kind;

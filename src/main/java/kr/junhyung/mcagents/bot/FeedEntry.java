@@ -4,6 +4,7 @@ import java.util.List;
 import kr.junhyung.mcagents.render.Dialogs;
 import kr.junhyung.mcagents.render.Flatten;
 import kr.junhyung.mcagents.render.Piece;
+import kr.junhyung.mcagents.render.Toasts;
 import tools.jackson.databind.JsonNode;
 
 /**
@@ -16,7 +17,8 @@ import tools.jackson.databind.JsonNode;
  * @param text      the bot's own flattening, kept as a fallback for a bot that sent no segments
  * @param segments  the pieces a custom-font HUD is drawn from, kept apart
  * @param component the component the bot was given, which the server flattens itself
- * @param data      structure a sentence cannot hold: the dialog feed sends the dialog itself
+ * @param data      structure a sentence cannot hold: the dialog feed sends the dialog itself, the
+ *                  toast feed the advancement id a title does not show
  * @param firstSeen when this run started
  * @param seen      when it was last observed. A run that is still showing keeps moving this
  * @param repeats   how many times it has been observed, 1 or more
@@ -48,6 +50,9 @@ public record FeedEntry(
     public String rendered() {
         if (Dialogs.FEED.equals(kind)) {
             return Dialogs.describe(source, data, text);
+        }
+        if (Toasts.FEED.equals(kind)) {
+            return Toasts.describe(source, text, component, data);
         }
 
         List<Piece> flattened = Flatten.pieces(component);
