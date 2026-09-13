@@ -180,6 +180,14 @@ public final class Messages {
             Position position,
             Double health,
             Double food,
+            /*
+            Null from a bot that does not say. A dead player is still in the world as far as the
+            connection goes, so "ready" alone let a caller send a dead bot walking and watch the
+            walk time out with nothing to say why.
+            */
+            Boolean dead,
+            /* What the death screen said, while it is up. */
+            String causeOfDeath,
             String reason,
             /*
             Words, not a Failure. The class-and-code machinery decides what a failed *call* does to

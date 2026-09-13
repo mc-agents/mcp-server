@@ -216,7 +216,7 @@ public class BotLinkServer implements SmartLifecycle {
                 HEARTBEAT_MS,
                 REPEAT_FLUSH_MS,
                 LIMITS,
-                Map.of("chat", true, "actionBar", true, "title", true, "dialog", true, "effect", true),
+                Map.of("chat", true, "actionBar", true, "title", true, "dialog", true, "effect", true, "toast", true),
                 vetted.accepted().stream().map(Messages.Capability::tool).toList(),
                 vetted.rejected()));
 

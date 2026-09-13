@@ -1,0 +1,37 @@
+{
+  "tool": "get-player-state",
+  "note": "on the death screen. A death message is a translate key, so the bot's own reading of it is the line",
+  "data": {
+    "health": 0,
+    "food": 14,
+    "saturation": 0,
+    "experience": {
+      "level": 0,
+      "progress": 0,
+      "points": 0
+    },
+    "gameMode": "survival",
+    "dimension": "overworld",
+    "position": {
+      "x": 12,
+      "y": -60,
+      "z": -3
+    },
+    "oxygen": null,
+    "dead": true,
+    "causeOfDeath": "Steve was slain by Grave Warden",
+    "causeOfDeathComponent": {
+      "translate": "death.attack.mob",
+      "with": [
+        {
+          "text": "Steve"
+        },
+        {
+          "text": "Grave Warden",
+          "font": "hyperfarm:nametag/label"
+        }
+      ]
+    }
+  },
+  "text": "dead (Steve was slain by Grave Warden): call respawn to bring the bot back\nhealth: 0 / 20\nfood: 14 / 20 (saturation 0)\nhealth bar: 0%\nexperience: level 0, 0% to the next level, 0 points\ngameMode: survival / dimension: overworld\nposition: (12, -60, -3)\noxygen: full / 20"
+}

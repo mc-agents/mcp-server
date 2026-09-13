@@ -1,0 +1,20 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:oak_log"
+    },
+    "title": "Gather Supplies",
+    "description": "Bring wood and stone",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "wood": {
+      "trigger": "minecraft:impossible"
+    },
+    "stone": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

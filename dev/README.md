@@ -30,7 +30,7 @@ An empty flat world makes every reading tool answer "nothing there", which is a 
 be checked against. `dev/fixture` is a datapack that puts a scoreboard, a boss bar, a two-sided
 sign, a hologram, a named cow, a chest with custom names and lore, a furnace and a patch of
 diamond blocks at fixed coordinates, each of them drawn the way a server with a resource pack
-draws it. The [end-to-end suite](../e2e) is aimed at those coordinates.
+draws it. Two quests are advancements under `mcagents:quest/`, granted by nothing but a command. The [end-to-end suite](../e2e) is aimed at those coordinates.
 
 The action bar it sends is in `minecraft:illageralt` with the label and the numbers as separate
 pieces, which is the case a plain-text reader gets wrong.

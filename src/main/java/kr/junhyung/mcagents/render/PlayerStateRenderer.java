@@ -1,6 +1,8 @@
 package kr.junhyung.mcagents.render;
 
+import java.util.ArrayList;
 import java.util.List;
+import tools.jackson.databind.JsonNode;
 
 public final class PlayerStateRenderer implements Renderer<PlayerStateRenderer.View> {
 
@@ -9,13 +11,31 @@ public final class PlayerStateRenderer implements Renderer<PlayerStateRenderer.V
     public record Experience(int level, double progress, int points) {}
 
     public record View(double health, double food, double saturation, Experience experience, String gameMode,
-        String dimension, Point position, Double oxygen) {}
+        String dimension, Point position, Double oxygen, Boolean dead, String causeOfDeath,
+        JsonNode causeOfDeathComponent) {}
 
+    /**
+     * A dead bot's health reads 0 / 20 and nothing else about it looks wrong, so the first line
+     * says it outright. Every tool that acts in the world refuses until respawn, and a caller
+     * reading this is usually one that has just been refused.
+     *
+     * <p>{@code dead} is boxed because a bot built before it existed sends none, and that bot's
+     * state still has to render rather than fail on a field it never knew about.
+     */
     @Override
     public String render(View view) {
         Experience experience = view.experience();
+        List<String> lines = new ArrayList<>();
 
-        return String.join("\n", List.of(
+        if (Boolean.TRUE.equals(view.dead())) {
+            String cause = view.causeOfDeath() == null
+                ? ""
+                : " (" + Flatten.read(view.causeOfDeath(), view.causeOfDeathComponent()) + ")";
+
+            lines.add("dead" + cause + ": call respawn to bring the bot back");
+        }
+
+        lines.addAll(List.of(
             "health: " + Text.number(view.health()) + " / 20",
             "food: " + Text.number(view.food()) + " / 20 (saturation " + Text.number(view.saturation()) + ")",
             "health bar: " + Text.percent(view.health() / FULL_HEALTH) + "%",
@@ -24,5 +44,7 @@ public final class PlayerStateRenderer implements Renderer<PlayerStateRenderer.V
             "gameMode: " + view.gameMode() + " / dimension: " + view.dimension(),
             "position: " + (view.position() == null ? "unknown" : view.position().toString()),
             "oxygen: " + (view.oxygen() == null ? "full" : Text.number(view.oxygen())) + " / 20"));
+
+        return String.join("\n", lines);
     }
 }

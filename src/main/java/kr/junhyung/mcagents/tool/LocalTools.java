@@ -45,7 +45,9 @@ public class LocalTools {
             Map.entry("read-dialog", "dialog"),
             Map.entry("wait-for-dialog", "dialog"),
             Map.entry("read-effects", "effect"),
-            Map.entry("wait-for-effect", "effect"));
+            Map.entry("wait-for-effect", "effect"),
+            Map.entry("read-toasts", "toast"),
+            Map.entry("wait-for-toast", "toast"));
 
     private final BotRegistry bots;
 
@@ -107,6 +109,10 @@ public class LocalTools {
         }
         if (last.food() != null) {
             append(body, "Food", "%.1f of 20".formatted(last.food()));
+        }
+        if (Boolean.TRUE.equals(last.dead())) {
+            append(body, "Dead", (last.causeOfDeath() == null ? "yes" : last.causeOfDeath())
+                    + ". Every tool that acts in the world refuses until respawn is called.");
         }
         append(body, "Reason", last.reason());
 
@@ -283,7 +289,9 @@ public class LocalTools {
             return "linked, not in a world";
         }
         if ("ready".equals(status.state())) {
-            return "on " + status.address();
+            return Boolean.TRUE.equals(status.dead())
+                    ? "on %s, dead".formatted(status.address())
+                    : "on " + status.address();
         }
         return status.reason() == null ? status.state()
                 : "%s (%s)".formatted(status.state(), status.reason());
@@ -303,6 +311,7 @@ public class LocalTools {
             case "actionBar" -> "an action bar";
             case "title" -> "a title";
             case "dialog" -> "a dialog";
+            case "toast" -> "a toast";
             default -> "a sound or particle";
         };
     }

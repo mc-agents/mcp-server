@@ -110,6 +110,29 @@ class EventFeedTest {
                 + " | buttons: Confirm, Cancel, Close | 1 input field(s)", line.rendered());
     }
 
+    /*
+    A server marks a quest done by granting an advancement, and draws its title in the pack's own
+    font. The id is not on the toast at all, and it is the one part a wait can be written against
+    without knowing what the pack's glyphs spell.
+    */
+    @Test
+    void anAdvancementToastCarriesTheIdItsTitleDoesNotShow() throws Exception {
+        JsonMapper mapper = JsonMapper.builder().build();
+        JsonNode title = mapper.readTree("""
+                {"text": "", "extra": [
+                  {"text": "\uE001", "font": "hyperfarm:gui/icons"},
+                  {"text": "First Steps", "font": "hyperfarm:gui/label"}]}""");
+        JsonNode data = mapper.readTree("""
+                {"id": "mcagents:quest/first_steps", "frame": "goal",
+                 "description": "Talk to the guide", "descriptionComponent": {"text": "Talk to the guide"}}""");
+        long now = System.currentTimeMillis();
+
+        FeedEntry line = new FeedEntry(1, "toast", "advancement", "First Steps", List.of(), title, data, now, now, 1);
+
+        assertEquals("advancement made: [gui/label] First Steps (mcagents:quest/first_steps, goal)"
+                + " | Talk to the guide", line.rendered());
+    }
+
     /** The dialog going away is a line of its own, and the words for it are the server's. */
     @Test
     void aClosedDialogSaysSoWhateverTheBotCalledIt() {
