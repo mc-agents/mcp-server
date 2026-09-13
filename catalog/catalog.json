@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "3.9.0",
+  "catalogVersion": "3.10.0",
   "protocol": 1,
   "tools": [
     {
@@ -719,7 +719,7 @@
     {
       "name": "close-window",
       "group": "window",
-      "description": "Close the GUI window the bot has open. Answers that there was none rather than failing, because asking to close nothing is a no-op and not a mistake.",
+      "description": "Close whatever the bot has open -- a container, a book, a sign editor, a dialog -- the way Escape would. Answers that there was none rather than failing, because asking to close nothing is a no-op and not a mistake. A screen that does not close on Escape, such as the death screen, is refused.",
       "route": "rpc",
       "kinds": [
         "fabric"
@@ -765,11 +765,19 @@
               "string",
               "null"
             ]
+          },
+          "screen": {
+            "description": "What was closed when it was not a container window: \"book\", \"lectern\", \"book editor\", \"sign editor\", \"dialog\", or the screen's class name. Null for a container.",
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
           "closed",
-          "closedComponent"
+          "closedComponent",
+          "screen"
         ]
       }
     },
@@ -7322,5 +7330,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:94a1467a6c6efcd74c530327afb67131e5c0948c0f77d4514c0a81951060f468"
+  "catalogHash": "sha256:9d958457b37a9c1e9ac96d86da80daa4dfb1006e42ec7ea7f20ff58a198ba580"
 }

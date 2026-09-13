@@ -501,9 +501,13 @@ class BotEndToEndTest {
 
         String book = agent.call("read-book", Map.of("bot", BotWorld.BOT));
 
-        agent.mustCall("press-dialog-button", Map.of("bot", BotWorld.BOT, "label", "Done"));
+        /* close-window used to look for a chest, and answered "No window was open" in front of this. */
+        String closed = agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+        String after = agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
         world.run("function mcagents:setup");
 
+        assertTrue(closed.startsWith("Closed the book"), closed);
+        assertTrue(after.startsWith("No window was open"), "the book was still open: " + after);
         assertTrue(book.startsWith("\"Probe Guide\" by Probe in hand, 3 pages, open at page 1"), book);
         assertTrue(book.contains("1. Find the shrine."), book);
         assertTrue(book.contains("2. [gui/price] 12 coins"), book);

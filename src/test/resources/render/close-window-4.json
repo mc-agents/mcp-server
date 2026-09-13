@@ -1,0 +1,10 @@
+{
+  "tool": "close-window",
+  "note": "a book, which has no title of its own and used to be answered with \"No window was open\"",
+  "data": {
+    "closed": "",
+    "closedComponent": null,
+    "screen": "book"
+  },
+  "text": "Closed the book."
+}

@@ -1,0 +1,12 @@
+{
+  "tool": "close-window",
+  "note": "a dialog, whose title is the one the server gave it",
+  "data": {
+    "closed": "Name the probe",
+    "closedComponent": {
+      "text": "Name the probe"
+    },
+    "screen": "dialog"
+  },
+  "text": "Closed the dialog \"Name the probe\"."
+}

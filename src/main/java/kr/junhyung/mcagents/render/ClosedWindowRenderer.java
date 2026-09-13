@@ -10,13 +10,20 @@ import tools.jackson.databind.JsonNode;
  */
 public final class ClosedWindowRenderer implements Renderer<ClosedWindowRenderer.View> {
 
-    public record View(String closed, JsonNode closedComponent) {}
+    public record View(String closed, JsonNode closedComponent, String screen) {}
 
     @Override
     public String render(View view) {
         if (view.closed() == null) {
             return "No window was open, so there was nothing to close.";
         }
-        return "Closed window \"" + Flatten.read(view.closed(), view.closedComponent()) + "\".";
+
+        String title = Flatten.read(view.closed(), view.closedComponent());
+
+        /* A book or a sign editor usually has no title of its own, and "Closed the book" is enough. */
+        if (view.screen() != null) {
+            return "Closed the " + view.screen() + (title.isBlank() ? "" : " \"" + title + "\"") + ".";
+        }
+        return "Closed window \"" + title + "\".";
     }
 }

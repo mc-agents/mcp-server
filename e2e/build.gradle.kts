@@ -56,8 +56,19 @@ tasks.test {
 /*
 Not part of `check`. This needs Docker, a published bot image and a minute, none of which a build
 should insist on; CI asks for it by name and so does anybody running it locally.
+
+Nor part of a bare `test`. Gradle runs a task named on the command line in every project that has
+one, so `./gradlew test` at the root reached this too and started a Paper server and a bot for
+somebody who meant the unit tests -- four people did it in one afternoon. It runs only when asked
+for by its path.
 */
 tasks.named("check") { setDependsOn(emptyList<Any>()) }
+
+val askedForByPath = gradle.startParameter.taskNames.any { it.removePrefix(":") == "e2e:test" }
+
+tasks.test {
+    onlyIf("the end-to-end suite runs only as :e2e:test") { askedForByPath }
+}
 
 tasks.withType<JavaCompile> {
     options.compilerArgs.addAll(listOf("-Xlint:all,-processing,-serial", "-Werror"))
