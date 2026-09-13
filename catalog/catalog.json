@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "2.12.0",
+  "catalogVersion": "2.13.0",
   "protocol": 1,
   "tools": [
     {
@@ -3615,7 +3615,7 @@
       "exclusive": false,
       "untrusted": false,
       "structured": false,
-      "defaultDeadlineMs": 90000,
+      "defaultDeadlineMs": 180000,
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
@@ -5134,5 +5134,5 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     }
   ],
-  "catalogHash": "sha256:54540603ce27834eeb6817457fa39f63a4a0146ee992d8291a1633073ac2137f"
+  "catalogHash": "sha256:f3559e7662875b378c07dbe410b4d5eced9c8100acf596e877d22fef5d9684f4"
 }

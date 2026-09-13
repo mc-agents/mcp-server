@@ -329,6 +329,13 @@ sends `titleComponent` for its header and `close-window` for the one it closed, 
 `labelComponent`, and the tab list sends `displayName` with its component beside the username. The username stays because it is the identity every other tool
 takes; the drawn name is where a server puts a rank.
 
+**`join-server` waits three minutes for a spawn.** A mineflayer bot is in the world a second after
+it dials, and a fabric one on a machine with a graphics card is not far behind. Without one it is
+another matter: the client builds every texture atlas in software before it can act, and on a
+four-core CI runner that took eighty-nine seconds -- so the bot arrived in the world one second
+after its own ninety-second deadline had fired, and disconnected itself on the way in. The number
+is what a client without a card costs, not slack.
+
 **A blank lore line is a line.** It is where a menu puts its spacing, and the line below it sits
 where the server put it -- the same reason a blank sign face line is reported rather than dropped.
 One kind of bot used to drop them and the other kept them, so an item with a spacer read as two
