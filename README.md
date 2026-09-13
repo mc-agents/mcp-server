@@ -60,6 +60,30 @@ bot has linked, because an MCP client reads that list once when its session open
 [`dev/`](dev/README.md) has a fake bot that speaks the whole protocol, a sweep that calls every
 tool, and a one-liner for calling one by hand. None of them needs a Minecraft client.
 
+### End to end
+
+```bash
+./gradlew :e2e:test
+```
+
+[`e2e/`](e2e) is a project of its own: it starts the jar a release ships, a Paper server with the
+fixture datapack in it and a real bot in a container, and then asks the MCP endpoint for things and
+asserts the sentence that comes back. It compiles against nothing in this project, so what it holds
+is the contract rather than the code behind it.
+
+Every case in it is a bug that was once shipped. What found those was a set of scripts somebody had
+to run and read; none of them could fail a build, so a renderer that started saying something else
+went unnoticed until the next time anyone looked. The assertions are against the expected sentence
+rather than against a second bot, because two implementations agreeing is a weaker thing to know --
+they agreed for a while that a chat line reading "Hello world" was "Hello  | world".
+
+It needs Docker and a bot image, so it is not part of `build`. Which bot and which Minecraft version
+are the build's to say, and CI runs the same cases against every version the mod supports:
+
+```bash
+./gradlew :e2e:test -Pe2e.minecraft.version=26.2 -Pe2e.bot.image=<image>
+```
+
 ## Status
 
 The server answers the whole catalogue. `join-server` sends a bot that has linked into a world;
