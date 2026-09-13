@@ -210,7 +210,7 @@ public class LocalTools {
         List<FeedEntry> lines = bot.feed(feed).recent(count);
 
         if (lines.isEmpty()) {
-            return ToolDispatcher.text("The server has not sent %s yet.".formatted(nounOf(feed)));
+            return ToolDispatcher.text("The server has not sent %s yet.".formatted(withArticle(nounOf(feed))));
         }
 
         boolean manySources = lines.stream().map(FeedEntry::source).distinct().count() > 1;
@@ -236,7 +236,7 @@ public class LocalTools {
         FeedEntry showing = bot.feed(feed).latest();
         if (showing != null && pattern.matcher(showing.rendered()).find()) {
             return ToolDispatcher.text(Trust.mark(
-                    "The %s already shows: %s".formatted(nounOf(feed), showing.rendered())));
+                    "The latest %s already shows: %s".formatted(nounOf(feed), showing.rendered())));
         }
 
         try {
@@ -305,15 +305,24 @@ public class LocalTools {
         return "[%s] %s%s%s".formatted(Instant.ofEpochMilli(line.seen()), source, line.rendered(), repeats);
     }
 
+    /**
+     * The bare noun, because the two sentences it goes into need different articles: "has not sent
+     * a toast" and "the latest toast". Returning it with "a" already on read "The a toast already
+     * shows" on every feed.
+     */
     private static String nounOf(String feed) {
         return switch (feed) {
-            case "chat" -> "a chat line";
-            case "actionBar" -> "an action bar";
-            case "title" -> "a title";
-            case "dialog" -> "a dialog";
-            case "toast" -> "a toast";
-            default -> "a sound or particle";
+            case "chat" -> "chat line";
+            case "actionBar" -> "action bar";
+            case "title" -> "title";
+            case "dialog" -> "dialog";
+            case "toast" -> "toast";
+            default -> "sound or particle";
         };
+    }
+
+    private static String withArticle(String noun) {
+        return ("aeiou".indexOf(noun.charAt(0)) >= 0 ? "an " : "a ") + noun;
     }
 
     private static int intArg(Map<String, Object> arguments, String name, int fallback) {

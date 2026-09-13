@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "3.10.0",
+  "catalogVersion": "3.11.0",
   "protocol": 1,
   "tools": [
     {
@@ -3646,6 +3646,55 @@
         ],
         "additionalProperties": false
       }
+    },
+    {
+      "name": "open-inventory",
+      "group": "window",
+      "description": "Open the bot's own inventory, as pressing E does, so click-slot and drag-slots reach the crafting grid, armour, offhand and the inventory itself. In creative this is the creative inventory, opened on the tab asked for; its clicks go through the creative screen the way a player's do, and clicking an item on a tab other than the inventory takes a stack of it. Riding something with an inventory of its own, the server is asked instead, and wait-for-window follows.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "needsWorld": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "tab": {
+            "description": "Creative only: the tab to open, by its name, such as \"Building Blocks\" or \"Search\". Defaults to the inventory tab, whose slots are the bot's own inventory.",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "tab": {
+            "description": "Creative only: the tab to open, by its name, such as \"Building Blocks\" or \"Search\". Defaults to the inventory tab, whose slots are the bot's own inventory.",
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "default": null
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "tab"
+        ]
+      },
+      "wireSchemaHash": "sha256:9f4bd22029a76816a5adf4d36f944683f85eb4d664e8ace73e1e42c706013b0f"
     },
     {
       "name": "ping-server",
@@ -7330,5 +7379,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:9d958457b37a9c1e9ac96d86da80daa4dfb1006e42ec7ea7f20ff58a198ba580"
+  "catalogHash": "sha256:48bc310edac6647e3428969adfec3256875310aee73368ba89140647941315ac"
 }

@@ -79,6 +79,12 @@ setblock 1 -60 3 chest{CustomName:{text:"",extra:[{text:"",font:"hyperfarm:gui/i
 kill @e[type=villager,tag=mcagents]
 summon villager 0 -60 -4 {Tags:["mcagents"],NoAI:1b,Silent:1b,Invulnerable:1b,CustomName:{text:"",extra:[{text:"",font:"hyperfarm:gui/icons"},{text:"Probe Librarian",font:"hyperfarm:gui/header"}]},VillagerData:{type:"minecraft:plains",profession:"minecraft:librarian",level:3},Xp:40,Offers:{Recipes:[{buy:{id:"minecraft:emerald",count:3},sell:{id:"minecraft:paper",count:1,components:{"minecraft:custom_name":{text:"",extra:[{text:"",font:"hyperfarm:gui/icons"},{text:"Map Fragment",font:"hyperfarm:gui/label"}]}}},uses:0,maxUses:4,rewardExp:0b,xp:5,priceMultiplier:0.0f,specialPrice:0,demand:0},{buy:{id:"minecraft:emerald",count:5},buyB:{id:"minecraft:book",count:1},sell:{id:"minecraft:enchanted_book",count:1,components:{"minecraft:stored_enchantments":{"minecraft:mending":1}}},uses:0,maxUses:12,rewardExp:0b,xp:10,priceMultiplier:0.2f,specialPrice:0,demand:0},{buy:{id:"minecraft:wheat",count:20},sell:{id:"minecraft:emerald",count:1},uses:16,maxUses:16,rewardExp:0b,xp:2,priceMultiplier:0.05f,specialPrice:0,demand:0}]}}
 
+# --- a loom: read-container-options, press-container-button ---
+# Its patterns are drawn by the screen and pressed by number, like the stonecutter's results, and the
+# number means whichever pattern the list happens to put there -- which depends on the dye.
+setblock -1 -60 7 air
+setblock -1 -60 7 loom
+
 # --- a furnace with fuel and input: smelt-item ---
 setblock 1 -60 5 air
 setblock 1 -60 5 furnace[facing=north]

@@ -699,6 +699,13 @@ class BotEndToEndTest {
     @Test
     void controlDropThrowsTheWholeStack() {
         world.run("function mcagents:setup");
+        /*
+        Where the stack lands depends on where the bot throws it from. From a spot a case before this
+        one left the bot in, it landed within reach, and a player picks up what they threw once two
+        seconds have passed -- which on a slow runner was before the ground was looked at.
+        */
+        world.run("tp " + BotWorld.BOT + " 2 -59 0");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
         agent.mustCall("open-container", Map.of("bot", BotWorld.BOT, "x", 1, "y", -60, "z", 3));
 
         agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 4, "mode", "throw-stack"));
@@ -755,6 +762,11 @@ class BotEndToEndTest {
             Map.of("bot", BotWorld.BOT, "x", 4, "y", -60, "z", 0, "timeoutMs", 5000));
         String state = agent.call("get-player-state", Map.of("bot", BotWorld.BOT));
         String status = agent.call("get-bot-status", Map.of("bot", BotWorld.BOT));
+        /*
+        Reading goes on behind the death screen, because what a death did is read after it. The
+        fixture carries three diamonds and keepInventory is off, so they went with the body.
+        */
+        String inventory = agent.mustCall("list-inventory", Map.of("bot", BotWorld.BOT));
 
         agent.mustCall("respawn", Map.of("bot", BotWorld.BOT));
         world.run("tp " + BotWorld.BOT + " 2 -59 0");
@@ -763,6 +775,7 @@ class BotEndToEndTest {
         assertTrue(refused.contains("the bot is dead"), refused);
         assertTrue(state.startsWith("dead"), state);
         assertTrue(status.contains("Dead:"), status);
+        assertTrue(!inventory.contains("diamond"), "the inventory still reads as it did before dying: " + inventory);
     }
 
     /**
@@ -824,6 +837,74 @@ class BotEndToEndTest {
         assertTrue(advancements.indexOf("mcagents:quest/gather") < advancements.indexOf("mcagents:quest/first_steps"),
             "the most recently progressed did not come first: " + advancements);
         assertTrue(!advancements.contains("minecraft:"), "vanilla was listed without being asked for: " + advancements);
+    }
+
+    /**
+     * A loom's patterns are pressed by a number that means whichever pattern the list puts there,
+     * and the list depends on the dye. Asserted on the banner the server hands back, because the
+     * client shows the pattern it asked for whether or not the server agreed.
+     */
+    @Test
+    void aLoomPatternIsPressedByTheNameItIsShownAs() {
+        world.run("clear " + BotWorld.BOT);
+        world.run("give " + BotWorld.BOT + " white_banner 1");
+        world.run("give " + BotWorld.BOT + " red_dye 1");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "red_dye", "timeoutMs", 10000));
+        agent.mustCall("activate-block", Map.of("bot", BotWorld.BOT, "x", -1, "y", -60, "z", 7));
+        agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "timeoutMs", 10000));
+        /* The hotbar starts at 31 on a loom; a shift-click sends a banner and a dye to their own slots. */
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 31, "shift", true));
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 32, "shift", true));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String options = agent.mustCall("read-container-options", Map.of("bot", BotWorld.BOT));
+        Matcher first = Pattern.compile("\n  \\d+\\. (.+?) \\[").matcher(options);
+        assertTrue(first.find(), options);
+
+        agent.mustCall("press-container-button", Map.of("bot", BotWorld.BOT, "option", first.group(1)));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 3, "shift", true));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+
+        String banner = world.run("data get entity " + BotWorld.BOT
+            + " Inventory[{id:\"minecraft:white_banner\"}].components.\"minecraft:banner_patterns\"");
+        world.run("function mcagents:setup");
+
+        assertTrue(options.contains("Red Base [stripe_bottom]"), options);
+        assertTrue(banner.contains("minecraft:red") || banner.contains("color: \"red\""),
+            "the server's banner has no red pattern on it: " + banner);
+    }
+
+    /**
+     * The creative inventory's slots are an item picker, and on a tab of items a click takes a stack
+     * of one. Sending the click as a container packet instead clicked the picker's slot number on the
+     * real inventory -- the crafting result, for slot 0 -- and nothing arrived anywhere.
+     */
+    @Test
+    void theCreativeInventoryIsClickedTheWayACreativePlayerClicksIt() {
+        world.run("function mcagents:setup");
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+
+        String opened = agent.mustCall("open-inventory", Map.of("bot", BotWorld.BOT, "tab", "Building Blocks"));
+        String window = agent.mustCall("read-window", Map.of("bot", BotWorld.BOT));
+        Matcher offered = Pattern.compile("\n  0: (\\S+) x").matcher(window);
+        assertTrue(offered.find(), window);
+
+        /* The last nine slots are the hotbar, and the ninth hotbar slot is empty in the fixture. */
+        int hotbarNine = Integer.parseInt(Pattern.compile("(\\d+) slots").matcher(window).results()
+            .findFirst().orElseThrow().group(1)) - 1;
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 0));
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", hotbarNine));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+
+        String hotbar = world.run("data get entity " + BotWorld.BOT + " Inventory[{Slot:8b}].id");
+        world.run("function mcagents:setup");
+
+        assertTrue(opened.startsWith("Opened the creative inventory on its \"Building Blocks\" tab"), opened);
+        assertTrue(hotbar.contains("minecraft:" + offered.group(1)),
+            "the ninth hotbar slot does not hold what slot 0 offered (" + offered.group(1) + "): " + hotbar);
     }
 
     /** The reason this kind of bot exists: a frame of what is actually on the screen. */
