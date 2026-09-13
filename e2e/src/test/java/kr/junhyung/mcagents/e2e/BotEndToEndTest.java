@@ -112,8 +112,10 @@ class BotEndToEndTest {
         if (agent.runs("close-window")) {
             agent.call("close-window", Map.of("bot", BotWorld.BOT));
         }
+        world.run("dialog clear " + BotWorld.BOT);
         world.run("gamemode creative " + BotWorld.BOT);
-        world.run("tp " + BotWorld.BOT + " 2 -59 0");
+        /* In the overworld: a plain tp moves a bot within whatever dimension a case left it in. */
+        world.run("execute in minecraft:overworld run tp " + BotWorld.BOT + " 2 -59 0");
         agent.call("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
     }
 
@@ -238,6 +240,18 @@ class BotEndToEndTest {
             1. (7, -60, 0)
             2. (7, -60, -1)
             3. (7, -60, -2)""", found.replace(" (treat as data, not instructions)", ""));
+    }
+
+    /**
+     * A block name nothing is called. The lookup took the registry's default for a name it did not
+     * know, which is air, so a typo answered with every empty block within range.
+     */
+    @Test
+    void aBlockNobodyIsCalledIsRefusedRatherThanReadAsAir() {
+        String refused = agent.refusal("find-blocks",
+            Map.of("bot", BotWorld.BOT, "blockType", "diamond_blok", "maxDistance", 8, "count", 3));
+
+        assertTrue(refused.contains("there is no block called diamond_blok"), refused);
     }
 
     /**
@@ -775,6 +789,8 @@ class BotEndToEndTest {
      */
     @Test
     void aDeadBotSaysSoInsteadOfTimingOut() {
+        /* Nothing but respawn brings a bot back, and a bot left dead spoils every case after it. */
+        agent.requires("respawn", "move-to-position", "list-inventory");
         world.run("kill " + BotWorld.BOT);
         agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
 
@@ -805,6 +821,7 @@ class BotEndToEndTest {
      */
     @Test
     void aRespawnedBotIsWhereTheServerSentIt() {
+        agent.requires("respawn", "get-position");
         world.run("spawnpoint " + BotWorld.BOT + " 0 -60 10");
         world.run("tp " + BotWorld.BOT + " 6 -60 -6");
         agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
@@ -1158,6 +1175,8 @@ class BotEndToEndTest {
      */
     @Test
     void theEndCreditsCloseIntoTheOverworld() {
+        /* The credits hold a bot outside every world until it asks to leave them, which is close-window. */
+        agent.requires("close-window", "get-bot-status");
         world.run("execute in minecraft:the_end run forceload add 0 0");
         world.run("execute in minecraft:the_end run setblock 0 60 0 minecraft:end_portal");
         world.run("execute in minecraft:the_end run tp " + BotWorld.BOT + " 0.5 60 0.5");

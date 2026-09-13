@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "3.14.0",
+  "catalogVersion": "3.15.0",
   "protocol": 1,
   "tools": [
     {
@@ -968,7 +968,8 @@
       "description": "Report the game mode the server assigned to the bot.",
       "route": "local",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -1556,7 +1557,8 @@
       "description": "Find nearby blocks of a given type.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -2040,7 +2042,8 @@
       "description": "Describe the block at a position.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -2203,7 +2206,8 @@
       "description": "Report the health, hunger, experience and position the bot sees for itself, and whether it is dead.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -7831,5 +7835,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:99e8d787b85d7faea9eff6d78482fd23c3a4aafa4db16f53a383be90329e1eb2"
+  "catalogHash": "sha256:b34274d7a7975858df71ee94705da644c34f258574fe4230cad43da027c0cc7c"
 }

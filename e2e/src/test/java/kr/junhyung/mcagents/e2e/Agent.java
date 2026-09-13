@@ -50,19 +50,27 @@ final class Agent implements AutoCloseable {
     /**
      * A case that needs a tool this kind of bot does not have is skipped, not failed.
      *
-     * <p>The catalogue is what says which kind runs what, so the suite asks it rather than every case
+     * <p>The catalogue is what says which kind runs what, so every call asks it rather than every case
      * listing the tools it needs: a tool that gains a kind turns on every case that uses it, and
      * nothing here has to be edited for that to happen.
+     *
+     * <p>A case calls this itself, before anything else, only when it puts the bot somewhere a tool
+     * is needed to get it out of. Skipping at the first call it cannot make is too late for those: the
+     * end-credits case had already sent an azalea bot through the portal when it reached
+     * close-window, and a bot that never asks to leave the credits is held outside every world, so
+     * each case after it failed on a teleport that could not land.
      */
-    private void require(String tool) {
-        if (!runs(tool)) {
-            Assumptions.abort("a " + kind + " bot does not run " + tool);
+    void requires(String... tools) {
+        for (String tool : tools) {
+            if (!runs(tool)) {
+                Assumptions.abort("a " + kind + " bot does not run " + tool);
+            }
         }
     }
 
     /** The text an agent is shown, with the blob parts left out. */
     String call(String tool, Map<String, Object> args) {
-        require(tool);
+        requires(tool);
         McpSchema.CallToolResult answer = client.callTool(McpSchema.CallToolRequest.builder(tool).arguments(args).build());
 
         return text(answer);
@@ -77,7 +85,7 @@ final class Agent implements AutoCloseable {
      * why.
      */
     String mustCall(String tool, Map<String, Object> args) {
-        require(tool);
+        requires(tool);
         McpSchema.CallToolResult answer = client.callTool(
             McpSchema.CallToolRequest.builder(tool).arguments(args).build());
 
@@ -89,7 +97,7 @@ final class Agent implements AutoCloseable {
 
     /** The same, for a tool expected to refuse: the message is the answer. */
     String refusal(String tool, Map<String, Object> args) {
-        require(tool);
+        requires(tool);
         McpSchema.CallToolResult answer = client.callTool(McpSchema.CallToolRequest.builder(tool).arguments(args).build());
 
         if (!Boolean.TRUE.equals(answer.isError())) {
@@ -100,7 +108,7 @@ final class Agent implements AutoCloseable {
 
     /** How many parts of the answer were not text, which is how a screenshot arrives. */
     int blobs(String tool, Map<String, Object> args) {
-        require(tool);
+        requires(tool);
         McpSchema.CallToolResult answer = client.callTool(McpSchema.CallToolRequest.builder(tool).arguments(args).build());
 
         return (int) answer.content().stream().filter(part -> !(part instanceof McpSchema.TextContent)).count();
