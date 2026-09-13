@@ -11,6 +11,9 @@ import tools.jackson.databind.JsonNode;
  * the menu's own reading of it: 0 is the cheapest enchantment on a table and whichever result
  * happens to come first on a stonecutter, and a caller that learns to press 0 learns nothing that
  * carries over.
+ *
+ * <p>A beacon's effects are listed apart from the buttons, for set-beacon-effects rather than
+ * press-container-button.
  */
 public final class ContainerOptionsRenderer implements Renderer<ContainerOptionsRenderer.View> {
 
@@ -20,8 +23,12 @@ public final class ContainerOptionsRenderer implements Renderer<ContainerOptions
     public record Option(int button, String name, String label, Integer count, Integer levels, Integer lapis,
                          boolean available, boolean selected) {}
 
+    public record Effect(String name, String label, String slot, int levels, boolean available, boolean selected) {}
+
+    public record Beacon(int levels, String payment, List<Effect> effects) {}
+
     public record Window(String title, JsonNode titleComponent, String type, List<Option> options,
-                         Integer page, Integer pageCount) {}
+                         Integer page, Integer pageCount, Beacon beacon) {}
 
     public record View(Window window) {}
 
@@ -36,6 +43,9 @@ public final class ContainerOptionsRenderer implements Renderer<ContainerOptions
         String named = "window \"" + Flatten.read(window.title(), window.titleComponent()) + "\" (type "
             + window.type() + ")";
 
+        if (window.beacon() != null) {
+            return beacon(named, window.beacon());
+        }
         if (window.options().isEmpty()) {
             return named + nothing(window.type());
         }
@@ -69,6 +79,41 @@ public final class ContainerOptionsRenderer implements Renderer<ContainerOptions
             return " has nothing to press: its result appears in slot 2 once both inputs are in, and click-slot takes it.";
         }
         return " has nothing to press right now, only slots.";
+    }
+
+    /**
+     * A beacon's effects are not pressed one at a time, so they are not numbered like buttons. The
+     * pyramid and the payment lead, because those are what refuse a choice, and a caller who reads
+     * the list without them picks an effect that cannot be set.
+     */
+    private static String beacon(String named, Beacon beacon) {
+        String pyramid = beacon.levels() == 0
+            ? "no pyramid"
+            : "a pyramid of " + levels(beacon.levels());
+        String payment = beacon.payment() == null
+            ? "nothing in the payment slot to pay with"
+            : beacon.payment() + " in the payment slot";
+
+        List<String> lines = new ArrayList<>();
+
+        for (Effect effect : beacon.effects()) {
+            List<String> notes = new ArrayList<>(List.of(effect.slot(), levels(effect.levels())));
+
+            if (effect.selected()) {
+                notes.add("selected");
+            }
+            if (!effect.available()) {
+                notes.add("unavailable");
+            }
+            lines.add("  " + effect.label() + " [" + effect.name() + "], " + String.join(", ", notes));
+        }
+
+        return Text.withLines(named + " is a beacon on " + pyramid + ", with " + payment + " "
+            + Text.DATA_NOTICE + ":", lines);
+    }
+
+    private static String levels(int levels) {
+        return levels + (levels == 1 ? " level" : " levels");
     }
 
     private static String option(Option option) {

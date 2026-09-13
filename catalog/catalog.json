@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "3.11.0",
+  "catalogVersion": "3.12.0",
   "protocol": 1,
   "tools": [
     {
@@ -3697,6 +3697,82 @@
       "wireSchemaHash": "sha256:9f4bd22029a76816a5adf4d36f944683f85eb4d664e8ace73e1e42c706013b0f"
     },
     {
+      "name": "pick-block",
+      "group": "block",
+      "description": "Middle-click the block at a position, walking into reach and facing it first. In creative the hand gets the block's item, made if the inventory has none. Outside creative an item already in the inventory is moved onto the hotbar and selected, and a block the inventory has none of is refused. Answers with what the bot holds once the server has updated the hand.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "needsWorld": true,
+      "defaultDeadlineMs": 10000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          },
+          "includeData": {
+            "description": "Pick the block with its data, as Ctrl+middle-click does: a chest keeps its contents, a sign its text. The server gives it only to a creative player (default: false)",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "description": "Z coordinate"
+          },
+          "includeData": {
+            "description": "Pick the block with its data, as Ctrl+middle-click does: a chest keeps its contents, a sign its text. The server gives it only to a creative player (default: false)",
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "includeData",
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:082eb1efdc19b54ad71f346ea6411a3d31981eccd7ac85af6d83d6bca42ef389"
+    },
+    {
       "name": "ping-server",
       "group": "probe",
       "description": "Send a Minecraft server list ping and report version, protocol, player count and MOTD. Use it to check a server is up and speaks a version we can join before spending a bot slot.",
@@ -4522,7 +4598,7 @@
     {
       "name": "read-container-options",
       "group": "window",
-      "description": "Read what the open menu offers to press rather than click: an enchanting table's three offers with their cost, a stonecutter's results, a loom's patterns, a lectern's page turns. read-window shows slots and none of these are in one. Answers that nothing is open rather than failing.",
+      "description": "Read what the open menu offers to press rather than click: an enchanting table's three offers with their cost, a stonecutter's results, a loom's patterns, a lectern's page turns, a beacon's effects with the pyramid levels each needs. read-window shows slots and none of these are in one. Answers that nothing is open rather than failing.",
       "route": "rpc",
       "kinds": [
         "fabric"
@@ -4657,9 +4733,82 @@
                   "integer",
                   "null"
                 ]
+              },
+              "beacon": {
+                "description": "What a beacon offers; null on every other menu. Its effects are not buttons: set-beacon-effects sends a primary and a secondary together.",
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "levels": {
+                    "description": "How many levels of pyramid the beacon stands on, 0 to 4, as the server last counted",
+                    "type": "integer"
+                  },
+                  "payment": {
+                    "description": "The item in the payment slot, slot 0, or null when it is empty and nothing can be set",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "effects": {
+                    "description": "Every effect button in the screen's order: the primary rows, regeneration, then the primary again as the level II secondary once a primary is set",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "Effect id without its namespace: \"speed\", \"jump_boost\"",
+                          "type": "string"
+                        },
+                        "label": {
+                          "description": "What the screen calls it in the bot's language, \"Speed II\" on the upgrade",
+                          "type": "string"
+                        },
+                        "slot": {
+                          "description": "Which of the two it is chosen as",
+                          "type": "string",
+                          "enum": [
+                            "primary",
+                            "secondary"
+                          ]
+                        },
+                        "levels": {
+                          "description": "The pyramid levels it needs",
+                          "type": "integer"
+                        },
+                        "available": {
+                          "description": "Whether the pyramid is tall enough for it",
+                          "type": "boolean"
+                        },
+                        "selected": {
+                          "description": "Whether the beacon has it set now",
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "available",
+                        "label",
+                        "levels",
+                        "name",
+                        "selected",
+                        "slot"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "effects",
+                  "levels",
+                  "payment"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [
+              "beacon",
               "options",
               "page",
               "pageCount",
@@ -5784,6 +5933,66 @@
       "wireSchemaHash": "sha256:5e168363ead5955da20ee091a62d2d24a085a14ca43f7c52479b2a3655e40465"
     },
     {
+      "name": "select-bundle-item",
+      "group": "slot",
+      "description": "Choose which item a bundle in the open window gives up next, as scrolling over its tooltip does. Nothing comes out yet: a right click on the bundle with an empty cursor (click-slot with button 'right') takes the chosen item out, and without a choice it takes the first. A left click, shift-click or number key on the bundle clears the choice. The answer lists what the bundle holds, numbered from 1, and an item that is not in it is refused with that list, so read-window's slot and this are all it takes to see inside one.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": true,
+      "structured": false,
+      "needsWorld": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "slot": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The window slot the bundle is in, as read-window numbers it"
+          },
+          "item": {
+            "description": "The item to choose: its number in the bundle counting from 1, or its name. A name that more than one stack in the bundle answers to is refused with their numbers.",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "item",
+          "slot"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The window slot the bundle is in, as read-window numbers it"
+          },
+          "item": {
+            "description": "The item to choose: its number in the bundle counting from 1, or its name. A name that more than one stack in the bundle answers to is refused with their numbers.",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "item",
+          "slot"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:61ffc82ab002355ea800ec3e116096a0c536dbd185468a71fc2334768420f38f"
+    },
+    {
       "name": "select-trade",
       "group": "window",
       "description": "Pick a trade on the trading screen that is open, as pressing it in the list does. The price is moved out of the inventory into the payment slots and the result slot fills if the trade can be made. Picking is not trading: take the result from slot 2 with click-slot afterwards -- a plain click trades once, a shift-click trades as many times as the payment slots cover.",
@@ -6244,6 +6453,69 @@
         "additionalProperties": false
       },
       "wireSchemaHash": "sha256:5c7dd5f9ce17e6ef4722a41c75a474b6dddbbccab91d61afb2ada4ef8ff46829"
+    },
+    {
+      "name": "set-beacon-effects",
+      "group": "window",
+      "description": "Choose and confirm the effects of the beacon whose window is open, as its confirm button does: a primary effect and, on a pyramid of four levels, a secondary one. The payment slot (slot 0) has to hold an iron ingot, gold ingot, emerald, diamond or netherite ingot, and one is used up. A choice the beacon would not take -- an effect its pyramid is too low for, a secondary that is neither regeneration nor the primary again, or nothing to pay with -- is refused with the reason before anything is sent. read-container-options lists the effects and what each needs. The window closes afterwards, as it does for a player.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": false,
+      "needsWorld": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "primary": {
+            "description": "The primary effect, by id or by the name the screen shows: speed or haste from a pyramid of one level, resistance or jump_boost from two, strength from three.",
+            "type": "string",
+            "minLength": 1
+          },
+          "secondary": {
+            "description": "The secondary effect, which needs a pyramid of four levels: regeneration, or the primary effect again to make it level II. Leave it out for none.",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "primary"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "primary": {
+            "description": "The primary effect, by id or by the name the screen shows: speed or haste from a pyramid of one level, resistance or jump_boost from two, strength from three.",
+            "type": "string",
+            "minLength": 1
+          },
+          "secondary": {
+            "description": "The secondary effect, which needs a pyramid of four levels: regeneration, or the primary effect again to make it level II. Leave it out for none.",
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "default": null
+          }
+        },
+        "required": [
+          "primary",
+          "secondary"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:892553669d702345a2ff4dd97777ffed2a54c3b4324a5f5b68f092d2b58f32f4"
     },
     {
       "name": "set-stance",
@@ -7379,5 +7651,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:48bc310edac6647e3428969adfec3256875310aee73368ba89140647941315ac"
+  "catalogHash": "sha256:b5f34cfb8925a36d8bfb1d93c3cb312586999f755e352004379213d745913543"
 }
