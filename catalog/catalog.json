@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "3.5.0",
+  "catalogVersion": "3.6.0",
   "protocol": 1,
   "tools": [
     {
@@ -4163,6 +4163,290 @@
       }
     },
     {
+      "name": "read-trades",
+      "group": "window",
+      "description": "Read every trade on the trading screen that is open: what each one costs, what it gives, how many times it can still be made, and the villager's level and experience. The trades are not in any slot, so read-window cannot show them, and they arrive a moment after the screen opens: a screen read in the same tick lists none yet.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "required": []
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "titleComponent": {
+            "description": "The component the title was written as, as Minecraft's own JSON",
+            "type": [
+              "object",
+              "array",
+              "string",
+              "null"
+            ]
+          },
+          "level": {
+            "description": "1 novice to 5 master. Only shown on the screen when showProgressBar is true: a wandering trader is sent a level it has no use for.",
+            "type": "integer"
+          },
+          "xp": {
+            "description": "The villager's experience",
+            "type": "integer"
+          },
+          "showProgressBar": {
+            "description": "Whether this merchant levels up at all",
+            "type": "boolean"
+          },
+          "canRestock": {
+            "description": "Whether a trade that is out of stock comes back",
+            "type": "boolean"
+          },
+          "trades": {
+            "description": "Every trade, in the order the screen lists them",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "number": {
+                  "description": "The trade's place in the list, counting from 1. select-trade takes this.",
+                  "type": "integer"
+                },
+                "costA": {
+                  "description": "The first price, with demand and the player's reputation already applied: what the payment slot takes",
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "label": {
+                      "description": "The custom name the server gave it, if any",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "lore": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "labelComponent": {
+                      "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                      "type": [
+                        "object",
+                        "array",
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "loreComponents": {
+                      "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "count",
+                    "label",
+                    "labelComponent",
+                    "lore",
+                    "loreComponents",
+                    "name"
+                  ]
+                },
+                "baseCountA": {
+                  "description": "How many of costA the trade asks before demand and reputation. Fewer in costA is a discount, more is a price pushed up by demand.",
+                  "type": "integer"
+                },
+                "costB": {
+                  "description": "The second price, null when the trade asks for one thing",
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "label": {
+                      "description": "The custom name the server gave it, if any",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "lore": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "labelComponent": {
+                      "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                      "type": [
+                        "object",
+                        "array",
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "loreComponents": {
+                      "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "count",
+                    "label",
+                    "labelComponent",
+                    "lore",
+                    "loreComponents",
+                    "name"
+                  ]
+                },
+                "result": {
+                  "description": "What the trade gives",
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "label": {
+                      "description": "The custom name the server gave it, if any",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "lore": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "labelComponent": {
+                      "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                      "type": [
+                        "object",
+                        "array",
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "loreComponents": {
+                      "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "count",
+                    "label",
+                    "labelComponent",
+                    "lore",
+                    "loreComponents",
+                    "name"
+                  ]
+                },
+                "enchantments": {
+                  "description": "The enchantments the result carries or, on a book, stores. Two enchanted books are otherwise the same item.",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "level": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "level",
+                      "name"
+                    ]
+                  }
+                },
+                "uses": {
+                  "type": "integer"
+                },
+                "maxUses": {
+                  "type": "integer"
+                },
+                "outOfStock": {
+                  "description": "uses has reached maxUses. The trade stays in the list and gives nothing until the villager restocks.",
+                  "type": "boolean"
+                },
+                "xp": {
+                  "description": "Experience the villager gains each time the trade is made",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "baseCountA",
+                "costA",
+                "costB",
+                "enchantments",
+                "maxUses",
+                "number",
+                "outOfStock",
+                "result",
+                "uses",
+                "xp"
+              ]
+            }
+          }
+        },
+        "required": [
+          "canRestock",
+          "level",
+          "showProgressBar",
+          "title",
+          "titleComponent",
+          "trades",
+          "xp"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "read-window",
       "group": "window",
       "description": "Read the window that is currently open: its title, its type, and every slot that has something in it. Answers that nothing is open rather than failing, because that is a state worth reporting.",
@@ -4459,6 +4743,418 @@
         ]
       },
       "wireSchemaHash": "sha256:5e168363ead5955da20ee091a62d2d24a085a14ca43f7c52479b2a3655e40465"
+    },
+    {
+      "name": "select-trade",
+      "group": "window",
+      "description": "Pick a trade on the trading screen that is open, as pressing it in the list does. The price is moved out of the inventory into the payment slots and the result slot fills if the trade can be made. Picking is not trading: take the result from slot 2 with click-slot afterwards -- a plain click trades once, a shift-click trades as many times as the payment slots cover.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": true,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "trade": {
+            "description": "The trade to pick: its number in read-trades, counting from 1, or the name of what it gives. A name that more than one trade gives is refused with their numbers.",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "trade"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "trade": {
+            "description": "The trade to pick: its number in read-trades, counting from 1, or the name of what it gives. A name that more than one trade gives is refused with their numbers.",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "trade"
+        ]
+      },
+      "wireSchemaHash": "sha256:dca18d169df2b97eead79c37bf85bd55ac217323864fc9fcc3d2563cd3ed2bc0",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "trade": {
+            "type": "object",
+            "properties": {
+              "number": {
+                "description": "The trade's place in the list, counting from 1. select-trade takes this.",
+                "type": "integer"
+              },
+              "costA": {
+                "description": "The first price, with demand and the player's reputation already applied: what the payment slot takes",
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "type": "integer"
+                  },
+                  "label": {
+                    "description": "The custom name the server gave it, if any",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lore": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "labelComponent": {
+                    "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                    "type": [
+                      "object",
+                      "array",
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "loreComponents": {
+                    "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "count",
+                  "label",
+                  "labelComponent",
+                  "lore",
+                  "loreComponents",
+                  "name"
+                ]
+              },
+              "baseCountA": {
+                "description": "How many of costA the trade asks before demand and reputation. Fewer in costA is a discount, more is a price pushed up by demand.",
+                "type": "integer"
+              },
+              "costB": {
+                "description": "The second price, null when the trade asks for one thing",
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "type": "integer"
+                  },
+                  "label": {
+                    "description": "The custom name the server gave it, if any",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lore": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "labelComponent": {
+                    "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                    "type": [
+                      "object",
+                      "array",
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "loreComponents": {
+                    "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "count",
+                  "label",
+                  "labelComponent",
+                  "lore",
+                  "loreComponents",
+                  "name"
+                ]
+              },
+              "result": {
+                "description": "What the trade gives",
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "type": "integer"
+                  },
+                  "label": {
+                    "description": "The custom name the server gave it, if any",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lore": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "labelComponent": {
+                    "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                    "type": [
+                      "object",
+                      "array",
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "loreComponents": {
+                    "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "count",
+                  "label",
+                  "labelComponent",
+                  "lore",
+                  "loreComponents",
+                  "name"
+                ]
+              },
+              "enchantments": {
+                "description": "The enchantments the result carries or, on a book, stores. Two enchanted books are otherwise the same item.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "level": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "level",
+                    "name"
+                  ]
+                }
+              },
+              "uses": {
+                "type": "integer"
+              },
+              "maxUses": {
+                "type": "integer"
+              },
+              "outOfStock": {
+                "description": "uses has reached maxUses. The trade stays in the list and gives nothing until the villager restocks.",
+                "type": "boolean"
+              },
+              "xp": {
+                "description": "Experience the villager gains each time the trade is made",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "baseCountA",
+              "costA",
+              "costB",
+              "enchantments",
+              "maxUses",
+              "number",
+              "outOfStock",
+              "result",
+              "uses",
+              "xp"
+            ]
+          },
+          "paymentA": {
+            "description": "What payment slot 0 holds after picking, null when the inventory had none of the price to move",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              },
+              "label": {
+                "description": "The custom name the server gave it, if any",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lore": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "labelComponent": {
+                "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              },
+              "loreComponents": {
+                "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                "type": "array"
+              }
+            },
+            "required": [
+              "count",
+              "label",
+              "labelComponent",
+              "lore",
+              "loreComponents",
+              "name"
+            ]
+          },
+          "paymentB": {
+            "description": "What payment slot 1 holds after picking, null when it is empty",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              },
+              "label": {
+                "description": "The custom name the server gave it, if any",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lore": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "labelComponent": {
+                "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              },
+              "loreComponents": {
+                "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                "type": "array"
+              }
+            },
+            "required": [
+              "count",
+              "label",
+              "labelComponent",
+              "lore",
+              "loreComponents",
+              "name"
+            ]
+          },
+          "result": {
+            "description": "What result slot 2 holds after picking, null when the trade cannot be made: out of stock, or the payment slots do not cover the price",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              },
+              "label": {
+                "description": "The custom name the server gave it, if any",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lore": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "labelComponent": {
+                "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              },
+              "loreComponents": {
+                "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                "type": "array"
+              }
+            },
+            "required": [
+              "count",
+              "label",
+              "labelComponent",
+              "lore",
+              "loreComponents",
+              "name"
+            ]
+          }
+        },
+        "required": [
+          "paymentA",
+          "paymentB",
+          "result",
+          "trade"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "send-chat",
@@ -5605,5 +6301,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:0c30d395e3addf03ff516715a327fc7f926daaa4cc4392a9704314f18a2cd43b"
+  "catalogHash": "sha256:a6d9e18e5e12b9c871df8843a6270b1a6067c99ea001af03b69b00591ab531bb"
 }

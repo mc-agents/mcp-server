@@ -69,6 +69,16 @@ setblock 1 -60 3 air
 # what a plugin menu header is. "Chest" stays inside it so a wait on that pattern still matches.
 setblock 1 -60 3 chest{CustomName:{text:"",extra:[{text:"",font:"hyperfarm:gui/icons"},{text:"Probe Chest",font:"hyperfarm:gui/header"}]},Items:[{Slot:0b,id:"minecraft:diamond_sword",count:1,components:{"minecraft:custom_name":{text:"Excalibur",color:"aqua",italic:false},"minecraft:lore":[{text:"A sword a server named",color:"gray"},{text:"Second line of lore",color:"dark_gray"}]}},{Slot:4b,id:"minecraft:cooked_beef",count:12},{Slot:8b,id:"minecraft:paper",count:1,components:{"minecraft:custom_name":{text:"",extra:[{text:"",font:"hyperfarm:gui/icons"},{text:"Mana Potion",font:"hyperfarm:gui/label"}]},"minecraft:lore":[{text:"Restores ",extra:[{text:"50",color:"aqua"},{text:" mana"}]},{text:""},{text:"Right-click to drink",color:"dark_gray"}]}},{Slot:26b,id:"minecraft:emerald",count:3}]}
 
+# --- a villager with trades of its own: read-trades, select-trade ---
+# The trades are written out rather than left to the profession, which would roll different ones on
+# every load and leave nothing to assert. Three cases a trading screen has to tell apart: a result a
+# server named in its own font, an enchanted book whose enchantment is the whole trade, and one that
+# is out of stock -- which stays in the list and gives nothing. NoAI keeps it where it was put and
+# stops it from reworking its trades at a lectern it happens to find.
+# The name is drawn in the pack's own font, and a trading screen takes its title from the name.
+kill @e[type=villager,tag=mcagents]
+summon villager 0 -60 -4 {Tags:["mcagents"],NoAI:1b,Silent:1b,Invulnerable:1b,CustomName:{text:"",extra:[{text:"",font:"hyperfarm:gui/icons"},{text:"Probe Librarian",font:"hyperfarm:gui/header"}]},VillagerData:{type:"minecraft:plains",profession:"minecraft:librarian",level:3},Xp:40,Offers:{Recipes:[{buy:{id:"minecraft:emerald",count:3},sell:{id:"minecraft:paper",count:1,components:{"minecraft:custom_name":{text:"",extra:[{text:"",font:"hyperfarm:gui/icons"},{text:"Map Fragment",font:"hyperfarm:gui/label"}]}}},uses:0,maxUses:4,rewardExp:0b,xp:5,priceMultiplier:0.0f,specialPrice:0,demand:0},{buy:{id:"minecraft:emerald",count:5},buyB:{id:"minecraft:book",count:1},sell:{id:"minecraft:enchanted_book",count:1,components:{"minecraft:stored_enchantments":{"minecraft:mending":1}}},uses:0,maxUses:12,rewardExp:0b,xp:10,priceMultiplier:0.2f,specialPrice:0,demand:0},{buy:{id:"minecraft:wheat",count:20},sell:{id:"minecraft:emerald",count:1},uses:16,maxUses:16,rewardExp:0b,xp:2,priceMultiplier:0.05f,specialPrice:0,demand:0}]}}
+
 # --- a furnace with fuel and input: smelt-item ---
 setblock 1 -60 5 air
 setblock 1 -60 5 furnace[facing=north]
