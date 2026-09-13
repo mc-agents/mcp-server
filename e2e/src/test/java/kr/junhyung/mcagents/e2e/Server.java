@@ -22,15 +22,41 @@ final class Server implements AutoCloseable {
     private static final Duration BOOT = Duration.ofMinutes(2);
     private static final Duration POLL = Duration.ofMillis(250);
 
+    /**
+     * A port picked here and bound by the server a moment later is a port something else can take
+     * in between, and two runs in a row is enough for that to happen. Once is plenty: the same
+     * collision twice would be something other than luck.
+     */
+    private static final int ATTEMPTS = 2;
+
     private final Process process;
+    private final Path log;
     private final int mcpPort;
     private final int linkPort;
 
-    Server(Path jar) {
+    static Server start(Path jar) {
+        IllegalStateException taken = null;
+
+        for (int attempt = 0; attempt < ATTEMPTS; attempt++) {
+            try {
+                return new Server(jar);
+            } catch (IllegalStateException failed) {
+                if (failed.getMessage() == null || !failed.getMessage().contains("already in use")) {
+                    throw failed;
+                }
+                taken = failed;
+            }
+        }
+
+        throw taken;
+    }
+
+    private Server(Path jar) {
         mcpPort = freePort();
         linkPort = freePort();
 
         try {
+            log = java.nio.file.Files.createTempFile("mcp-server", ".log");
             process = new ProcessBuilder(
                     javaBinary(), "-jar", jar.toString(),
                     "--server.port=" + mcpPort,
@@ -38,7 +64,8 @@ final class Server implements AutoCloseable {
                     /* A bot that is already linked is the one join-server uses; nothing to create. */
                     "--mcagents.bots.provision=never")
                 .redirectErrorStream(true)
-                .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                /* Kept rather than discarded: a server that will not start has to be able to say so. */
+                .redirectOutput(log.toFile())
                 .start();
         } catch (IOException failed) {
             throw new IllegalStateException("could not start " + jar, failed);
@@ -66,7 +93,8 @@ final class Server implements AutoCloseable {
 
         while (Instant.now().isBefore(deadline)) {
             if (!process.isAlive()) {
-                throw new IllegalStateException("the server exited with " + process.exitValue());
+                throw new IllegalStateException(
+                    "the server exited with " + process.exitValue() + "\n" + read());
             }
             try {
                 if (client.send(liveness, HttpResponse.BodyHandlers.ofString()).statusCode() == 200) {
@@ -78,7 +106,16 @@ final class Server implements AutoCloseable {
             sleep();
         }
 
-        throw new IllegalStateException("the server did not report itself live within " + BOOT);
+        throw new IllegalStateException(
+            "the server did not report itself live within " + BOOT + "\n" + read());
+    }
+
+    private String read() {
+        try {
+            return java.nio.file.Files.readString(log);
+        } catch (IOException unreadable) {
+            return "(its log could not be read: " + unreadable.getMessage() + ")";
+        }
     }
 
     private static void sleep() {

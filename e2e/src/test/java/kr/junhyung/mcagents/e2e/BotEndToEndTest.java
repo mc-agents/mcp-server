@@ -4,12 +4,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.TestWatcher;
 import org.testcontainers.DockerClientFactory;
 
 /**
@@ -30,16 +35,43 @@ import org.testcontainers.DockerClientFactory;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class BotEndToEndTest {
 
+    /** How much of each log a failure is worth. */
+    private static final int LOG_TAIL = 60;
+
+    /** How long a bot container may take to dial in and be accepted. */
+    private static final Duration LINK = Duration.ofMinutes(3);
+
     private Server server;
     private BotWorld world;
     private Agent agent;
+
+    /**
+     * What went wrong, from the side it went wrong on.
+     *
+     * <p>A tool that answers "not in a world" says the bot left and nothing about why, and the
+     * answer is in the client's log or the server's. Without this a run reported nine assertion
+     * failures around one event nobody could see.
+     */
+    @RegisterExtension
+    final TestWatcher diagnosis = new TestWatcher() {
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            System.err.println("\n=== " + context.getDisplayName() + " failed");
+            try {
+                System.err.println("bot: " + agent.call("get-bot-status", Map.of("bot", BotWorld.BOT)));
+            } catch (RuntimeException unreachable) {
+                System.err.println("bot: could not be asked -- " + unreachable.getMessage());
+            }
+            System.err.println(world.logs(LOG_TAIL));
+        }
+    };
 
     @BeforeAll
     void joinTheWorld() {
         Assumptions.assumeTrue(DockerClientFactory.instance().isDockerAvailable(),
             "the end-to-end suite drives real containers");
 
-        server = new Server(Path.of(System.getProperty("e2e.server.jar")));
+        server = Server.start(Path.of(System.getProperty("e2e.server.jar")));
         world = new BotWorld(
             Path.of(System.getProperty("e2e.fixture")),
             System.getProperty("e2e.minecraft.version"),
@@ -48,10 +80,43 @@ class BotEndToEndTest {
         world.start();
 
         agent = new Agent(server.mcpPort());
-        agent.call("join-server", Map.of(
-            "name", BotWorld.BOT, "host", world.minecraftHost(), "port", world.minecraftPort()));
-        agent.call("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+
+        /* A setup that failed silently left every case after it reporting an empty world. */
+        try {
+            awaitLink();
+            agent.mustCall("join-server", Map.of(
+                "name", BotWorld.BOT, "host", world.minecraftHost(), "port", world.minecraftPort()));
+            agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+        } catch (RuntimeException failed) {
+            throw new IllegalStateException(failed.getMessage() + "\n" + world.logs(LOG_TAIL), failed);
+        }
+
         world.run("tp " + BotWorld.BOT + " 2 -59 0");
+    }
+
+    /**
+     * Wait for the bot to be there before telling it to join a world.
+     *
+     * <p>The container is up as soon as the mod says it is dialling, which is before the link is
+     * made, and a join sent into that gap is refused with "there is no bot named ...". Under
+     * emulation the gap is twenty seconds wide.
+     */
+    private void awaitLink() {
+        Instant deadline = Instant.now().plus(LINK);
+
+        while (Instant.now().isBefore(deadline)) {
+            if (agent.call("list-bots", Map.of()).contains(BotWorld.BOT)) {
+                return;
+            }
+            try {
+                Thread.sleep(Duration.ofSeconds(1));
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(interrupted);
+            }
+        }
+
+        throw new IllegalStateException("the bot never linked within " + LINK + "\n" + world.logs(LOG_TAIL));
     }
 
     @AfterAll

@@ -7,11 +7,7 @@ import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * A Minecraft server with the fixture in it, and a bot standing in that world.
  *
@@ -26,8 +22,6 @@ import org.slf4j.LoggerFactory;
  * not exist yet and the mount is simply there when it is created.
  */
 final class BotWorld implements AutoCloseable {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(BotWorld.class);
 
     /** The bot's own name, which is also the name join-server is given. */
     static final String BOT = "e2e";
@@ -84,19 +78,27 @@ final class BotWorld implements AutoCloseable {
             .withEnv("MCP_SERVER_PORT", String.valueOf(linkPort))
             .withEnv("BOT_NAME", BOT)
             .withEnv("MC_VERSION", minecraftVersion)
-            /* Shared between runs: filling it is a 500MB download and it never changes. */
+            /*
+            Kept between runs, because filling it is a 500MB download and what is in it does not
+            change. Named after the image rather than the version: a client's LWJGL natives are
+            built for one architecture, so an arm64 image filling a volume an amd64 one then reads
+            leaves the client loading natives it cannot run, and the link dies during the join.
+            */
             .withCreateContainerCmdModifier(command -> command.getHostConfig()
-                .withBinds(com.github.dockerjava.api.model.Bind.parse(
-                    "mc-agents-e2e-assets-" + minecraftVersion + ":/mc")))
+                .withBinds(com.github.dockerjava.api.model.Bind.parse(assets(botImage) + ":/mc")))
             .withNetwork(network)
             .waitingFor(Wait.forLogMessage(".*dialling.*\\n", 1).withStartupTimeout(BOT_LINK));
     }
 
+    private static String assets(String botImage) {
+        return "mc-agents-e2e-" + botImage.replaceAll("[^A-Za-z0-9_.-]", "-");
+    }
+
     /** The server first: a bot that reaches a world before there is one has nothing to join. */
     void start() {
-        server.withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("paper")).start();
+        server.start();
         run("function " + FIXTURE + ":setup");
-        bot.withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("bot")).start();
+        bot.start();
     }
 
     /** Where the bot is told to connect, which is the server's name on the network they share. */
@@ -118,9 +120,21 @@ final class BotWorld implements AutoCloseable {
         }
     }
 
-    /** Whatever the bot has written to its log, for a failure that needs the bot's side of it. */
-    String botLog() {
-        return bot.getLogs();
+    /**
+     * The end of both logs, which is what a failure needs and what a pass does not.
+     *
+     * <p>Printed only when something fails: a Minecraft server and a Minecraft client together
+     * write thousands of lines a run, and a job whose output is that is a job nobody reads.
+     */
+    String logs(int lines) {
+        return "--- minecraft\n" + tail(server.getLogs(), lines)
+            + "\n--- bot\n" + tail(bot.getLogs(), lines);
+    }
+
+    private static String tail(String log, int lines) {
+        String[] all = log.split("\n");
+        return String.join("\n", java.util.Arrays.asList(all)
+            .subList(Math.max(all.length - lines, 0), all.length));
     }
 
     @Override

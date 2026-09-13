@@ -49,7 +49,8 @@ tasks.test {
     /* Minutes, not seconds: a server boots, a bot downloads a client and joins a world. */
     timeout = Duration.ofMinutes(30)
     outputs.upToDateWhen { false }
-    testLogging { showStandardStreams = false }
+    /* The diagnosis a failure prints has to reach whoever reads the job. */
+    testLogging { showStandardStreams = true }
 }
 
 /*

@@ -40,6 +40,24 @@ final class Agent implements AutoCloseable {
         return text(answer);
     }
 
+    /**
+     * A call the run cannot continue without.
+     *
+     * <p>{@link #call} hands back what a tool said whether or not it worked, which is what an
+     * assertion wants. Setting the world up is the other case: a join that failed and was ignored
+     * left every case after it reporting that the bot was not in a world, which says nothing about
+     * why.
+     */
+    String mustCall(String tool, Map<String, Object> args) {
+        McpSchema.CallToolResult answer = client.callTool(
+            McpSchema.CallToolRequest.builder(tool).arguments(args).build());
+
+        if (Boolean.TRUE.equals(answer.isError())) {
+            throw new IllegalStateException(tool + " failed: " + text(answer));
+        }
+        return text(answer);
+    }
+
     /** The same, for a tool expected to refuse: the message is the answer. */
     String refusal(String tool, Map<String, Object> args) {
         McpSchema.CallToolResult answer = client.callTool(McpSchema.CallToolRequest.builder(tool).arguments(args).build());
