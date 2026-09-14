@@ -21,7 +21,11 @@ HELM    := helm --kube-context $(CONTEXT) -n $(NAMESPACE)
 
 CHARTS                 := oci://junhyung.cloud/library/charts
 OPERATOR_CHART_VERSION := 0.9.0-20260914025831.g8637fb66
-SERVER_CHART_VERSION   := 0.46.0
+SERVER_CHART_VERSION   := 0.48.0
+# Pinned, not latest: the tag is latest-mc<version>, which Kubernetes does not treat as :latest, so
+# a node that already pulled it once keeps running that build no matter what was published since.
+FABRIC_TAG             := 0.56.0
+AZALEA_TAG             := 0.8.0
 
 # Loopback only. k3d binds 0.0.0.0 unless told otherwise, and the token is the only thing between
 # that port and a bot that runs commands as op.
@@ -46,6 +50,7 @@ operator:
 	$(HELM) upgrade --install operator $(CHARTS)/mc-agents-operator \
 		--version $(OPERATOR_CHART_VERSION) \
 		--set watchNamespace=$(NAMESPACE) \
+		--set bots.fabricTag=$(FABRIC_TAG) --set bots.azaleaTag=$(AZALEA_TAG) \
 		--force-conflicts --wait --timeout 5m
 
 # The chart will not invent a token, and a token in this file would be one every clone shares. So
