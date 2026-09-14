@@ -4957,7 +4957,8 @@
       "description": "Read the data a block carries beyond its type: sign text, a container's custom name, a banner's pattern. Signs are the common case, since that is where servers write instructions into the world itself.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -7834,7 +7835,8 @@
       "description": "Type into a text field on the screen that is open: a dialog's input, an anvil's name box, a sign being edited, a page of a book. A dialog's inputs are not in the packet that opened it, so this is the only way to fill one in before pressing a button. Characters go through the client's own keyboard path, so a field's length limit and the characters it refuses apply as they would to a player. On a sign the editor is closed afterwards, because closing it is what sends the sign to the server; a book stays open, because writing one takes a call per page and then a name.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -8708,5 +8710,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:8596a93337e5a067146a62c90f11c0eff7e85125bf5b82b6e5ec4cd77718ea29"
+  "catalogHash": "sha256:17d7c9eb7ad2862c942b28abf79107f4d97ca9798206415ba41ab58c2faec60e"
 }
