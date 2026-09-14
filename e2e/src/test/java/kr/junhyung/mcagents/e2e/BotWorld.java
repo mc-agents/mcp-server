@@ -9,6 +9,7 @@ import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.utility.MountableFile;
 /**
  * A Minecraft server with the fixture in it, and a bot standing in that world.
  *
@@ -75,6 +76,14 @@ final class BotWorld implements AutoCloseable {
             .withFileSystemBind(fixture.toString(), "/fixture", BindMode.READ_ONLY)
             /* Copied into the server's plugins by the image at start, for the same ownership reason. */
             .withFileSystemBind(fixturePlugin.toString(), "/plugins/mcagents-fixture.jar", BindMode.READ_ONLY)
+            /*
+            No connection throttle. restart-bot is a leave and a join a second apart, and Paper refused
+            that as "Connection throttled!", which hid an azalea bot answering a join it never made.
+            The image fetches the default bukkit.yml before the first start so that it can be patched.
+            */
+            .withEnv("PATCH_DEFINITIONS", "/patches")
+            .withCopyFileToContainer(MountableFile.forClasspathResource("paper/no-connection-throttle.json"),
+                "/patches/no-connection-throttle.json")
             .withNetwork(network)
             .withNetworkAliases(SERVER_ALIAS)
             .waitingFor(Wait.forLogMessage(".*RCON running.*\\n", 1).withStartupTimeout(SERVER_START));

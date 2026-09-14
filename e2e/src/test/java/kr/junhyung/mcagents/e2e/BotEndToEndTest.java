@@ -1607,20 +1607,19 @@ class BotEndToEndTest {
 
     /**
      * A restart is a leave and a join under the same name, and the server's count of leaves is what
-     * says the bot really went, and its position that it came back. The race that once left an azalea
-     * bot waiting out the spawn timeout needs a rejoin inside Paper's four-second connection throttle,
-     * which this server keeps on, so it is not what this case catches.
+     * says the bot really went, and its position that it came back.
+     *
+     * <p>Twice in a row, because the second restart leaves a connection that has only just logged in.
+     * An azalea bot sent that join while the connection was still closing, was answered Ok for a join
+     * it never made, and waited out the spawn timeout in no world. A server with a connection throttle
+     * refuses such a quick rejoin outright, which is why this one runs without one.
      */
     @Test
     void aRestartedBotReallyLeftAndIsBackInTheWorld() {
         world.run("scoreboard objectives remove mcagents_leaves");
         world.run("scoreboard objectives add mcagents_leaves minecraft.custom:minecraft.leave_game");
 
-        /*
-        Paper refuses a login from an address that logged in within the last four seconds, and an
-        azalea bot rejoins well inside that when this case happens to run first.
-        */
-        sleep(5000);
+        agent.mustCall("restart-bot", Map.of("bot", BotWorld.BOT));
         String restarted = agent.mustCall("restart-bot", Map.of("bot", BotWorld.BOT));
         /* On the ground, so where it stands does not depend on whether a kind of bot falls. */
         world.run("tp " + BotWorld.BOT + " 2 -60 0");
@@ -1630,7 +1629,7 @@ class BotEndToEndTest {
         world.run("scoreboard objectives remove mcagents_leaves");
 
         assertTrue(restarted.startsWith("Restarted."), restarted);
-        assertTrue(leaves.contains("has 1 "), "the server did not see the bot leave: " + leaves);
+        assertTrue(leaves.contains("has 2 "), "the server did not see the bot leave twice: " + leaves);
         assertEquals("Position: (2, -60, 0)", position);
     }
 
