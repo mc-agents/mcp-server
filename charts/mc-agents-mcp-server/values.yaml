@@ -58,6 +58,13 @@ networkPolicy:
 # How many bots may be linked at once. A bot that is turned away says this number.
 maxBots: 16
 
+# What linked bots are told in helloOk. A repeated action bar, title or dialog line is resent at this
+# cadence and closed after three without a repeat. A muted feed is never sent by the bot at all,
+# which is cheaper than dropping it here: chat, actionBar, title, dialog, effect, toast.
+feeds:
+  repeatFlushMs: 1000
+  muted: []
+
 logLevel: INFO
 
 resources:

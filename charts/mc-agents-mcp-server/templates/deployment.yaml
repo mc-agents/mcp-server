@@ -66,6 +66,10 @@ spec:
               value: {{ default (printf "%s.%s.svc" (include "mc-agents-mcp-server.fullname" .) .Release.Namespace) .Values.bots.mcpHost | quote }}
             - name: MCP_LOG_LEVEL
               value: {{ .Values.logLevel | quote }}
+            - name: BOT_LINK_REPEAT_FLUSH_MS
+              value: {{ .Values.feeds.repeatFlushMs | quote }}
+            - name: BOT_LINK_MUTED_FEEDS
+              value: {{ join "," .Values.feeds.muted | quote }}
             {{- if .Values.auth.enabled }}
             - name: MCP_AUTH_TOKEN
               valueFrom:
