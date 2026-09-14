@@ -28,9 +28,9 @@ SERVER_CHART_VERSION   := 0.46.0
 MCP_HOST_PORT := 13000
 
 .NOTPARALLEL:
-.PHONY: up port operator server paper fixture names token
+.PHONY: up port operator server paper plugin fixture names token
 
-up: port operator server paper fixture names
+up: port operator server paper plugin fixture names
 
 # Editing the load balancer recreates its container, so this runs only when the port is missing.
 port:
@@ -63,6 +63,17 @@ server: token
 
 paper:
 	$(KUBECTL) apply -f $(HERE)/paper.yaml
+	$(KUBECTL) rollout status deploy/paper --timeout 10m
+
+# The fixture plugin: what the server received from a bot's keys, and the conversation and the bite
+# that press-input is tried against. Paper loads plugins only at start, so this restarts the server;
+# the world and the datapack are on the claim and come back with it.
+plugin:
+	cd $(HERE)/../.. && ./gradlew -q :fixture-plugin:jar
+	$(KUBECTL) exec deploy/paper -- mkdir -p /data/plugins
+	$(KUBECTL) cp $(HERE)/../fixture-plugin/build/libs/mcagents-fixture.jar \
+		$$($(KUBECTL) get pod -l app.kubernetes.io/name=paper -o name | cut -d/ -f2):/data/plugins/mcagents-fixture.jar
+	$(KUBECTL) rollout restart deploy/paper
 	$(KUBECTL) rollout status deploy/paper --timeout 10m
 
 # Copied rather than baked into an image, so a fixture edit is one `make fixture` away. The claim

@@ -144,5 +144,7 @@ make -C dev/cluster names                   the MCP address and the `claude mcp 
 
 The server answers on `127.0.0.1:13000/mcp` with the token from the `mcp-auth` Secret, and bots are
 started by calling `join-server` with host `paper.mc-agents.svc`; the operator makes the pod, of
-either kind. `make fixture` copies an edited datapack in and reloads it. Anyone who connects is made
+either kind. `make fixture` copies an edited datapack in and reloads it, and `make plugin` builds the
+fixture plugin, copies it into the server's plugins and restarts it -- Paper loads plugins only at
+start. Bot names there are Kubernetes object names: lowercase, digits and `-`. Anyone who connects is made
 op, because a scenario names its bots and no ops list could name them in advance.
