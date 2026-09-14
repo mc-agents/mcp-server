@@ -61,7 +61,9 @@ If a scenario needs one fabric-only read, one fabric bot beside azalea bots is f
 - **Leave at the end**, pass or fail: `leave-server` for every bot you joined. In a cluster that
   also gives the bot's pod back.
 - After redeploying a plugin, `restart-bot` rather than trusting a bot still holding the old build's
-  state.
+  state. Paper refuses a login from an address that logged in within the last four seconds
+  ("Connection throttled!"), and an azalea bot rejoins faster than that, so do not restart a bot that
+  has only just joined.
 
 ## 4. Verify against the server
 

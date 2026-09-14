@@ -96,10 +96,37 @@ public class Orchestration {
      * is the part that took time to start. Ending it is the operator's decision, not a tool call's.
      */
     private McpSchema.CallToolResult leave(Map<String, Object> arguments) {
-        BotSession bot = bots.resolve(ToolDispatcher.stringArg(arguments, "bot"));
+        String requested = ToolDispatcher.stringArg(arguments, "bot");
+        BotSession bot;
+
+        try {
+            bot = bots.resolve(requested);
+        } catch (IllegalArgumentException absent) {
+            /*
+            A bot this server asked for that never dialled in -- a pod that cannot start, an image
+            that does not exist -- has no session to leave, and its MinecraftBot is still holding a
+            pod. Giving that back is the whole of leaving it.
+            */
+            if (requested != null && released(requested)) {
+                return ToolDispatcher.text(
+                        "Bot \"%s\" never linked, and the bot it was being started on was given back."
+                                .formatted(requested));
+            }
+            throw absent;
+        }
+
         Messages.Status before = bot.status();
 
+        /*
+        Not in a world is still a bot this server may have started: a join or a restart that failed
+        leaves one linked and idle, and answering "nothing to leave" left its pod running for good.
+        */
         if (before == null || !READY.equals(before.state())) {
+            if (released(bot.name())) {
+                return ToolDispatcher.text(
+                        "Bot \"%s\" is not in a world, and the bot it was running on was given back."
+                                .formatted(bot.name()));
+            }
             return ToolDispatcher.text(
                     "Bot \"%s\" is not in a world, so there was nothing to leave.".formatted(bot.name()));
         }
@@ -119,13 +146,18 @@ public class Orchestration {
         A bot this server asked the operator for is given back; one somebody declared by hand, or
         started on a laptop, is not this call's to end. It goes idle and waits for the next join.
         */
-        if (provisioner.available() && provisioner.release(bot.name())) {
+        if (released(bot.name())) {
             return ToolDispatcher.text(
                     "Bot \"%s\" left %s, and the bot it was running on was given back."
                             .formatted(bot.name(), before.address()));
         }
         return ToolDispatcher.text(
                 "Bot \"%s\" left %s and is linked and idle.".formatted(bot.name(), before.address()));
+    }
+
+    /** Give back the bot's MinecraftBot, when there is a cluster and this server is the one that asked for it. */
+    private boolean released(String name) {
+        return provisioner.available() && provisioner.release(name);
     }
 
     /**
@@ -228,9 +260,21 @@ public class Orchestration {
         String kind = orDefault(ToolDispatcher.stringArg(arguments, "kind"), "fabric");
         String mcVersion = orDefault(ToolDispatcher.stringArg(arguments, "minecraftVersion"), "26.1.2");
 
-        provisioner.request(name, kind, mcVersion, ToolDispatcher.stringArg(arguments, "owner"));
+        boolean created = provisioner.request(name, kind, mcVersion, ToolDispatcher.stringArg(arguments, "owner"));
 
-        return awaitLink(name, kind);
+        try {
+            return awaitLink(name, kind);
+        } catch (JoinFailure never) {
+            /*
+            A bot this call asked for and that never linked cannot be reached by leave-server under a
+            session, and its pod would be left starting, failing or waiting. One asked for by an
+            earlier call is that call's, and is left for it.
+            */
+            if (created) {
+                provisioner.release(name);
+            }
+            throw never;
+        }
     }
 
     /**
