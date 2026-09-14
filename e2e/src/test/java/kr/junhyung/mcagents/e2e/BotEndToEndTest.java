@@ -364,6 +364,44 @@ class BotEndToEndTest {
     }
 
     /**
+     * A chat line can open a dialog, by its id or written out in the line. The client opens it on its
+     * own screen and tells the server nothing, so it is read from the dialog feed like one the server
+     * sent, and pressed like one: the scoreboard is what says the button reached the server. One kind
+     * of bot refused the click because the dialog inside it had been dropped, and the other opened it
+     * and never fed it.
+     */
+    @Test
+    void aDialogOpenedFromChatIsReadAndPressedLikeOneTheServerSent() {
+        world.run("scoreboard players reset unnamed mcagents");
+        world.run("""
+            tellraw @a ["Quest: ",{"text":"[Name it]","click_event":{"action":"show_dialog","dialog":"mcagents:name"}}]""");
+        agent.mustCall("wait-for-chat", Map.of("bot", BotWorld.BOT, "pattern", "Name it", "timeoutMs", 10000));
+        String registered = agent.mustCall("click-chat", Map.of("bot", BotWorld.BOT, "match", "[Name it]"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+        String listed = agent.call("read-dialog", Map.of("bot", BotWorld.BOT, "count", 1));
+
+        /* The name field starts out reading "unnamed", so that is the player the server scores. */
+        agent.mustCall("press-dialog-button", Map.of("bot", BotWorld.BOT, "label", "Set"));
+        String scored = untilTheServer("scoreboard players get unnamed mcagents", answer -> answer.contains("has 7"));
+        world.run("scoreboard players reset unnamed mcagents");
+        world.run("dialog clear " + BotWorld.BOT);
+
+        world.run("""
+            tellraw @a [{"text":"[Notice]","click_event":{"action":"show_dialog","dialog":{"type":"minecraft:notice","title":"Inline notice"}}}]""");
+        agent.mustCall("wait-for-chat", Map.of("bot", BotWorld.BOT, "pattern", "Notice", "timeoutMs", 10000));
+        String inline = agent.mustCall("click-chat", Map.of("bot", BotWorld.BOT, "match", "[Notice]"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+        String noticed = agent.call("read-dialog", Map.of("bot", BotWorld.BOT, "count", 1));
+        world.run("dialog clear " + BotWorld.BOT);
+
+        assertTrue(registered.startsWith("clicked \"[Name it]\" (show_dialog), and MultiButtonDialogScreen opened."), registered);
+        assertTrue(listed.contains("Name the probe"), listed);
+        assertTrue(scored.contains("has 7"), "the server scored nothing from the dialog's button: " + scored);
+        assertTrue(inline.startsWith("clicked \"[Notice]\" (show_dialog), and SimpleDialogScreen opened."), inline);
+        assertTrue(noticed.contains("Inline notice"), noticed);
+    }
+
+    /**
      * A click that would leave the game is not this bot's to make, and the refusal says which kind
      * it was: a server writing a link where it meant a command is a thing worth being told.
      */
