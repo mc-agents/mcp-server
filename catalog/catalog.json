@@ -4319,7 +4319,8 @@
       "description": "Press a button on the dialog the server has opened. Identify it by its label. Reading a dialog is not enough to carry a conversation forward; this is what answers it.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -5549,7 +5550,7 @@
     {
       "name": "read-dialog",
       "group": "hud",
-      "description": "Read the dialogs the server has opened on screen, with their title, body, the buttons they offer and what each input holds, and the point at which each was closed again. A dialog comes again with the new values when set-dialog-input changes one. The bot cannot press those buttons: the packet that answers a dialog is serialised from a definition that does not match 26.1, and a server drops the connection rather than read it. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
+      "description": "Read the dialogs the server has opened on screen, with their title, body, the buttons they offer and what each input holds, and the point at which each was closed again. A dialog comes again with the new values when set-dialog-input changes one. press-dialog-button presses them. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
       "route": "local",
       "kinds": [
         "fabric",
@@ -7423,7 +7424,8 @@
       "description": "Set a checkbox, a cycle or a slider on the dialog the server has opened, before pressing the button that sends it. The value goes into the dialog's own control, so the button sends exactly what a player who had clicked it would. Text fields are type-text's. The reply says what the input holds now and what it held before.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -8706,5 +8708,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:54b012ef98a13c7b286c449b3e4058390afe71a19dca12d129050883763e04cc"
+  "catalogHash": "sha256:8596a93337e5a067146a62c90f11c0eff7e85125bf5b82b6e5ec4cd77718ea29"
 }
