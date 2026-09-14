@@ -38,6 +38,12 @@ mcagents:
   bot-link:
     # Bots dial in here. The server never has to know a pod address.
     port: ${BOT_LINK_PORT:8765}
+    # How often a bot re-sends an action bar, title or dialog that is still showing. A run that nothing
+    # has repeated for three of these is closed.
+    repeat-flush-ms: ${BOT_LINK_REPEAT_FLUSH_MS:1000}
+    # Feeds bots are told not to push, comma separated: chat, actionBar, title, dialog, effect, toast.
+    # effect is the one a busy server floods.
+    muted-feeds: ${BOT_LINK_MUTED_FEEDS:}
   bots:
     max: ${MCP_MAX_BOTS:16}
     # auto looks for a cluster only from inside one. always uses whatever kubeconfig is around,

@@ -9,8 +9,11 @@ import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -40,8 +43,8 @@ public class BotLinkServer implements SmartLifecycle {
 
     private static final int HEARTBEAT_MS = 5_000;
 
-    /** How often a folded run is re-sent while it stays open, so "still showing" stays answerable. */
-    private static final int REPEAT_FLUSH_MS = 1_000;
+    /** Every feed a bot pushes, in the order the protocol lists them. */
+    public static final List<String> FEEDS = List.of("chat", "actionBar", "title", "dialog", "effect", "toast");
 
     private static final Map<String, Object> LIMITS = Map.of(
             "frameBytes", 16 * 1024 * 1024,
@@ -56,18 +59,41 @@ public class BotLinkServer implements SmartLifecycle {
     private final ObjectMapper mapper;
     private final ScheduledExecutorService timers;
     private final int port;
+    private final int repeatFlushMs;
+    private final Map<String, Boolean> events;
 
     private final AtomicBoolean running = new AtomicBoolean();
     private volatile ServerSocket listener;
     private volatile Thread acceptor;
 
+    /**
+     * @param repeatFlushMs how often a bot re-sends a folded run while it stays open, so "still
+     *                      showing" stays answerable. A run closes after three of these without a repeat
+     * @param mutedFeeds    feeds bots are told not to push. {@code effect} on a busy server is a
+     *                      firehose, and the valve is only worth having if it can be closed
+     */
     public BotLinkServer(Catalog catalog, BotRegistry bots, ObjectMapper mapper,
-            ScheduledExecutorService timers, int port) {
+            ScheduledExecutorService timers, int port, int repeatFlushMs, Set<String> mutedFeeds) {
+        if (repeatFlushMs <= 0) {
+            throw new IllegalArgumentException("repeatFlushMs has to be positive, and was " + repeatFlushMs);
+        }
+        for (String feed : mutedFeeds) {
+            if (!FEEDS.contains(feed)) {
+                throw new IllegalArgumentException("there is no feed called \"%s\" to mute; the feeds are %s"
+                        .formatted(feed, FEEDS));
+            }
+        }
+
         this.catalog = catalog;
         this.bots = bots;
         this.mapper = mapper;
         this.timers = timers;
         this.port = port;
+        this.repeatFlushMs = repeatFlushMs;
+
+        Map<String, Boolean> valves = new LinkedHashMap<>();
+        FEEDS.forEach(feed -> valves.put(feed, !mutedFeeds.contains(feed)));
+        this.events = Collections.unmodifiableMap(valves);
     }
 
     @Override
@@ -214,9 +240,9 @@ public class BotLinkServer implements SmartLifecycle {
                 catalog.protocol(),
                 UUID.randomUUID().toString(),
                 HEARTBEAT_MS,
-                REPEAT_FLUSH_MS,
+                repeatFlushMs,
                 LIMITS,
-                Map.of("chat", true, "actionBar", true, "title", true, "dialog", true, "effect", true, "toast", true),
+                events,
                 vetted.accepted().stream().map(Messages.Capability::tool).toList(),
                 vetted.rejected()));
 

@@ -291,11 +291,19 @@ still see everything.
 
 Six feeds: `chat`, `actionBar`, `title`, `dialog`, `effect`, `toast`. Bots push; they do not wait
 to be asked. `helloOk.events` carries one boolean per feed as a valve, because `effect` on a busy server
-is a firehose.
+is a firehose. A bot sends nothing on a feed that is false or missing. The server sets them from
+`mcagents.bot-link.muted-feeds`.
 
-`chat` is never folded — the same line twice is information. The other four are folded by the bot
-into runs, and a run is re-sent once a second while it stays open so the server's view of "how long
-has this been showing" stays current.
+`chat`, `effect` and `toast` are never folded — the same line twice, a sound played twice, a toast
+put up twice are each two things that happened. `actionBar`, `title` and `dialog` are folded by the
+bot into runs, one open run per feed. A repeat keeps the run's `seq` and raises `repeats`; a line
+that differs closes the run and opens the next. A run is re-sent every `helloOk.repeatFlushMs` while
+it stays open, so the server's view of "how long has this been showing" stays current, and a run
+nothing has repeated for three of those is sent once more with `closed: true` and dropped -- a
+server that stops sending an action bar says nothing about it having gone, and three flushes is
+where the bot decides it has. Leaving the world closes every run. `repeatFlushMs` is the server's,
+from `mcagents.bot-link.repeat-flush-ms`, so there is no second number for the two kinds of bot to
+disagree about.
 
 `event.source` is **who produced it**: a player's name for a message a player sent, and
 `system` for anything else. Not where the client drew it -- that is what `kind` already says, and

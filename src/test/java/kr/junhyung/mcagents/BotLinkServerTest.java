@@ -22,6 +22,8 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +55,7 @@ class BotLinkServerTest {
     void start() {
         catalog = Catalog.load();
         bots = new BotRegistry(4);
-        server = new BotLinkServer(catalog, bots, mapper, timers, 0);
+        server = new BotLinkServer(catalog, bots, mapper, timers, 0, 1_000, Set.of());
         server.start();
     }
 
@@ -120,6 +122,33 @@ class BotLinkServerTest {
         BotSession session = awaitSession("alice");
         assertEquals("fabric", session.kind());
         assertEquals(ok.acceptedTools().size(), session.capabilityCount());
+    }
+
+    /**
+     * The fold cadence and the feed valves are the server's to set, and a bot only honours what the
+     * handshake carries. A server that muted a feed and still said true would have a valve that
+     * closes nothing.
+     */
+    @Test
+    void theHandshakeCarriesTheCadenceAndTheValvesThisServerWasGiven() throws Exception {
+        server.stop();
+        server = new BotLinkServer(catalog, bots, mapper, timers, 0, 250, Set.of("effect"));
+        server.start();
+
+        Socket bot = dial();
+        send(bot, hello("carol", "fabric", everything("fabric")));
+
+        Messages.HelloOk ok = assertInstanceOf(Messages.HelloOk.class, read(bot));
+
+        assertEquals(250, ok.repeatFlushMs());
+        assertEquals(Map.of("chat", true, "actionBar", true, "title", true, "dialog", true, "effect", false,
+                "toast", true), ok.events());
+    }
+
+    @Test
+    void aFeedThatDoesNotExistCannotBeMuted() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new BotLinkServer(catalog, bots, mapper, timers, 0, 1_000, Set.of("effects")));
     }
 
     /*

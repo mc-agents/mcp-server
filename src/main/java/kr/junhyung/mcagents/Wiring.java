@@ -8,6 +8,7 @@ import jakarta.servlet.Filter;
 import kr.junhyung.mcagents.http.BearerTokenFilter;
 import kr.junhyung.mcagents.bot.BotRegistry;
 import kr.junhyung.mcagents.catalog.Catalog;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.slf4j.Logger;
@@ -150,7 +151,9 @@ public class Wiring {
 
     @Bean
     public BotLinkServer botLinkServer(Catalog catalog, BotRegistry bots,
-            ScheduledExecutorService timers, @Value("${mcagents.bot-link.port:8765}") int port) {
-        return new BotLinkServer(catalog, bots, wireMapper(), timers, port);
+            ScheduledExecutorService timers, @Value("${mcagents.bot-link.port:8765}") int port,
+            @Value("${mcagents.bot-link.repeat-flush-ms:1000}") int repeatFlushMs,
+            @Value("${mcagents.bot-link.muted-feeds:}") Set<String> mutedFeeds) {
+        return new BotLinkServer(catalog, bots, wireMapper(), timers, port, repeatFlushMs, mutedFeeds);
     }
 }
