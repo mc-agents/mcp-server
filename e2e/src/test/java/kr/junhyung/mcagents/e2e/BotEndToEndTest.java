@@ -1477,7 +1477,7 @@ class BotEndToEndTest {
      */
     @Test
     void aHeldKeyWalksTheBotTheWayItFacesAndStops() {
-        /* Facing west on dry ground: the pool spills over the grass round the start, and its current pushes. */
+        /* Facing west, where nothing stands in the way for the two blocks a half-second walk covers. */
         world.run("tp " + BotWorld.BOT + " 9 -60 8 90 0");
         agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
 
@@ -1611,6 +1611,36 @@ class BotEndToEndTest {
 
         assertEquals("Used bow x1 in the main hand, held for 1000ms and released.", used);
         assertTrue(arrow.startsWith("Test passed"), arrow);
+    }
+
+    /**
+     * A plain use is left in use, which is how food is eaten: the client that let go of the button
+     * a tick later put the food down after one bite. The server's count of what was eaten is the
+     * proof, since it only counts an item used up.
+     */
+    @Test
+    void foodUsedOnceIsEatenToTheEnd() {
+        world.run("tp " + BotWorld.BOT + " 9 -60 8");
+        world.run("gamemode survival " + BotWorld.BOT);
+        /* Hungry first: a full player cannot eat, and on peaceful a player never goes hungry. */
+        world.run("difficulty easy");
+        world.run("effect give " + BotWorld.BOT + " minecraft:hunger 5 255 true");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 100));
+        world.run("effect clear " + BotWorld.BOT);
+        world.run("scoreboard objectives remove mcagents_eaten");
+        world.run("scoreboard objectives add mcagents_eaten minecraft.used:minecraft.cooked_beef");
+        world.run("item replace entity " + BotWorld.BOT + " weapon.mainhand with minecraft:cooked_beef 4");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+
+        String used = agent.mustCall("use-held-item", Map.of("bot", BotWorld.BOT));
+        String eaten = untilTheServer("scoreboard players get " + BotWorld.BOT + " mcagents_eaten",
+            score -> score.contains("has 1 "));
+        world.run("scoreboard objectives remove mcagents_eaten");
+        world.run("difficulty peaceful");
+        world.run("function mcagents:setup");
+
+        assertEquals("Used cooked_beef x4 in the main hand.", used);
+        assertTrue(eaten.contains("has 1 "), "the server counted nothing eaten: " + eaten);
     }
 
     /** What a console command answers, asked again until it says what was expected or five seconds pass. */

@@ -118,8 +118,14 @@ fill 7 -60 -2 9 -60 0 minecraft:diamond_block
 # pool sounds like plenty and is not: the bobber flies several blocks, and a bot whose aim was a
 # little off put it on dry grass and then waited out the whole timeout for a bite that could not
 # come. Well clear of the blocks above, which sit at positive x.
-fill -10 -61 -10 -2 -61 -2 minecraft:water
-fill -10 -60 -10 -2 -60 -2 minecraft:water
+# Sunk into the ground rather than laid on it: a layer at the level players stand on has nothing
+# round it, so it spilled over the grass as far as the start of every case, and its current carried
+# a bot that was standing still. Two deep below the grass, the grass is the rim.
+# The pool is in the chunk west and north of spawn, which nothing keeps loaded before a player
+# arrives; filled then, it was never there. The forceload is what the next run of this finds loaded.
+forceload add -10 -10 -2 -2
+fill -10 -60 -10 -2 -60 -2 minecraft:air
+fill -10 -62 -10 -2 -61 -2 minecraft:water
 
 # --- the same inventory for everyone: list-inventory and find-item ---
 # Without this the comparison is about what each bot has happened to pick up. Dropped items go too,
