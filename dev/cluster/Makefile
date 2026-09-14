@@ -32,9 +32,10 @@ AZALEA_TAG             := 0.11.0
 MCP_HOST_PORT := 13000
 
 .NOTPARALLEL:
-.PHONY: up port operator server paper plugin fixture names token
+.PHONY: up port operator server paper plugin fixture copy-plugin copy-fixture restart-paper names token
 
-up: port operator server paper plugin fixture names
+# Both copies go in before the one restart they share: each needs Paper to start again to be read.
+up: port operator server paper copy-plugin copy-fixture restart-paper names
 
 # Editing the load balancer recreates its container, so this runs only when the port is missing.
 port:
@@ -71,23 +72,29 @@ paper:
 	$(KUBECTL) rollout status deploy/paper --timeout 10m
 
 # The fixture plugin: what the server received from a bot's keys, and the conversation and the bite
-# that press-input is tried against. Paper loads plugins only at start, so this restarts the server;
-# the world and the datapack are on the claim and come back with it.
-plugin:
+# that press-input is tried against. Paper loads plugins only at start.
+plugin: copy-plugin restart-paper
+
+copy-plugin:
 	cd $(HERE)/../.. && ./gradlew -q :fixture-plugin:jar
 	$(KUBECTL) exec deploy/paper -- mkdir -p /data/plugins
 	$(KUBECTL) cp $(HERE)/../fixture-plugin/build/libs/mcagents-fixture.jar \
 		$$($(KUBECTL) get pod -l app.kubernetes.io/name=paper -o name | cut -d/ -f2):/data/plugins/mcagents-fixture.jar
-	$(KUBECTL) rollout restart deploy/paper
-	$(KUBECTL) rollout status deploy/paper --timeout 10m
 
-# Copied rather than baked into an image, so a fixture edit is one `make fixture` away. The claim
-# under /data keeps it across restarts. The pack's load tag runs mcagents:setup, so the reload both
-# makes the pack exist and builds the fixture.
-fixture:
+# Copied rather than baked into an image, so a fixture edit is one `make fixture` away. Restarted
+# rather than reloaded: /reload re-reads functions and advancements, but a dialog, like everything else
+# held in a registry, is read only when the server starts, and a reload left `dialog show` unable to
+# find one the pack had just gained. The pack's load tag runs mcagents:setup on the start.
+fixture: copy-fixture restart-paper
+
+copy-fixture:
 	$(KUBECTL) exec deploy/paper -- rm -rf /data/world/datapacks/mcagents
 	$(KUBECTL) cp $(HERE)/../fixture $$($(KUBECTL) get pod -l app.kubernetes.io/name=paper -o name | cut -d/ -f2):/data/world/datapacks/mcagents
-	$(KUBECTL) exec deploy/paper -- rcon-cli reload
+
+# The world, the plugin and the datapack are on the claim under /data and come back with the server.
+restart-paper:
+	$(KUBECTL) rollout restart deploy/paper
+	$(KUBECTL) rollout status deploy/paper --timeout 10m
 
 names:
 	@echo

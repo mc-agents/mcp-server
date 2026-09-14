@@ -144,7 +144,8 @@ make -C dev/cluster names                   the MCP address and the `claude mcp 
 
 The server answers on `127.0.0.1:13000/mcp` with the token from the `mcp-auth` Secret, and bots are
 started by calling `join-server` with host `paper.mc-agents.svc`; the operator makes the pod, of
-either kind. `make fixture` copies an edited datapack in and reloads it, and `make plugin` builds the
+either kind. `make fixture` copies an edited datapack in and restarts the server, since dialogs are read only at
+start, and `make plugin` builds the
 fixture plugin, copies it into the server's plugins and restarts it -- Paper loads plugins only at
 start. A bot the cluster starts is named with at most 16 letters, digits and `_`, or lowercase letters,
 digits and `-`; a name Kubernetes would refuse gets a MinecraftBot of a derived name, with the bot's
