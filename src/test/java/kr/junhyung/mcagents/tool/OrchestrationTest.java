@@ -1,6 +1,7 @@
 package kr.junhyung.mcagents.tool;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.modelcontextprotocol.spec.McpSchema;
@@ -157,6 +158,16 @@ class OrchestrationTest {
 
         assertTrue(text(joined).contains("never dialled in"), text(joined));
         assertEquals(List.of("qa-dead-1"), cluster.released);
+    }
+
+    @Test
+    void aHostWrittenWithItsPortIsTheSameAsTheTwoGivenApart() {
+        assertEquals(List.of("game-velocity.hyperfarm-local.svc", "25565"),
+            List.of(Orchestration.hostAndPort("game-velocity.hyperfarm-local.svc:25565", null)));
+        assertEquals(List.of("paper.mc-agents.svc", "25566"),
+            List.of(Orchestration.hostAndPort("paper.mc-agents.svc", 25566)));
+        assertEquals(List.of("10.0.0.5", "25570"), List.of(Orchestration.hostAndPort("10.0.0.5:25570", 25570)));
+        assertThrows(IllegalArgumentException.class, () -> Orchestration.hostAndPort("paper.mc-agents.svc:25565", 25566));
     }
 
     /** One asked for by an earlier join is that join's to give back, not this one's. */

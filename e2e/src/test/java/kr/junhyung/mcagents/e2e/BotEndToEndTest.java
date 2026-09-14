@@ -278,12 +278,27 @@ class BotEndToEndTest {
     void aColouredChatLineReadsAsTheOneLineItIs() {
         world.run("""
             tellraw @a ["",{"text":"Hello ","color":"red"},{"text":"world","color":"blue"},{"text":" and welcome"}]""");
-        agent.call("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
-
-        String chat = agent.call("read-chat", Map.of("bot", BotWorld.BOT, "count", 1));
+        /* Waited for by what it says: the last line can be an advancement the server announced meanwhile. */
+        String chat = agent.mustCall("wait-for-chat",
+            Map.of("bot", BotWorld.BOT, "pattern", "welcome", "timeoutMs", 10000));
 
         assertTrue(chat.contains("Hello world and welcome"), chat);
         assertTrue(!chat.contains("Hello  | world"), chat);
+    }
+
+    /**
+     * A space can be a component of its own, which is how a plugin that appends one builds a line.
+     * Both kinds of bot dropped a piece that was nothing but whitespace, and "Cleared 0 [Track]" read
+     * "Cleared 0[Track]" while the screen showed the gap.
+     */
+    @Test
+    void aSpaceThatIsAComponentOfItsOwnIsKept() {
+        world.run("""
+            tellraw @a ["",{"text":"Cleared 0"},{"text":" "},{"text":"[Track]","color":"gold"}]""");
+        String chat = agent.mustCall("wait-for-chat",
+            Map.of("bot", BotWorld.BOT, "pattern", "Track", "timeoutMs", 10000));
+
+        assertTrue(chat.contains("Cleared 0 [Track]"), chat);
     }
 
     /**

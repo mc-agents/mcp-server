@@ -137,7 +137,9 @@ public final class Flatten {
 
     /**
      * One leaf. Not trimmed: "Mana " and "Mana" are different pieces, and a server that writes a
-     * label and a number as two components puts the space in one of them.
+     * label and a number as two components puts the space in one of them. A leaf that is blank once
+     * its glyphs are gone is a spacer and dropped; one that was only ever a space is text, and
+     * dropping it read "Cleared 0", " " and "[Track]" as "Cleared 0[Track]".
      */
     private static void take(String raw, String font, String colour, List<Piece> into, boolean glyphsOnly) {
         if (raw == null || raw.isEmpty()) {
@@ -153,7 +155,8 @@ public final class Flatten {
             }
             return;
         }
-        if (!readable.isBlank()) {
+        boolean spacer = readable.isBlank() && readable.length() != raw.length();
+        if (!readable.isEmpty() && !spacer) {
             into.add(new Piece(readable, font, colour));
         }
     }

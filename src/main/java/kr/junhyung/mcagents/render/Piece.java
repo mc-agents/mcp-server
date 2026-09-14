@@ -32,7 +32,8 @@ public record Piece(String text, String font, String color) {
         if (pieces.stream().noneMatch(piece -> piece.font() != null)) {
             return pieces.stream().map(Piece::text).collect(Collectors.joining());
         }
-        return String.join(" | ", pieces.stream().map(Piece::describe).toList());
+        /* Between labels a space separates nothing the " | " does not already. */
+        return String.join(" | ", pieces.stream().filter(piece -> !piece.text().isBlank()).map(Piece::describe).toList());
     }
 
     private static String describe(Piece piece) {

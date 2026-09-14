@@ -7,6 +7,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import kr.junhyung.mcagents.bot.BotProvisioner;
 import kr.junhyung.mcagents.bot.BotRegistry;
 import kr.junhyung.mcagents.bot.BotSession;
@@ -42,6 +44,9 @@ public class Orchestration {
     private static final int START_TIMEOUT_MS = 180_000;
 
     private static final int START_POLL_MS = 500;
+
+    /* A name or an IPv4 address and a port. An IPv6 address has colons of its own and is left whole. */
+    private static final Pattern HOST_WITH_PORT = Pattern.compile("([^:\\[\\]]+):(\\d{1,5})");
 
     /*
     How long one join-server call waits for a bot it had to start. A fabric client takes about a
@@ -81,8 +86,9 @@ public class Orchestration {
 
     private McpSchema.CallToolResult join(ToolSpec spec, Map<String, Object> arguments) {
         String name = required(arguments, "name");
-        String host = required(arguments, "host");
-        int port = intArg(arguments, "port", 25_565);
+        String[] address = hostAndPort(required(arguments, "host"), arguments.get("port"));
+        String host = address[0];
+        int port = Integer.parseInt(address[1]);
         String username = ToolDispatcher.stringArg(arguments, "username");
         String version = ToolDispatcher.stringArg(arguments, "version");
         String where = "%s:%d".formatted(host, port);
@@ -394,6 +400,24 @@ public class Orchestration {
             throw new IllegalArgumentException("\"%s\" is required".formatted(name));
         }
         return value;
+    }
+
+    /*
+    A host written with its port. The check for a bot already there compared the whole string and
+    accepted it, while a bot that had to be started was handed "host:port" as the host and failed
+    with "Host has a port", so the same arguments worked or did not depending on what was running.
+    */
+    static String[] hostAndPort(String host, Object port) {
+        Matcher written = HOST_WITH_PORT.matcher(host);
+        if (!written.matches()) {
+            return new String[] {host, String.valueOf(port instanceof Number number ? number.intValue() : 25_565)};
+        }
+        int named = Integer.parseInt(written.group(2));
+        if (port instanceof Number number && number.intValue() != named) {
+            throw new IllegalArgumentException("host names port %d and port says %d; give one of them"
+                    .formatted(named, number.intValue()));
+        }
+        return new String[] {written.group(1), String.valueOf(named)};
     }
 
     private static int intArg(Map<String, Object> arguments, String name, int fallback) {
