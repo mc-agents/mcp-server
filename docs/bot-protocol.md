@@ -412,6 +412,13 @@ datapack declared and the packet then carries nothing but an index into the `min
 registry. `source` is `dialog` for one being shown and `closed` for it going away, and the sentence
 for the second is the server's.
 
+What an input holds is not in the dialog: its definition carries a starting value, and after that
+the value lives in the client's control. A bot that changes one -- `set-dialog-input` -- sends the
+dialog again with `values`, an object from each input's `key` to what it holds now: `true` or
+`false` for a checkbox, the option's id for a cycle, the number for a slider, the text for a text
+field. Without `values` the server reads each input as its starting value, which is what a player
+who touched nothing would send.
+
 **A toast is a feed because it does not stay.** An advancement made or a recipe unlocked is up in
 the corner for five seconds; a tool that read the screen would be asking whether the call happened
 to land inside those five seconds, and an agent's round trip is often longer. `source` is

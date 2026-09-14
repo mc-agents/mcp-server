@@ -8,7 +8,7 @@ import tools.jackson.databind.JsonNode;
  * A dialog, in the words a reader gets.
  *
  * <p>A dialog is not one piece of text, so it cannot travel as a component the way a boss bar's
- * title does: it is a title, some lines of body, a row of buttons and a count of input fields, and
+ * title does: it is a title, some lines of body, a row of buttons and its inputs, and
  * which of those to read and in what order is presentation. So a bot sends the dialog as the game
  * serialises it and this reads it -- the same bargain as a component, and for the same reason. It
  * used to be read inside one kind of bot, which had a rule the other kind could only duplicate, and
@@ -75,13 +75,63 @@ public final class Dialogs {
             parts.add("buttons: " + String.join(", ", buttons));
         }
 
-        /* The values are not in the packet, so the count is the whole of what can be said. */
-        int inputs = each(dialog.get("inputs")).size();
-        if (inputs > 0) {
-            parts.add(inputs + " input field(s)");
+        List<String> inputs = new ArrayList<>();
+        for (JsonNode input : each(dialog.get("inputs"))) {
+            inputs.add(input(input, dialog.path("values")));
+        }
+        if (!inputs.isEmpty()) {
+            parts.add("inputs: " + String.join(", ", inputs));
         }
 
         return parts.isEmpty() ? fallback : String.join(" | ", parts);
+    }
+
+    /**
+     * One input as {@code key (what it takes) = what it holds}: the key is what set-dialog-input and
+     * the action's template name it by, and a label drawn in the pack's glyphs names nothing.
+     *
+     * <p>What it holds is the bot's {@code values} when it sent them, which it does once a value has
+     * been set, and otherwise what the dialog starts it at -- the default a player would see too.
+     */
+    private static String input(JsonNode input, JsonNode values) {
+        String key = input.path("key").asString("");
+        String type = input.path("type").asString("").replaceFirst("^minecraft:", "");
+        JsonNode held = values.get(key);
+
+        return switch (type) {
+            case "boolean" -> key + " (checkbox) = " + (held != null ? held.asString() : input.path("initial").asBoolean(false));
+            case "single_option" -> option(key, input.get("options"), held);
+            case "number_range" -> slider(key, input, held);
+            case "text" -> key + " (text) = \"" + (held != null ? held.asString() : input.path("initial").asString("")) + "\"";
+            default -> key + " (" + type + ")";
+        };
+    }
+
+    /** An option is written as its id alone or as an object with one, and the first is chosen when none says it is. */
+    private static String option(String key, JsonNode options, JsonNode held) {
+        List<String> ids = new ArrayList<>();
+        String initial = null;
+
+        for (JsonNode option : each(options)) {
+            String id = option.isString() ? option.asString() : option.path("id").asString("");
+            ids.add(id);
+            if (initial == null && option.path("initial").asBoolean(false)) {
+                initial = id;
+            }
+        }
+        String chosen = held != null ? held.asString() : initial != null ? initial : ids.isEmpty() ? "" : ids.getFirst();
+
+        return key + " (one of " + String.join(", ", ids) + ") = " + chosen;
+    }
+
+    /** A slider with no starting value starts halfway, as the client draws it. */
+    private static String slider(String key, JsonNode input, JsonNode held) {
+        double start = input.path("start").asDouble(0);
+        double end = input.path("end").asDouble(0);
+        String step = input.has("step") ? ", step " + Text.number(input.path("step").asDouble()) : "";
+        double value = held != null ? held.asDouble() : input.has("initial") ? input.path("initial").asDouble() : (start + end) / 2;
+
+        return key + " (" + Text.number(start) + " to " + Text.number(end) + step + ") = " + Text.number(value);
     }
 
     /**

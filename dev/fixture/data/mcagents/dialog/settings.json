@@ -1,0 +1,54 @@
+{
+  "type": "minecraft:multi_action",
+  "title": "Probe settings",
+  "external_title": "Probe settings",
+  "can_close_with_escape": true,
+  "body": [
+    {
+      "type": "minecraft:plain_message",
+      "contents": "A checkbox, a cycle and a slider, sent together by one button."
+    }
+  ],
+  "inputs": [
+    {
+      "key": "notify",
+      "type": "minecraft:boolean",
+      "label": "Tell me",
+      "on_true": "yes",
+      "on_false": "no"
+    },
+    {
+      "key": "mode",
+      "type": "minecraft:single_option",
+      "label": "Mode",
+      "options": [
+        {"id": "slow", "display": "Slow", "initial": true},
+        {"id": "fast", "display": "Fast"},
+        {"id": "turbo", "display": "Turbo"}
+      ]
+    },
+    {
+      "key": "speed",
+      "type": "minecraft:number_range",
+      "label": "Speed",
+      "start": 0,
+      "end": 10,
+      "step": 2,
+      "initial": 4
+    }
+  ],
+  "columns": 1,
+  "actions": [
+    {
+      "label": "Save",
+      "action": {
+        "type": "minecraft:dynamic/run_command",
+        "template": "scoreboard players set $(mode)_$(notify) mcagents $(speed)"
+      },
+      "tooltip": "scores what the three controls hold under a name made of two of them, which is how the server sees them"
+    }
+  ],
+  "exit_action": {
+    "label": "Close"
+  }
+}

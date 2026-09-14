@@ -5541,7 +5541,7 @@
     {
       "name": "read-dialog",
       "group": "hud",
-      "description": "Read the dialogs the server has opened on screen, with their title, body and the buttons they offer, and the point at which each was closed again. The bot cannot press those buttons: the packet that answers a dialog is serialised from a definition that does not match 26.1, and a server drops the connection rather than read it. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
+      "description": "Read the dialogs the server has opened on screen, with their title, body, the buttons they offer and what each input holds, and the point at which each was closed again. A dialog comes again with the new values when set-dialog-input changes one. The bot cannot press those buttons: the packet that answers a dialog is serialised from a definition that does not match 26.1, and a server drops the connection rather than read it. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
       "route": "local",
       "kinds": [
         "fabric",
@@ -7407,6 +7407,147 @@
       "wireSchemaHash": "sha256:892553669d702345a2ff4dd97777ffed2a54c3b4324a5f5b68f092d2b58f32f4"
     },
     {
+      "name": "set-dialog-input",
+      "group": "screen",
+      "description": "Set a checkbox, a cycle or a slider on the dialog the server has opened, before pressing the button that sends it. The value goes into the dialog's own control, so the button sends exactly what a player who had clicked it would. Text fields are type-text's. The reply says what the input holds now and what it held before.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": "string",
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected."
+          },
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The input's key, as the dialog names it: what its action's $(key) template reads"
+          },
+          "value": {
+            "type": [
+              "boolean",
+              "number",
+              "string"
+            ],
+            "description": "A checkbox takes true or false. A cycle takes an option's id, or the text it is shown as. A slider takes a number inside its range, which moves to the nearest step the slider has"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The input's key, as the dialog names it: what its action's $(key) template reads"
+          },
+          "value": {
+            "type": [
+              "boolean",
+              "number",
+              "string"
+            ],
+            "description": "A checkbox takes true or false. A cycle takes an option's id, or the text it is shown as. A slider takes a number inside its range, which moves to the nearest step the slider has"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:99dfa037bd9ee6cc20372402392b537a1343201aad09bcc14c79347362fc61a4",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "the input that was set"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "boolean",
+              "single_option",
+              "number_range"
+            ],
+            "description": "the kind of input, as the dialog's definition names it without its namespace"
+          },
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "the label the dialog shows beside the input, flattened; null when it has none"
+          },
+          "labelComponent": {
+            "type": [
+              "object",
+              "array",
+              "string",
+              "null"
+            ],
+            "description": "The component that label was written as, as Minecraft's own JSON. Null when there is none."
+          },
+          "value": {
+            "type": [
+              "boolean",
+              "number",
+              "string"
+            ],
+            "description": "what the input holds now: true or false, an option's id, or the slider's number"
+          },
+          "previous": {
+            "type": [
+              "boolean",
+              "number",
+              "string"
+            ],
+            "description": "what it held before"
+          },
+          "display": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "for a cycle, the text the chosen option is shown as; null otherwise"
+          },
+          "requested": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "for a slider, the number asked for when it is not on one of the slider's steps and the value moved to the nearest; null otherwise"
+          }
+        },
+        "required": [
+          "key",
+          "type",
+          "label",
+          "labelComponent",
+          "value",
+          "previous",
+          "display",
+          "requested"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "set-stance",
       "group": "movement",
       "description": "Hold the bot crouching or sprinting. Both stay on until turned off, so a plugin that only reacts to a crouching player can be reached. Nothing else here changes the stance.",
@@ -8554,5 +8695,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:7096c09dadf409b49cb561cb9002c49bc1a8fb5993f8647ecbcd1ca6d1dd7ea3"
+  "catalogHash": "sha256:a8f043e2eb592ee28ff93ec01477a3d8746b620ff26f3b3a6e54a51503ed3a22"
 }

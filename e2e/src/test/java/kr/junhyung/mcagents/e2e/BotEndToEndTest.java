@@ -440,6 +440,77 @@ class BotEndToEndTest {
     }
 
     /**
+     * Before anything is set, a dialog's inputs read as what the dialog starts them at. One kind of
+     * bot reads the dialog out of NBT, where a boolean is a byte and a list of one is a bare compound,
+     * so the same definition has to read the same from both.
+     */
+    @Test
+    void aDialogsInputsAreReadAsTheyStart() {
+        world.run("dialog show " + BotWorld.BOT + " mcagents:settings");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String read = agent.mustCall("read-dialog", Map.of("bot", BotWorld.BOT, "count", 1));
+
+        assertTrue(read.contains("Probe settings | A checkbox, a cycle and a slider, sent together by one button."
+            + " | buttons: Save, Close | inputs: notify (checkbox) = false, mode (one of slow, fast, turbo) = slow,"
+            + " speed (0 to 10, step 2) = 4"), read);
+    }
+
+    /**
+     * A dialog's checkbox, cycle and slider hold what its button sends, and nothing in the packet
+     * that opened it says what they hold. The server's scoreboard is the proof: the button scores the
+     * slider under a name made of the other two, so each value is asserted as the server got it. The
+     * slider is asked for a number between its steps, and the button sends the step it moved to.
+     */
+    @Test
+    void whatIsSetOnADialogsControlsIsWhatTheServerGets() {
+        world.run("scoreboard players reset fast_yes mcagents");
+        world.run("dialog show " + BotWorld.BOT + " mcagents:settings");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String ticked = agent.mustCall("set-dialog-input", Map.of("bot", BotWorld.BOT, "key", "notify", "value", true));
+        String picked = agent.mustCall("set-dialog-input", Map.of("bot", BotWorld.BOT, "key", "mode", "value", "Fast"));
+        String slid = agent.mustCall("set-dialog-input", Map.of("bot", BotWorld.BOT, "key", "speed", "value", 5));
+        String read = agent.mustCall("read-dialog", Map.of("bot", BotWorld.BOT, "count", 1));
+
+        agent.mustCall("press-dialog-button", Map.of("bot", BotWorld.BOT, "label", "Save"));
+        String board = agent.mustCall("wait-for-scoreboard",
+            Map.of("bot", BotWorld.BOT, "pattern", "fast_yes: 6", "timeoutMs", 10000));
+        world.run("scoreboard players reset fast_yes mcagents");
+
+        assertEquals("Set \"notify\" to true, was false.", ticked);
+        assertEquals("Set \"mode\" to fast (shown as \"Fast\"), was slow.", picked);
+        assertEquals("Set \"speed\" to 6, was 4. 5 is not one of the slider's steps, so it moved to the nearest.", slid);
+        assertTrue(read.contains("inputs: notify (checkbox) = true, mode (one of slow, fast, turbo) = fast,"
+            + " speed (0 to 10, step 2) = 6"), read);
+        assertTrue(board.contains("fast_yes: 6"), board);
+    }
+
+    /** Each way a value can be wrong for a dialog is refused by name, before anything on it moves. */
+    @Test
+    void aValueADialogsControlCannotTakeIsRefused() {
+        world.run("dialog show " + BotWorld.BOT + " mcagents:settings");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String noKey = agent.refusal("set-dialog-input", Map.of("bot", BotWorld.BOT, "key", "colour", "value", "red"));
+        String wrongType = agent.refusal("set-dialog-input", Map.of("bot", BotWorld.BOT, "key", "speed", "value", "fast"));
+        String outOfRange = agent.refusal("set-dialog-input", Map.of("bot", BotWorld.BOT, "key", "speed", "value", 11));
+        String noOption = agent.refusal("set-dialog-input", Map.of("bot", BotWorld.BOT, "key", "mode", "value", "warp"));
+        String untouched = agent.mustCall("read-dialog", Map.of("bot", BotWorld.BOT, "count", 1));
+
+        agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+        String noDialog = agent.refusal("set-dialog-input", Map.of("bot", BotWorld.BOT, "key", "notify", "value", true));
+
+        assertTrue(noKey.contains("no input \"colour\"; its inputs are notify, mode, speed"), noKey);
+        assertTrue(wrongType.contains("\"speed\" is a slider and takes a number"), wrongType);
+        assertTrue(outOfRange.contains("\"speed\" goes from 0 to 10, and 11 is outside it"), outOfRange);
+        assertTrue(noOption.contains("\"mode\" has no option \"warp\""), noOption);
+        assertTrue(untouched.contains("speed (0 to 10, step 2) = 4"), untouched);
+        assertTrue(noDialog.contains("no dialog is open"), noDialog);
+    }
+
+    /**
      * The half of a dialog that pressing a button cannot reach. A dialog's text inputs are not in
      * the packet that opened it -- the feed can say a dialog has two of them and not what they say
      * -- so until something could put a value in one, a dialog that asks a question could be read

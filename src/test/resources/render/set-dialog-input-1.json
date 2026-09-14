@@ -1,0 +1,15 @@
+{
+  "tool": "set-dialog-input",
+  "note": "a checkbox ticked",
+  "data": {
+    "key": "notify",
+    "type": "boolean",
+    "label": "Tell me",
+    "labelComponent": "Tell me",
+    "value": true,
+    "previous": false,
+    "display": null,
+    "requested": null
+  },
+  "text": "Set \"notify\" to true, was false."
+}

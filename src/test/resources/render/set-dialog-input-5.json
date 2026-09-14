@@ -1,0 +1,15 @@
+{
+  "tool": "set-dialog-input",
+  "note": "a cycle whose options show their own ids",
+  "data": {
+    "key": "mode",
+    "type": "single_option",
+    "label": "Mode",
+    "labelComponent": "Mode",
+    "value": "slow",
+    "previous": "slow",
+    "display": "slow",
+    "requested": null
+  },
+  "text": "Set \"mode\" to slow, was slow."
+}

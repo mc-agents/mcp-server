@@ -1,0 +1,15 @@
+{
+  "tool": "set-dialog-input",
+  "note": "a slider on one of its steps",
+  "data": {
+    "key": "speed",
+    "type": "number_range",
+    "label": null,
+    "labelComponent": null,
+    "value": 6,
+    "previous": 4,
+    "display": null,
+    "requested": null
+  },
+  "text": "Set \"speed\" to 6, was 4."
+}

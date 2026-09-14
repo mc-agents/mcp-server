@@ -107,7 +107,35 @@ class EventFeedTest {
         FeedEntry line = new FeedEntry(1, "dialog", "dialog", "wrong", List.of(), null, dialog, now, now, 1);
 
         assertEquals("[gui/header] Bot check | Which button did the bot press?"
-                + " | buttons: Confirm, Cancel, Close | 1 input field(s)", line.rendered());
+                + " | buttons: Confirm, Cancel, Close | inputs: name (text) = \"\"", line.rendered());
+    }
+
+    /*
+    What a dialog's inputs hold is what its button will send, so a caller about to press one needs it.
+    The bot sends the values once one was set; until then each input holds what the dialog starts it
+    at, and a slider with no starting value starts halfway, as the client draws it.
+    */
+    @Test
+    void aDialogsInputsReadWhatTheyHold() throws Exception {
+        JsonMapper mapper = JsonMapper.builder().build();
+        String inputs = """
+                "inputs": [
+                  {"key": "notify", "type": "minecraft:boolean", "label": "Tell me"},
+                  {"key": "mode", "type": "minecraft:single_option", "label": "Mode",
+                   "options": ["slow", {"id": "fast", "display": "Fast", "initial": true}]},
+                  {"key": "speed", "type": "minecraft:number_range", "label": "Speed",
+                   "start": 0, "end": 10, "step": 2}]""";
+        JsonNode shown = mapper.readTree("{\"title\": \"Settings\", " + inputs + "}");
+        JsonNode set = mapper.readTree("{\"title\": \"Settings\", " + inputs
+                + ", \"values\": {\"notify\": true, \"mode\": \"slow\", \"speed\": 8}}");
+        long now = System.currentTimeMillis();
+
+        assertEquals("Settings | inputs: notify (checkbox) = false, mode (one of slow, fast) = fast,"
+                + " speed (0 to 10, step 2) = 5",
+                new FeedEntry(1, "dialog", "dialog", "Settings", List.of(), null, shown, now, now, 1).rendered());
+        assertEquals("Settings | inputs: notify (checkbox) = true, mode (one of slow, fast) = slow,"
+                + " speed (0 to 10, step 2) = 8",
+                new FeedEntry(2, "dialog", "dialog", "Settings", List.of(), null, set, now, now, 1).rendered());
     }
 
     /*

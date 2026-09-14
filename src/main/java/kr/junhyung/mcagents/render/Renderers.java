@@ -66,6 +66,7 @@ public final class Renderers {
         Map.entry("read-trades", entry(TradesRenderer.View.class, new TradesRenderer())),
         Map.entry("read-window", entry(OpenWindowRenderer.View.class, new OpenWindowRenderer())),
         Map.entry("select-trade", entry(SelectedTradeRenderer.View.class, new SelectedTradeRenderer())),
+        Map.entry("set-dialog-input", entry(DialogInputRenderer.View.class, new DialogInputRenderer())),
         Map.entry("wait-for-window", entry(AwaitedWindowRenderer.View.class, new AwaitedWindowRenderer())));
 
     private Renderers() {}
