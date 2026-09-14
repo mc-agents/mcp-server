@@ -116,8 +116,13 @@ class BotEndToEndTest {
         }
         world.run("dialog clear " + BotWorld.BOT);
         world.run("gamemode creative " + BotWorld.BOT);
-        /* In the overworld: a plain tp moves a bot within whatever dimension a case left it in. */
-        world.run("execute in minecraft:overworld run tp " + BotWorld.BOT + " 2 -59 0");
+        /*
+        In the overworld: a plain tp moves a bot within whatever dimension a case left it in. And
+        facing south and level, because a plain tp keeps the rotation too: a case that walked to the
+        enchanting table left the bot looking at it, and the next case's right-click opened the table
+        instead of casting the rod it held.
+        */
+        world.run("execute in minecraft:overworld run tp " + BotWorld.BOT + " 2 -59 0 0 0");
         agent.call("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
     }
 
