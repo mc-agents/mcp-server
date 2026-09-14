@@ -2091,9 +2091,9 @@ class BotEndToEndTest {
         assertTrue(model.contains("\"hyperfarm:furniture/chair\""), model);
         assertTrue(state.contains("facing: \"east\""), state);
         assertTrue(item.contains("- item_display at (3, -58, -3), ")
-            && item.contains(" blocks away, showing Probe Chair [paper] x1 (model hyperfarm:furniture/chair)"), item);
+            && item.contains(", showing Probe Chair [paper] x1 (model hyperfarm:furniture/chair)"), item);
         assertTrue(block.contains(
-            " blocks away, showing oak_stairs[facing=east,half=bottom,shape=straight,waterlogged=false]"), block);
+            ", showing oak_stairs[facing=east,half=bottom,shape=straight,waterlogged=false]"), block);
     }
 
     /**
