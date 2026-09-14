@@ -53,7 +53,24 @@ Expect: `scoreboard players get <bot> fx_catch` -> `<bot> has 1 [fx_catch]`.
 - Waiting with `wait-for-effect` and then pressing is a round trip, which can miss a short window;
   `after` presses on the tick the sound arrives. `wait-for-effect` is fabric-only; `after` on the
   effect feed works on both kinds.
-- The fixture bites 30 ticks after the cast, in or out of water, with a 40-tick window.
+- The fixture bites 60 ticks after the cast, in or out of water, with a 40-tick window.
+
+## A 2-tick timing window: `after` on the action bar
+
+```
+(observer) run-command "tp <bot> 2 -60 0 0 -90"    # look up, so a creative click breaks nothing
+(observer) run-command "fixture gather <bot>"      # a cue 30-70 ticks later, at a moment nobody knows
+press-input key=attack after={feed: actionBar, pattern: "JUST"} timeoutMs=10000
+```
+
+Expect: `scoreboard players get <bot> fx_gather_hit` counts the round; `fx_gather_ticks` and
+`fx_gather_ms` say how long the click took from the cue, as the server measured it.
+
+- Start the press right after the command. `after` only hears lines that arrive while it listens, so a
+  press started after the cue waits for a cue that already came.
+- Measured on the e2e server, five rounds per kind: fabric 0 ticks every time (35-44 ms), azalea 0 or
+  1 tick (32-57 ms). A 2-tick window is caught on both; a 1-tick window is not certain on azalea.
+- Do not `wait-for-action-bar` and then press: the round trip alone is longer than the window.
 
 ## Repeated clicks: `until`
 

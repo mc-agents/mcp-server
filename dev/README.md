@@ -52,12 +52,15 @@ scoreboard objectives rcon reads back:
 | `fx_left`, `fx_right` | clicks into the air with the main hand |
 | `fx_swing` | every arm swing |
 | `fx_catch`, `fx_miss` | reels inside and outside a bite's window |
+| `fx_gather_hit`, `fx_gather_miss`, `fx_gather_early` | gathering rounds clicked inside the 2-tick window, outside it, and before the cue |
+| `fx_gather_ticks`, `fx_gather_ms` | how long the last gathering click took from the cue |
 
 It also plays two pieces of hyperfarm just far enough to test against. `/fixture talk <player>`
 opens a conversation on the action bar: jump turns the page, hotbar slot 0 or 1 answers and tags
 the player `fixture_choice_<n>`, and sneaking leaves and tags `fixture_talk_left`. A cast rod gets a
 bite sixty ticks later -- `entity.fishing_bobber.splash` played to the angler -- and a reel within
-forty ticks of it counts as a catch.
+forty ticks of it counts as a catch. `/fixture gather <player>` puts `Gather: JUST!` on the action bar 30 to 70 ticks later, and a left-click
+within two ticks of it is a hit.
 
 The end-to-end suite builds it and loads it into its server.
 

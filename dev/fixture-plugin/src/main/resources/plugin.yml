@@ -4,8 +4,8 @@ main: kr.junhyung.mcagents.fixture.FixturePlugin
 api-version: "26.1"
 commands:
   fixture:
-    description: Start the fixture's conversation for a player
-    usage: /fixture talk <player>
+    description: Start the fixture's conversation or gathering round for a player
+    usage: /fixture talk|gather <player>
     permission: mcagents.fixture
 permissions:
   mcagents.fixture:

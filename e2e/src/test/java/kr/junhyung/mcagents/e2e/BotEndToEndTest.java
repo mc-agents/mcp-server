@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -2381,6 +2382,39 @@ class BotEndToEndTest {
         assertTrue(caught.contains("for the effect feed to match /entity\\.fishing_bobber\\.splash/"
             + " (\"minecraft:entity.fishing_bobber.splash\"), then pressed use once."), caught);
         assertEquals(1, catches, "the server counted " + misses + " reel(s) outside the window");
+    }
+
+    /**
+     * hyperfarm's gathering wants a left-click within two ticks of a cue at a moment nobody can predict,
+     * which is shorter than any round trip through this server. Five rounds, and four have to land:
+     * the reaction is the bot's own, on the tick the cue arrives. How many ticks each took, as the
+     * server counted them, is in the answer either way, because that is the number a game's window
+     * has to be compared against.
+     */
+    @Test
+    void aTwoTickWindowIsCaughtOnTheTickItsCueArrives() {
+        agent.requires("press-input");
+        /* Looking straight up, so a creative click breaks nothing. */
+        world.run("tp " + BotWorld.BOT + " 2 -59 0 0 -90");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+        forget("fx_gather_hit", "fx_gather_miss", "fx_gather_early", "fx_gather_ticks", "fx_gather_ms");
+
+        List<String> reactions = new ArrayList<>();
+        for (int round = 0; round < 5; round++) {
+            world.run("fixture gather " + BotWorld.BOT);
+            agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "attack",
+                "after", Map.of("feed", "actionBar", "pattern", "JUST"), "timeoutMs", 10000));
+            agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+            /* Read raw: an unset score reads as 0 through counted, which is also the best reaction there is. */
+            String ticks = world.run("scoreboard players get " + BotWorld.BOT + " fx_gather_ticks");
+            assertTrue(ticks.contains(" has "), "round " + round + " recorded no click: " + ticks);
+            reactions.add(counted("fx_gather_ticks") + "t/" + counted("fx_gather_ms") + "ms");
+            forget("fx_gather_ticks", "fx_gather_ms");
+        }
+        String measured = "reactions " + reactions + ", " + counted("fx_gather_early") + " early";
+        System.out.println(System.getProperty("e2e.bot.kind") + " gathering " + measured);
+
+        assertTrue(counted("fx_gather_hit") >= 4, "fewer than 4 of 5 inside the window: " + measured);
     }
 
     /**

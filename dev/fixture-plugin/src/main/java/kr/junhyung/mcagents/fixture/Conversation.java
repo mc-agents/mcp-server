@@ -5,8 +5,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -20,7 +18,7 @@ import org.bukkit.scheduler.BukkitTask;
  * is still open has to stay on the screen. What was chosen and that the player left are tags, which
  * rcon reads back.
  */
-final class Conversation implements CommandExecutor {
+final class Conversation {
 
     private static final String SPEAKER = "[Probe Farmer] ";
     private static final String[] OPTIONS = {"Wheat", "Carrot"};
@@ -37,17 +35,7 @@ final class Conversation implements CommandExecutor {
         this.plugin = plugin;
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length != 2 || !args[0].equals("talk")) {
-            return false;
-        }
-        Player player = Bukkit.getPlayerExact(args[1]);
-        if (player == null) {
-            sender.sendMessage(args[1] + " is not online");
-            return true;
-        }
-
+    void talk(CommandSender sender, Player player) {
         player.removeScoreboardTag("fixture_talk_left");
         for (int option = 0; option < OPTIONS.length; option++) {
             player.removeScoreboardTag("fixture_choice_" + option);
@@ -58,7 +46,6 @@ final class Conversation implements CommandExecutor {
             redraw = Bukkit.getScheduler().runTaskTimer(plugin, this::redraw, REDRAW_TICKS, REDRAW_TICKS);
         }
         sender.sendMessage("talking to " + player.getName());
-        return true;
     }
 
     void jumped(Player player) {
