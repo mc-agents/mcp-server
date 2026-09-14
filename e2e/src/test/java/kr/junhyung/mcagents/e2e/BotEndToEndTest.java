@@ -916,20 +916,14 @@ class BotEndToEndTest {
 
         String hit = agent.mustCall("attack-entity", Map.of("bot", BotWorld.BOT, "name", "chicken"));
 
-        Instant deadline = Instant.now().plus(Duration.ofSeconds(10));
-        String alive = "";
-        while (Instant.now().isBefore(deadline)) {
-            alive = world.run("execute if entity @e[type=chicken,tag=mcagents]");
-            if (alive.startsWith("Test failed")) {
-                break;
-            }
-            sleep(250);
-        }
+        /* A read the console answers either way: the chicken's health while it lives, and no entity once it is gone. */
+        String left = untilTheServer("data get entity @e[type=chicken,tag=mcagents,limit=1] Health",
+            answer -> answer.startsWith("No entity was found"));
         world.run("kill @e[type=chicken,tag=mcagents]");
         world.run("function mcagents:setup");
 
         assertEquals("Hit chicken 1 time(s).", hit);
-        assertTrue(alive.startsWith("Test failed"), "the chicken outlived the hit: " + alive);
+        assertTrue(left.startsWith("No entity was found"), "the chicken outlived the hit: " + left);
     }
 
     /**
