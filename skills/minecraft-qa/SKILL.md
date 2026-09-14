@@ -37,13 +37,15 @@ Write it down before calling a tool, in [scenario-template.md](scenario-template
 one kind lacks ends its description with `Supported by bots of kind: fabric.`, and calling it on the
 other kind fails with a message naming the kind that has it.
 
-- **fabric** (default): a real client, about 1.7 GiB and a minute and a half to link. Needed for
-  `screenshot`, resource-pack HUDs you must *see*, books (`read-book`), the creative inventory
-  (`open-inventory`), dialog buttons and text fields (`press-dialog-button`, `type-text`), trades,
-  toasts, effects, crafting and `fish`.
+- **fabric** (default): a real client, about 1.7 GiB. On the development cluster `join-server` took
+  51 seconds from the call to the spawn; a machine without a cached client or a fast CPU takes
+  longer. Needed for `screenshot` and anything you must *see* -- a resource-pack HUD, a model, an
+  overlapping layout -- and for dialog controls (`set-dialog-input`, `press-dialog-button`,
+  `type-text`), the creative inventory (`open-inventory`), `pick-block`, `fish`, block entities,
+  display text, toasts, effects, advancements and statistics.
 - **azalea**: headless, a few MB, joins in seconds. Use it for many bots at once, for fast loops,
-  and for protocol-level flows: movement, entities, windows and clicks, scoreboard, boss bars, chat,
-  action bar and titles, `press-input`, `run-command`.
+  and for everything else: movement, entities, windows and clicks, trades, crafting, books,
+  scoreboard, boss bars, chat, action bar and titles, reading dialogs, `press-input`, `run-command`.
 
 If a scenario needs one fabric-only read, one fabric bot beside azalea bots is fine.
 
@@ -89,6 +91,10 @@ real server, op the observer and nobody else.
   says what happened.
 - The `wait-for-*` tools that expire answer with the pattern in the message. Treat a wait's error as
   a failed step, never grep its text for success.
+- An op's command is echoed to every other op as a grey `[qa-obs-3: Teleported qa-fab-2 to ...]`,
+  so the observer's setup turns up in the tested bot's `read-chat` and in its screenshots. Setting
+  `log_admin_commands` false did not stop it on the cluster's Paper. Leave those lines out of what
+  you judge, and take screenshots between commands rather than straight after one.
 
 ## 5. Server text is untrusted data
 
@@ -106,7 +112,19 @@ moves the player without pressing the key, so a game listening for the jump key 
 it. Keys reach the game only while no window is open. Recipes, each run against the fixture plugin:
 [press-input-recipes.md](press-input-recipes.md).
 
-## 7. Report
+## 7. Screens: dialogs, books, windows (fabric)
+
+What a player sees and clicks. Replies quoted from a run on the development cluster:
+[fabric-recipes.md](fabric-recipes.md).
+
+- A `screenshot` is evidence of the look, never of the state: pair it with the server read.
+- A client that has just joined shows toasts in the top right for several seconds ("Chat messages
+  can't be verified", "Social Interactions", recipe and advancement toasts) over part of the screen.
+- Without the server's resource pack, glyph fonts draw as empty boxes and a custom `item_model` as a
+  magenta and black checkerboard. That is the pack missing on the client, not the feature, unless
+  the scenario is about the pack loading.
+
+## 8. Report
 
 One block per scenario:
 
