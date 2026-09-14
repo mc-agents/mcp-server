@@ -146,5 +146,7 @@ The server answers on `127.0.0.1:13000/mcp` with the token from the `mcp-auth` S
 started by calling `join-server` with host `paper.mc-agents.svc`; the operator makes the pod, of
 either kind. `make fixture` copies an edited datapack in and reloads it, and `make plugin` builds the
 fixture plugin, copies it into the server's plugins and restarts it -- Paper loads plugins only at
-start. Bot names there are Kubernetes object names: lowercase, digits and `-`. Anyone who connects is made
+start. A bot the cluster starts is named with at most 16 letters, digits and `_`, or lowercase letters,
+digits and `-`; a name Kubernetes would refuse gets a MinecraftBot of a derived name, with the bot's
+own in `spec.botName`. Anyone who connects is made
 op, because a scenario names its bots and no ops list could name them in advance.

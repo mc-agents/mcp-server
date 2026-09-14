@@ -56,23 +56,38 @@ public class BotProvisioner {
      * @return true when this call created it, false when it was already there
      */
     public boolean request(String name, String kind, String minecraftVersion, String owner) {
-        GenericKubernetesResource existing = client.genericKubernetesResources(BOTS)
-                .inNamespace(namespace).withName(name).get();
-
-        if (existing != null) {
+        if (find(name) != null) {
             log.info("bot \"{}\" is already declared; waiting for it rather than making another", name);
             return false;
         }
 
+        String objectName;
+        try {
+            objectName = BotResourceName.of(name);
+        } catch (IllegalArgumentException refused) {
+            throw new JoinFailure(JoinStage.LINK, refused.getMessage());
+        }
+
         try {
             client.genericKubernetesResources(BOTS).inNamespace(namespace)
-                    .resource(declare(name, kind, minecraftVersion, owner)).create();
+                    .resource(declare(objectName, name, kind, minecraftVersion, owner)).create();
         } catch (KubernetesClientException e) {
+            /*
+            The object's name is taken by a bot of another name. Only a name declared by hand can do
+            that -- a derived one carries a hash of the bot name -- and reusing it would start the
+            other bot's pod for this one.
+            */
+            if (e.getCode() == 409) {
+                throw new JoinFailure(JoinStage.LINK,
+                        "could not ask for a bot named \"%s\": the MinecraftBot \"%s\" already exists for another bot"
+                                .formatted(name, objectName));
+            }
             throw new JoinFailure(JoinStage.LINK,
                     "could not ask for a bot named \"%s\": %s".formatted(name, reason(e)));
         }
 
-        log.info("asked for a {} bot named \"{}\" on Minecraft {}", kind, name, minecraftVersion);
+        log.info("asked for a {} bot named \"{}\" on Minecraft {}, as MinecraftBot \"{}\"",
+                kind, name, minecraftVersion, objectName);
         return true;
     }
 
@@ -85,8 +100,7 @@ public class BotProvisioner {
      * timeout and reporting that nothing happened.
      */
     public String failure(String name) {
-        GenericKubernetesResource bot = client.genericKubernetesResources(BOTS)
-                .inNamespace(namespace).withName(name).get();
+        GenericKubernetesResource bot = find(name);
 
         if (bot == null) {
             return "the MinecraftBot is gone";
@@ -107,24 +121,47 @@ public class BotProvisioner {
      * and one someone else declared with kubectl outlives any tool call.
      */
     public boolean release(String name) {
-        GenericKubernetesResource existing = client.genericKubernetesResources(BOTS)
-                .inNamespace(namespace).withName(name).get();
+        GenericKubernetesResource existing = find(name);
 
-        if (existing == null || !"mcp-server".equals(
+        if (existing == null || existing.getMetadata().getLabels() == null || !"mcp-server".equals(
                 existing.getMetadata().getLabels().get("mc-agents.dev/requested-by"))) {
             return false;
         }
-        client.genericKubernetesResources(BOTS).inNamespace(namespace).withName(name).delete();
-        log.info("gave back the bot named \"{}\"", name);
+        client.genericKubernetesResources(BOTS).inNamespace(namespace).resource(existing).delete();
+        log.info("gave back the bot named \"{}\" (MinecraftBot \"{}\")", name, existing.getMetadata().getName());
         return true;
     }
 
-    private GenericKubernetesResource declare(String name, String kind, String minecraftVersion,
-            String owner) {
+    /**
+     * The object that stands for a bot, found by the bot name it declares rather than by its own
+     * name, which a bot name only sometimes is. A handful of objects per namespace, so listing them
+     * costs nothing next to the join it serves.
+     */
+    private GenericKubernetesResource find(String name) {
+        for (GenericKubernetesResource bot : client.genericKubernetesResources(BOTS).inNamespace(namespace).list().getItems()) {
+            if (name.equals(BotResourceName.declared(bot.getMetadata().getName(), specBotName(bot)))) {
+                return bot;
+            }
+        }
+        return null;
+    }
+
+    private static String specBotName(GenericKubernetesResource bot) {
+        return bot.getAdditionalProperties().get("spec") instanceof Map<?, ?> spec
+                && spec.get("botName") instanceof String botName ? botName : null;
+    }
+
+    private GenericKubernetesResource declare(String objectName, String botName, String kind,
+            String minecraftVersion, String owner) {
         Map<String, Object> spec = new LinkedHashMap<>();
         spec.put("kind", kind);
         spec.put("minecraftVersion", minecraftVersion);
         spec.put("server", Map.of("host", mcpHost, "port", mcpPort));
+        /* The name the pod dials in with, when the object's own name cannot be it. */
+        String dialled = BotResourceName.specBotName(botName);
+        if (dialled != null) {
+            spec.put("botName", dialled);
+        }
 
         Map<String, String> labels = new LinkedHashMap<>();
         labels.put("app.kubernetes.io/managed-by", "mc-agents-mcp-server");
@@ -138,7 +175,7 @@ public class BotProvisioner {
                 .withApiVersion("mc-agents.dev/v1alpha1")
                 .withKind("MinecraftBot")
                 .withNewMetadata()
-                .withName(name)
+                .withName(objectName)
                 .withNamespace(namespace)
                 .withLabels(labels)
                 .withAnnotations(annotations)

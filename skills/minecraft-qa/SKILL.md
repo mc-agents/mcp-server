@@ -52,8 +52,9 @@ If a scenario needs one fabric-only read, one fabric bot beside azalea bots is f
 - **A fresh name per scenario**, e.g. `qa-talk-1`. The server is offline mode, so a name *is* a
   player: the same name comes back with the last run's inventory, position, tags, scores and
   advancements. Reusing one makes a scenario depend on whatever ran before it.
-- **Names**: lowercase letters, digits and `-`, at most 16 characters. In a cluster the name becomes a
-  Kubernetes object and `_` is refused; the username defaults to the name, and Minecraft allows 16.
+- **Names**: at most 16 characters, either a Minecraft username (`Qa_Bot1`: letters, digits, `_`) or
+  lowercase letters, digits and `-` (`qa-talk-1`). The username defaults to the name. A cluster
+  refuses anything else, such as `Qa-Bot`, before starting a bot.
 - **One bot per agent** when several agents run at once, and always pass `bot` explicitly. The
   argument is only optional while exactly one bot is connected, which stops being true the moment
   another agent joins one.
