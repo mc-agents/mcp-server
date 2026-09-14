@@ -16,7 +16,7 @@ BOT_LINK_PORT=18765 MCP_PORT=13000 ./gradlew bootRun &
 python3 dev/bot.py 18765 alice fabric
 ```
 
-The third argument is the kind it reports, and `fabric` is the only one there is.
+The third argument is the kind it reports, `fabric` or `azalea`.
 
 ## `fixture.sh` — put something in the world to read
 
@@ -66,7 +66,7 @@ implementation happened to do.
 It never sends `connect`, so the bot answers every tool with "not in a world". That is a result,
 and a result is what is being checked.
 
-## `sweep.py` — call all 64 tools once
+## `sweep.py` — call every tool once
 
 ```
 python3 dev/sweep.py

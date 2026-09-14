@@ -1405,6 +1405,276 @@ class BotEndToEndTest {
         assertTrue(heard.contains(BotWorld.BOT), heard);
     }
 
+    /**
+     * A turn of the head is only the client's until it is sent. The server's own record of the
+     * rotation is asserted, because a bot that turns locally and says "Looking at" has told an
+     * agent something no plugin watching the player will ever see.
+     */
+    @Test
+    void theServerSeesTheBotLookWhereItWasTold() {
+        world.run("tp " + BotWorld.BOT + " 11 -60 0");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+
+        String east = agent.mustCall("look-at", Map.of("bot", BotWorld.BOT, "x", 14, "y", -59, "z", 0));
+        String facingEast = untilTheServer("data get entity " + BotWorld.BOT + " Rotation",
+            rotation -> facing(rotation, -90, 2));
+        agent.mustCall("look-at", Map.of("bot", BotWorld.BOT, "x", 11, "y", -61, "z", -3));
+        String facingDown = untilTheServer("data get entity " + BotWorld.BOT + " Rotation",
+            rotation -> facing(rotation, 180, 35));
+
+        assertEquals("Looking at (14, -59, 0).", east);
+        assertTrue(facing(facingEast, -90, 2), facingEast);
+        assertTrue(facing(facingDown, 180, 35), facingDown);
+    }
+
+    /** A jump the server believed is one it counted, in the statistic a parkour plugin would read. */
+    @Test
+    void aJumpIsOneTheServerCounts() {
+        world.run("tp " + BotWorld.BOT + " 2 -60 0");
+        world.run("scoreboard objectives remove mcagents_jumps");
+        world.run("scoreboard objectives add mcagents_jumps minecraft.custom:minecraft.jump");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String jumped = agent.mustCall("jump", Map.of("bot", BotWorld.BOT));
+        String counted = untilTheServer("scoreboard players get " + BotWorld.BOT + " mcagents_jumps",
+            score -> score.contains("has 1 "));
+        world.run("scoreboard objectives remove mcagents_jumps");
+
+        assertEquals("Jumped.", jumped);
+        assertTrue(counted.contains("has 1 "), counted);
+    }
+
+    /**
+     * A sneaking player does not set off a pressure plate, and plugins read the crouch to mean
+     * something, so the crouch has to be the server's and not only the client's. It is let go of
+     * again before the case ends: a bot left crouching walks every case after it at a third of
+     * the speed.
+     */
+    @Test
+    void aCrouchIsOneTheServerSees() {
+        world.run("tp " + BotWorld.BOT + " 9 -60 8");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        /* "unless" rather than a failed "if", because a failed test answers the console with nothing. */
+        String predicate = " predicate {condition:\"minecraft:entity_properties\",entity:\"this\","
+            + "predicate:{flags:{is_sneaking:true}}}";
+
+        String crouched = agent.mustCall("set-stance", Map.of("bot", BotWorld.BOT, "sneak", true));
+        String whileCrouched = untilTheServer("execute as " + BotWorld.BOT + " if" + predicate,
+            answer -> answer.startsWith("Test passed"));
+        String stood = agent.mustCall("set-stance", Map.of("bot", BotWorld.BOT, "sneak", false));
+        String afterStanding = untilTheServer("execute as " + BotWorld.BOT + " unless" + predicate,
+            answer -> answer.startsWith("Test passed"));
+
+        assertTrue(crouched.startsWith("sneaking: true, "), "crouching: " + crouched);
+        assertTrue(whileCrouched.startsWith("Test passed"), "the server saw no crouch: " + whileCrouched);
+        assertTrue(stood.startsWith("sneaking: false, "), "standing: " + stood);
+        assertTrue(afterStanding.startsWith("Test passed"), "the server saw no standing up: " + afterStanding);
+    }
+
+    /**
+     * Holding a key moves the bot the way it faces and lets go afterwards. Where it ended is read
+     * from the server twice, a second apart, because a key left down still reads as having moved.
+     */
+    @Test
+    void aHeldKeyWalksTheBotTheWayItFacesAndStops() {
+        /* Facing west, where nothing stands in the way for the two blocks a half-second walk covers. */
+        world.run("tp " + BotWorld.BOT + " 9 -60 8 90 0");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String moved = agent.mustCall("move-in-direction",
+            Map.of("bot", BotWorld.BOT, "direction", "forward", "durationMs", 500));
+        String stopped = untilTheServer("data get entity " + BotWorld.BOT + " Pos", pos -> numbers(pos)[0] < 8.5);
+        sleep(1000);
+        String later = world.run("data get entity " + BotWorld.BOT + " Pos");
+
+        assertEquals("Moved forward for 500ms.", moved);
+        assertTrue(numbers(stopped)[0] < 8.5, "the bot did not walk west: " + stopped);
+        assertTrue(Math.abs(numbers(stopped)[2] - 8.5) < 0.3, "the bot did not walk straight: " + stopped);
+        assertTrue(Math.abs(numbers(later)[0] - numbers(stopped)[0]) < 0.3, "the key stayed down: " + later);
+    }
+
+    /** The fixture's wall is three blocks high, so arriving on its far side means going round it. */
+    @Test
+    void aWalkGoesRoundTheWallInTheWay() {
+        world.run("tp " + BotWorld.BOT + " 11 -60 0");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String walked = agent.mustCall("move-to-position",
+            Map.of("bot", BotWorld.BOT, "x", 17, "y", -60, "z", 0, "timeoutMs", 50000));
+        String pos = untilTheServer("data get entity " + BotWorld.BOT + " Pos", answer -> numbers(answer)[0] > 15);
+
+        assertEquals("Moved to within 1 block(s) of (17, -60, 0).", walked);
+        assertTrue(numbers(pos)[0] > 15 && Math.abs(numbers(pos)[2]) < 2, "the server has the bot elsewhere: " + pos);
+    }
+
+    /**
+     * A target nobody can walk to is refused with how far the bot got, and the bot stays there. A
+     * walk left running after its refusal carried the bot on behind the caller's back.
+     */
+    @Test
+    void aWalkThatCannotArriveSaysSoAndStops() {
+        world.run("fill 19 -61 9 21 -58 11 minecraft:stone hollow");
+        world.run("tp " + BotWorld.BOT + " 11 -60 10");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String refused = agent.refusal("move-to-position",
+            Map.of("bot", BotWorld.BOT, "x", 20, "y", -60, "z", 10, "timeoutMs", 20000));
+        String refusedAt = world.run("data get entity " + BotWorld.BOT + " Pos");
+        sleep(1500);
+        String later = world.run("data get entity " + BotWorld.BOT + " Pos");
+        world.run("fill 19 -61 9 21 -58 11 minecraft:air");
+        world.run("fill 19 -61 9 21 -61 11 minecraft:grass_block");
+
+        assertTrue(refused.contains("could not reach (20, -60, 10) within 20000ms; it stopped "), refused);
+        assertTrue(distance(numbers(refusedAt), numbers(later)) < 0.3, "the bot walked on: " + refusedAt + " then " + later);
+    }
+
+    /**
+     * Survival, where breaking takes as long as the hand takes and the client has to keep hitting
+     * until the server agrees. The block is out of reach, so the bot walks to it first.
+     */
+    @Test
+    void aBlockIsBrokenWhereTheServerSeesItGo() {
+        world.run("gamemode survival " + BotWorld.BOT);
+        world.run("clear " + BotWorld.BOT);
+        world.run("setblock 10 -60 -4 minecraft:dirt");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+
+        String dug = agent.mustCall("dig-block", Map.of("bot", BotWorld.BOT, "x", 10, "y", -60, "z", -4));
+        String gone = untilTheServer("execute if block 10 -60 -4 minecraft:air", answer -> answer.startsWith("Test passed"));
+        String again = agent.mustCall("dig-block", Map.of("bot", BotWorld.BOT, "x", 10, "y", -60, "z", -4));
+        world.run("kill @e[type=item]");
+        world.run("function mcagents:setup");
+
+        assertEquals("Dug dirt at (10, -60, -4).", dug);
+        assertTrue(gone.startsWith("Test passed"), gone);
+        assertEquals("Nothing to dig at (10, -60, -4).", again);
+    }
+
+    /**
+     * A block goes against the face it was asked to go against. A log shows which: it lies along
+     * the axis of the face it was put on. A right-click whose hit was made up -- the middle of the
+     * block, on top -- stands the log upright on the neighbour instead of beside it.
+     */
+    @Test
+    void aBlockIsPlacedAgainstTheFaceItWasAskedFor() {
+        world.run("setblock 10 -60 -5 minecraft:stone");
+        world.run("setblock 10 -60 -4 minecraft:air");
+        world.run("item replace entity " + BotWorld.BOT + " weapon.mainhand with minecraft:oak_log");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+
+        String placed = agent.mustCall("place-block",
+            Map.of("bot", BotWorld.BOT, "x", 10, "y", -60, "z", -4, "faceDirection", "north"));
+        String log = untilTheServer("execute if block 10 -60 -4 minecraft:oak_log[axis=z]",
+            answer -> answer.startsWith("Test passed"));
+        String again = agent.mustCall("place-block",
+            Map.of("bot", BotWorld.BOT, "x", 10, "y", -60, "z", -4, "faceDirection", "north"));
+        world.run("fill 10 -60 -5 10 -60 -4 minecraft:air");
+        world.run("function mcagents:setup");
+
+        assertEquals("Placed a block at (10, -60, -4) against its north face.", placed);
+        assertTrue(log.startsWith("Test passed"), log);
+        assertEquals("(10, -60, -4) already holds oak_log.", again);
+    }
+
+    /** A right-click the server acted on, which for a lever is the power it now gives. */
+    @Test
+    void aLeverIsPulledByRightClickingIt() {
+        world.run("setblock 10 -60 -8 minecraft:lever[face=floor,facing=north,powered=false]");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+
+        String clicked = agent.mustCall("activate-block", Map.of("bot", BotWorld.BOT, "x", 10, "y", -60, "z", -8));
+        String powered = untilTheServer("execute if block 10 -60 -8 minecraft:lever[powered=true]",
+            answer -> answer.startsWith("Test passed"));
+        world.run("setblock 10 -60 -8 minecraft:air");
+
+        assertEquals("Right-clicked lever at (10, -60, -8).", clicked);
+        assertTrue(powered.startsWith("Test passed"), powered);
+    }
+
+    /**
+     * A bow fires on release, with the power of however long it was drawn, so an arrow in the world
+     * is a draw that lasted and a release that reached the server. A use let go of at once fires
+     * nothing.
+     */
+    @Test
+    void aBowDrawnForAWhileLoosesAnArrow() {
+        world.run("kill @e[type=minecraft:arrow]");
+        world.run("tp " + BotWorld.BOT + " 9 -60 8 0 -20");
+        world.run("item replace entity " + BotWorld.BOT + " weapon.mainhand with minecraft:bow");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String used = agent.mustCall("use-held-item", Map.of("bot", BotWorld.BOT, "holdMs", 1000));
+        String arrow = untilTheServer("execute if entity @e[type=minecraft:arrow]", answer -> answer.startsWith("Test passed"));
+        world.run("kill @e[type=minecraft:arrow]");
+        world.run("function mcagents:setup");
+
+        assertEquals("Used bow x1 in the main hand, held for 1000ms and released.", used);
+        assertTrue(arrow.startsWith("Test passed"), arrow);
+    }
+
+    /**
+     * A plain use is left in use, which is how food is eaten: the client that let go of the button
+     * a tick later put the food down after one bite. The server's count of what was eaten is the
+     * proof, since it only counts an item used up.
+     */
+    @Test
+    void foodUsedOnceIsEatenToTheEnd() {
+        world.run("tp " + BotWorld.BOT + " 9 -60 8");
+        world.run("gamemode survival " + BotWorld.BOT);
+        /* Hungry first: a full player cannot eat, and on peaceful a player never goes hungry. */
+        world.run("difficulty easy");
+        world.run("effect give " + BotWorld.BOT + " minecraft:hunger 5 255 true");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 100));
+        world.run("effect clear " + BotWorld.BOT);
+        world.run("scoreboard objectives remove mcagents_eaten");
+        world.run("scoreboard objectives add mcagents_eaten minecraft.used:minecraft.cooked_beef");
+        world.run("item replace entity " + BotWorld.BOT + " weapon.mainhand with minecraft:cooked_beef 4");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+
+        String used = agent.mustCall("use-held-item", Map.of("bot", BotWorld.BOT));
+        String eaten = untilTheServer("scoreboard players get " + BotWorld.BOT + " mcagents_eaten",
+            score -> score.contains("has 1 "));
+        world.run("scoreboard objectives remove mcagents_eaten");
+        world.run("difficulty peaceful");
+        world.run("function mcagents:setup");
+
+        assertEquals("Used cooked_beef x4 in the main hand.", used);
+        assertTrue(eaten.contains("has 1 "), "the server counted nothing eaten: " + eaten);
+    }
+
+    /** What a console command answers, asked again until it says what was expected or five seconds pass. */
+    private String untilTheServer(String command, java.util.function.Predicate<String> expected) {
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(5));
+        String answer = world.run(command);
+
+        while (!expected.test(answer) && Instant.now().isBefore(deadline)) {
+            sleep(100);
+            answer = world.run(command);
+        }
+        return answer;
+    }
+
+    /** The numbers in a data answer, in order: "[1.5d, -60.0d, 0.5d]" is 1.5, -60 and 0.5. */
+    private static double[] numbers(String answer) {
+        Matcher number = Pattern.compile("-?\\d+(\\.\\d+)?(E-?\\d+)?(?=[dfDF])").matcher(answer.substring(answer.indexOf('[') + 1));
+        return number.results().mapToDouble(found -> Double.parseDouble(found.group())).toArray();
+    }
+
+    /** Whether a rotation answer's yaw is the one expected, and its pitch too, a degree either way. */
+    private static boolean facing(String rotation, double yaw, double pitch) {
+        double[] angles = numbers(rotation);
+        if (angles.length < 2) {
+            return false;
+        }
+        double turned = ((angles[0] - yaw) % 360 + 540) % 360 - 180;
+        return Math.abs(turned) < 1 && Math.abs(angles[1] - pitch) < 1;
+    }
+
+    private static double distance(double[] a, double[] b) {
+        return Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2) + Math.pow(a[2] - b[2], 2));
+    }
+
     /** The reason this kind of bot exists: a frame of what is actually on the screen. */
     @Test
     void aScreenshotComesBackAsAnImage() {

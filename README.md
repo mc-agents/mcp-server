@@ -60,7 +60,7 @@ The JVM's heap is then sized from the container's real limit rather than a perce
 guessed, and an SBOM comes with it. One invocation builds one architecture; CI runs it on a
 native runner per architecture and joins the two into a manifest list.
 
-Agents connect to `/mcp`; bots dial in on `:8765`. All 64 tools are in `tools/list` before any
+Agents connect to `/mcp`; bots dial in on `:8765`. Every tool in the catalogue is in `tools/list` before any
 bot has linked, because an MCP client reads that list once when its session opens.
 
 [`dev/`](dev/README.md) has a fake bot that speaks the whole protocol, a sweep that calls every

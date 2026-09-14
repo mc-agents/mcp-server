@@ -3,6 +3,7 @@ package kr.junhyung.mcagents.e2e;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
@@ -107,7 +108,29 @@ final class BotWorld implements AutoCloseable {
     void start() {
         server.start();
         run("function " + FIXTURE + ":setup");
+        /*
+        Again once what it forceloads is loaded. At boot nothing keeps the chunks off spawn loaded,
+        and whatever the first run put there was not placed -- the pool, which appeared only after
+        some case ran setup again, so whether a case stood in water depended on the ones before it.
+        */
+        awaitLoaded();
+        run("function " + FIXTURE + ":setup");
         bot.start();
+    }
+
+    private void awaitLoaded() {
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(30));
+        while (!run("execute if loaded -10 -61 -10").startsWith("Test passed")) {
+            if (Instant.now().isAfter(deadline)) {
+                throw new IllegalStateException("the fixture's pool never loaded");
+            }
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(interrupted);
+            }
+        }
     }
 
     /** Where the bot is told to connect, which is the server's name on the network they share. */
