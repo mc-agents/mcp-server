@@ -347,6 +347,20 @@ sends `titleComponent` for its header and `close-window` for the one it closed, 
 `labelComponent` with `lore` and `loreComponents` beside them, and the tab list sends `displayName` with its component beside the username. The username stays because it is the identity every other tool
 takes; the drawn name is where a server puts a rank.
 
+**An NPC is picked by the label over it, and the rule for "over" is the catalogue's.** On a server
+that draws with a resource pack an NPC has no name of its own: it is a mannequin, or a model clicked
+through an invisible base or an `interaction` hitbox, and the name a player reads is a separate
+`text_display` floating above it. Nothing in the game links the two, so every kind of bot links
+them by the same rule about where they stand -- feet no higher than the label and at most 3 blocks
+below it, at most 1 block to the side, the nearest such entity a player could click -- and
+`find-entity` reports the label it arrives at as `nameplate`, so what an agent reads is what
+`label` then finds. Two bots with their own idea of "over" would click different NPCs under the
+same sign.
+
+`crosshair` is the client's own hit test where there is one. azalea keeps a hit result that gives
+an `interaction` entity no size, so it never lands on the hitbox a model is clicked through; that
+bot walks the same ray itself with the entity's width and height from its metadata.
+
 **`join-server` waits three minutes for a spawn.** A bot on a machine with a graphics card is in
 the world a few seconds after it dials. Without one it is another matter: the client builds every texture atlas in software before it can act, and on a
 four-core CI runner that took eighty-nine seconds -- so the bot arrived in the world one second

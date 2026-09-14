@@ -150,6 +150,9 @@ give @a minecraft:bow 1
 give @a minecraft:paper[custom_name={text:"",extra:[{text:"",font:"hyperfarm:gui/icons"},{text:"Quest Note",font:"hyperfarm:gui/label"}]},lore=[{text:"Bring this to the smith",color:"gray"},{text:""}],item_model="hyperfarm:quest/note"] 1
 kill @e[type=item]
 
+# --- NPCs known by the label over them: interact-entity, attack-entity, find-entity ---
+function mcagents:npc
+
 # --- a wall to walk around: move-to-position ---
 # Straight-line walking is enough in an empty world and useless in a built one, so the fixture has
 # something in the way. Three blocks high, so it cannot be jumped, with the way round it eight

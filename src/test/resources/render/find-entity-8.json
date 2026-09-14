@@ -1,0 +1,39 @@
+{
+  "tool": "find-entity",
+  "note": "an NPC with no name of its own, known by the label floating over it, which is drawn in the pack's font",
+  "data": {
+    "query": "mannequin",
+    "maxDistance": 16,
+    "entities": [
+      {
+        "id": 57,
+        "label": "mannequin",
+        "type": "mannequin",
+        "position": {
+          "x": 2,
+          "y": -60,
+          "z": -17
+        },
+        "distance": 4.7,
+        "labelComponent": null,
+        "nameplate": "Fisher Kim",
+        "nameplateComponent": {
+          "text": "",
+          "extra": [
+            {
+              "text": "",
+              "font": "hyperfarm:nametag/icons"
+            },
+            {
+              "text": "Fisher Kim",
+              "font": "hyperfarm:nametag/label"
+            }
+          ]
+        },
+        "item": null,
+        "block": null
+      }
+    ]
+  },
+  "text": "Found 1 entity/entities:\n- mannequin labelled \"[nametag/label] Fisher Kim\" at (2, -60, -17), 4.7 blocks away, id 57"
+}

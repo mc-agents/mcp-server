@@ -1,0 +1,48 @@
+{
+  "tool": "find-entity",
+  "note": "a model's hitbox under a plain label beside a named cow with none, each with the id a click takes",
+  "data": {
+    "query": null,
+    "maxDistance": 16,
+    "entities": [
+      {
+        "id": 61,
+        "label": "interaction",
+        "type": "interaction",
+        "position": {
+          "x": 6,
+          "y": -60,
+          "z": -17
+        },
+        "distance": 5.1,
+        "labelComponent": null,
+        "nameplate": "Well Keeper",
+        "nameplateComponent": {
+          "text": "Well Keeper",
+          "color": "gold"
+        },
+        "item": null,
+        "block": null
+      },
+      {
+        "id": 12,
+        "label": "Probe Cow",
+        "type": "cow",
+        "position": {
+          "x": 5,
+          "y": -60,
+          "z": 5
+        },
+        "distance": 6.3,
+        "labelComponent": {
+          "text": "Probe Cow"
+        },
+        "nameplate": null,
+        "nameplateComponent": null,
+        "item": null,
+        "block": null
+      }
+    ]
+  },
+  "text": "Found 2 entity/entities:\n- interaction labelled \"Well Keeper\" at (6, -60, -17), 5.1 blocks away, id 61\n- Probe Cow (cow) at (5, -60, 5), 6.3 blocks away, id 12"
+}

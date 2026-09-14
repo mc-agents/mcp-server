@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterAll;
@@ -946,6 +947,170 @@ class BotEndToEndTest {
 
         assertEquals("Right-clicked interaction.", clicked);
         assertTrue(recorded.contains("player"), recorded);
+    }
+
+    private static final String MANNEQUIN = "@e[type=mannequin,tag=mcagents_npc,limit=1]";
+    private static final String HITBOX = "@e[type=interaction,tag=mcagents_npc,limit=1]";
+
+    /**
+     * The fixture's two NPCs, unclicked, with the bot a few blocks from both and a named name tag in
+     * its hand. A mannequin keeps no record of a bare right-click, and the name a name tag leaves on
+     * it is the record a click reached it.
+     */
+    private void standBesideTheNpcs() {
+        world.run("function mcagents:npc");
+        world.run("tp " + BotWorld.BOT + " 4.5 -60 -12.5");
+        world.run("item replace entity " + BotWorld.BOT
+            + " weapon.mainhand with minecraft:name_tag[custom_name={text:\"clicked\"}]");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+    }
+
+    /** What the server holds on an entity, once it holds what a click leaves. */
+    private String awaitRecord(String entity, String path, Predicate<String> recorded) {
+        String read = "";
+
+        for (int attempt = 0; attempt < 20; attempt++) {
+            read = world.run("data get entity " + entity + " " + path);
+            if (recorded.test(read)) {
+                break;
+            }
+            agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+        }
+        return read;
+    }
+
+    /**
+     * An NPC on a server with a resource pack has no name of its own: it is a mannequin, or a model
+     * clicked through an interaction hitbox, and what a player reads is a text display floating over
+     * it. Picked by that label, a case-insensitive part of it being enough.
+     */
+    @Test
+    void anNpcIsRightClickedByTheLabelOverIt() {
+        standBesideTheNpcs();
+
+        String mannequin = agent.mustCall("interact-entity", Map.of("bot", BotWorld.BOT, "label", "Fisher Kim"));
+        String hitbox = agent.mustCall("interact-entity", Map.of("bot", BotWorld.BOT, "label", "well keeper"));
+
+        String named = awaitRecord(MANNEQUIN, "CustomName", read -> read.contains("clicked"));
+        String clicked = awaitRecord(HITBOX, "interaction", read -> read.contains("player"));
+        world.run("function mcagents:setup");
+
+        assertEquals("Right-clicked mannequin.", mannequin);
+        assertEquals("Right-clicked interaction.", hitbox);
+        assertTrue(named.contains("clicked"), "the mannequin was never clicked: " + named);
+        assertTrue(clicked.contains("player"), "the hitbox was never clicked: " + clicked);
+    }
+
+    @Test
+    void anNpcIsHitByTheLabelOverIt() {
+        standBesideTheNpcs();
+
+        String mannequin = agent.mustCall("attack-entity", Map.of("bot", BotWorld.BOT, "label", "Fisher Kim"));
+        String hitbox = agent.mustCall("attack-entity", Map.of("bot", BotWorld.BOT, "label", "Well Keeper"));
+
+        String health = awaitRecord(MANNEQUIN, "Health", read -> !read.contains("20.0f"));
+        String attacked = awaitRecord(HITBOX, "attack", read -> read.contains("player"));
+        world.run("function mcagents:setup");
+
+        assertEquals("Hit mannequin 1 time(s).", mannequin);
+        assertEquals("Hit interaction 1 time(s).", hitbox);
+        assertTrue(health.contains("entity data: ") && !health.contains("20.0f"), "the mannequin was never hurt: " + health);
+        assertTrue(attacked.contains("player"), "the hitbox was never hit: " + attacked);
+    }
+
+    /**
+     * find-entity names the label over each NPC and the id to click it by, and the id is what makes
+     * the second call reach the entity the first one listed rather than whatever is nearest.
+     */
+    @Test
+    void anNpcIsRightClickedByTheIdFindEntityGaveIt() {
+        standBesideTheNpcs();
+
+        String mannequins = agent.mustCall("find-entity",
+            Map.of("bot", BotWorld.BOT, "type", "mannequin", "maxDistance", 16));
+        String hitboxes = agent.mustCall("find-entity",
+            Map.of("bot", BotWorld.BOT, "type", "interaction", "maxDistance", 16));
+
+        Matcher mannequin = Pattern.compile("- mannequin labelled \"\\[nametag/label] Fisher Kim\" at \\(2, -60, -17\\), [\\d.]+ blocks away, id (\\d+)")
+            .matcher(mannequins);
+        Matcher hitbox = Pattern.compile("- interaction labelled \"Well Keeper\" at \\(6, -60, -17\\), [\\d.]+ blocks away, id (\\d+)")
+            .matcher(hitboxes);
+        assertTrue(mannequin.find(), mannequins);
+        assertTrue(hitbox.find(), hitboxes);
+
+        String clickedMannequin = agent.mustCall("interact-entity",
+            Map.of("bot", BotWorld.BOT, "id", Integer.parseInt(mannequin.group(1))));
+        String clickedHitbox = agent.mustCall("interact-entity",
+            Map.of("bot", BotWorld.BOT, "id", Integer.parseInt(hitbox.group(1))));
+
+        String named = awaitRecord(MANNEQUIN, "CustomName", read -> read.contains("clicked"));
+        String clicked = awaitRecord(HITBOX, "interaction", read -> read.contains("player"));
+        world.run("function mcagents:setup");
+
+        assertEquals("Right-clicked mannequin.", clickedMannequin);
+        assertEquals("Right-clicked interaction.", clickedHitbox);
+        assertTrue(named.contains("clicked"), "the mannequin was never clicked: " + named);
+        assertTrue(clicked.contains("player"), "the hitbox was never clicked: " + clicked);
+    }
+
+    /**
+     * The crosshair is how a player clicks, and it is the one way to reach something a name or a
+     * label cannot pick out. The tool does not turn the bot, so look-at does, and what it clicks is
+     * whatever that left under the crosshair. Aimed at the NPC's legs: a block's middle at head height
+     * put the ray a hand's width under the top of the mannequin.
+     */
+    @Test
+    void anNpcIsRightClickedWhereTheCrosshairIs() {
+        agent.requires("look-at");
+        standBesideTheNpcs();
+
+        world.run("tp " + BotWorld.BOT + " 2.5 -60 -14.0");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("look-at", Map.of("bot", BotWorld.BOT, "x", 2, "y", -60, "z", -17));
+        String mannequin = agent.mustCall("interact-entity", Map.of("bot", BotWorld.BOT, "crosshair", true));
+
+        world.run("tp " + BotWorld.BOT + " 6.5 -60 -14.0");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("look-at", Map.of("bot", BotWorld.BOT, "x", 6, "y", -60, "z", -17));
+        String hitbox = agent.mustCall("interact-entity", Map.of("bot", BotWorld.BOT, "crosshair", true));
+
+        agent.mustCall("look-at", Map.of("bot", BotWorld.BOT, "x", 6, "y", -40, "z", -14));
+        String sky = agent.refusal("interact-entity", Map.of("bot", BotWorld.BOT, "crosshair", true));
+
+        String named = awaitRecord(MANNEQUIN, "CustomName", read -> read.contains("clicked"));
+        String clicked = awaitRecord(HITBOX, "interaction", read -> read.contains("player"));
+        world.run("function mcagents:setup");
+
+        assertEquals("Right-clicked mannequin.", mannequin);
+        assertEquals("Right-clicked interaction.", hitbox);
+        assertTrue(sky.contains("The crosshair is not on an entity within reach."), sky);
+        assertTrue(named.contains("clicked"), "the mannequin was never clicked: " + named);
+        assertTrue(clicked.contains("player"), "the hitbox was never clicked: " + clicked);
+    }
+
+    /**
+     * Two ways of saying which entity can name two different ones, and picking either would click
+     * something the caller may not have meant. Refused before anything is sent to the server.
+     */
+    @Test
+    void twoWaysOfSayingWhichEntityAreRefused() {
+        standBesideTheNpcs();
+        world.run("tp " + BotWorld.BOT + " 6.5 -60 -14.0 180 14");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+
+        String both = agent.refusal("interact-entity",
+            Map.of("bot", BotWorld.BOT, "label", "Well Keeper", "crosshair", true));
+        String none = agent.refusal("attack-entity", Map.of("bot", BotWorld.BOT, "crosshair", false));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String clicked = world.run("data get entity " + HITBOX + " interaction");
+        String attacked = world.run("data get entity " + HITBOX + " attack");
+        world.run("function mcagents:setup");
+
+        assertTrue(both.contains("Say which entity with exactly one of name, label, id or crosshair; this call gave label and crosshair."), both);
+        assertTrue(none.contains("Say which entity with exactly one of name, label, id or crosshair; this call gave none."), none);
+        assertTrue(!clicked.contains("player"), "a refused call clicked the hitbox: " + clicked);
+        assertTrue(!attacked.contains("player"), "a refused call hit the hitbox: " + attacked);
     }
 
     /**

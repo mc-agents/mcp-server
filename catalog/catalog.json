@@ -72,7 +72,7 @@
     {
       "name": "attack-entity",
       "group": "world",
-      "description": "Attack the nearest entity whose name matches, walking to it first when out of reach.",
+      "description": "Attack an entity, walking to it first when out of reach. Say which entity with exactly one of name, label, id or crosshair; none, or more than one, is refused. A label is text floating in the world: a text_display, or an invisible armor stand showing its name. The entity under a label is the one a player could click whose feet are no higher than the label and at most 3 blocks below it, and at most 1 block from it horizontally; of several, the one nearest the label.",
       "route": "rpc",
       "kinds": [
         "fabric",
@@ -94,10 +94,24 @@
           "name": {
             "type": "string",
             "minLength": 1,
-            "description": "Entity name or part of a player name, for example villager or Steve"
+            "description": "Entity name or part of a player name, for example villager or Steve. The nearest match within maxDistance."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Text floating over the entity, or part of it, for example Fisher Kim: what a player reads over an NPC that has no name of its own. The nearest label containing it that has an entity under it within maxDistance is used. find-entity shows each entity's label."
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The id find-entity gave the entity. Not limited by maxDistance."
+          },
+          "crosshair": {
+            "type": "boolean",
+            "description": "Pass true to take whatever entity the crosshair is on, as the client's own hit test finds it, without turning or walking. It reaches what a player clicks and a name does not: an interaction hitbox, an invisible model base. Turn the bot first."
           },
           "maxDistance": {
-            "description": "Search radius (default: 8)",
+            "description": "Search radius for name and label (default: 8)",
             "type": "number",
             "minimum": 1
           },
@@ -108,21 +122,48 @@
             "maximum": 20
           }
         },
-        "required": [
-          "name"
-        ],
         "additionalProperties": false
       },
       "wireSchema": {
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "minLength": 1,
-            "description": "Entity name or part of a player name, for example villager or Steve"
+            "description": "Entity name or part of a player name, for example villager or Steve. The nearest match within maxDistance.",
+            "default": null
+          },
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "description": "Text floating over the entity, or part of it, for example Fisher Kim: what a player reads over an NPC that has no name of its own. The nearest label containing it that has an entity under it within maxDistance is used. find-entity shows each entity's label.",
+            "default": null
+          },
+          "id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "The id find-entity gave the entity. Not limited by maxDistance.",
+            "default": null
+          },
+          "crosshair": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Pass true to take whatever entity the crosshair is on, as the client's own hit test finds it, without turning or walking. It reaches what a player clicks and a name does not: an interaction hitbox, an invisible model base. Turn the bot first.",
+            "default": null
           },
           "maxDistance": {
-            "description": "Search radius (default: 8)",
+            "description": "Search radius for name and label (default: 8)",
             "type": "number",
             "minimum": 1,
             "default": 8.0
@@ -136,13 +177,16 @@
           }
         },
         "required": [
+          "crosshair",
+          "id",
+          "label",
           "maxDistance",
           "name",
           "times"
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:ad34f9f2602d72747786a2ad0758c1debc3e06367a46ff110d04dd4636edd27a"
+      "wireSchemaHash": "sha256:7ffff72dca24dc8640f46a40863606eda6a1e09e3a98fc615b5c315937589fd2"
     },
     {
       "name": "can-craft",
@@ -1698,7 +1742,7 @@
     {
       "name": "find-entity",
       "group": "entity",
-      "description": "Find nearby entities, optionally filtered by type or name.",
+      "description": "Find nearby entities, optionally filtered by type or name. Each comes with the id interact-entity and attack-entity take, and the label floating over it when there is one.",
       "route": "rpc",
       "kinds": [
         "fabric",
@@ -1897,14 +1941,37 @@
                     "properties"
                   ],
                   "additionalProperties": false
+                },
+                "id": {
+                  "description": "The entity's id in this bot's world, which interact-entity and attack-entity take as id. It holds while the entity stays loaded.",
+                  "type": "integer"
+                },
+                "nameplate": {
+                  "description": "The label floating over it, which interact-entity and attack-entity take as label. A label is text floating in the world: a text_display, or an invisible armor stand showing its name. The entity under a label is the one a player could click whose feet are no higher than the label and at most 3 blocks below it, and at most 1 block from it horizontally; of several, the one nearest the label. A label belongs to that one entity only. Null when no label is over it.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "nameplateComponent": {
+                  "description": "The component that label was written as, as Minecraft's own JSON, flattened by the server the same way labelComponent is. Null when there is no label.",
+                  "type": [
+                    "object",
+                    "array",
+                    "string",
+                    "null"
+                  ]
                 }
               },
               "required": [
                 "block",
                 "distance",
+                "id",
                 "item",
                 "label",
                 "labelComponent",
+                "nameplate",
+                "nameplateComponent",
                 "position",
                 "type"
               ],
@@ -2998,7 +3065,7 @@
     {
       "name": "interact-entity",
       "group": "world",
-      "description": "Right-click the nearest entity whose name matches, walking to it first when out of reach. This is what opens an NPC dialogue.",
+      "description": "Right-click an entity, walking to it first when out of reach. This is what opens an NPC dialogue. Say which entity with exactly one of name, label, id or crosshair; none, or more than one, is refused. A label is text floating in the world: a text_display, or an invisible armor stand showing its name. The entity under a label is the one a player could click whose feet are no higher than the label and at most 3 blocks below it, and at most 1 block from it horizontally; of several, the one nearest the label.",
       "route": "rpc",
       "kinds": [
         "fabric",
@@ -3020,41 +3087,85 @@
           "name": {
             "type": "string",
             "minLength": 1,
-            "description": "Entity name or part of a player name, for example villager or Steve"
+            "description": "Entity name or part of a player name, for example villager or Steve. The nearest match within maxDistance."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Text floating over the entity, or part of it, for example Fisher Kim: what a player reads over an NPC that has no name of its own. The nearest label containing it that has an entity under it within maxDistance is used. find-entity shows each entity's label."
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The id find-entity gave the entity. Not limited by maxDistance."
+          },
+          "crosshair": {
+            "type": "boolean",
+            "description": "Pass true to take whatever entity the crosshair is on, as the client's own hit test finds it, without turning or walking. It reaches what a player clicks and a name does not: an interaction hitbox, an invisible model base. Turn the bot first."
           },
           "maxDistance": {
-            "description": "Search radius (default: 8)",
+            "description": "Search radius for name and label (default: 8)",
             "type": "number",
             "minimum": 1
           }
         },
-        "required": [
-          "name"
-        ],
         "additionalProperties": false
       },
       "wireSchema": {
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "minLength": 1,
-            "description": "Entity name or part of a player name, for example villager or Steve"
+            "description": "Entity name or part of a player name, for example villager or Steve. The nearest match within maxDistance.",
+            "default": null
+          },
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "description": "Text floating over the entity, or part of it, for example Fisher Kim: what a player reads over an NPC that has no name of its own. The nearest label containing it that has an entity under it within maxDistance is used. find-entity shows each entity's label.",
+            "default": null
+          },
+          "id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "The id find-entity gave the entity. Not limited by maxDistance.",
+            "default": null
+          },
+          "crosshair": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Pass true to take whatever entity the crosshair is on, as the client's own hit test finds it, without turning or walking. It reaches what a player clicks and a name does not: an interaction hitbox, an invisible model base. Turn the bot first.",
+            "default": null
           },
           "maxDistance": {
-            "description": "Search radius (default: 8)",
+            "description": "Search radius for name and label (default: 8)",
             "type": "number",
             "minimum": 1,
             "default": 8.0
           }
         },
         "required": [
+          "crosshair",
+          "id",
+          "label",
           "maxDistance",
           "name"
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:34e1bc55c70e5bfb98e332cfb17c3ebecf6c0e115a101c51e7de4662a7342504"
+      "wireSchemaHash": "sha256:95665c75b51a41b365e551b1414d216dd63aaa5e5167fc846b1b0637f853ca19"
     },
     {
       "name": "join-server",
@@ -8443,5 +8554,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:e152bff76c15a4e4813d998a4787e445d1e550a50acdd9794bcd72f2e0800ea8"
+  "catalogHash": "sha256:7096c09dadf409b49cb561cb9002c49bc1a8fb5993f8647ecbcd1ca6d1dd7ea3"
 }
