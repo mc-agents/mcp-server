@@ -47,8 +47,9 @@ jobs:
 
       - name: chart renders
         run: |
-          helm lint charts/mc-agents-mcp-server
-          helm template charts/mc-agents-mcp-server > /dev/null
+          # The chart refuses to render without a token rather than invent one, so hand it one.
+          helm lint charts/mc-agents-mcp-server --set auth.token=ci
+          helm template charts/mc-agents-mcp-server --set auth.token=ci > /dev/null
 
       # What this proves is that every tool in the catalogue reaches something that answers. The
       # fake bot never touches Minecraft, so no server is needed and the world is never the
