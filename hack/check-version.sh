@@ -9,13 +9,24 @@
 set -euo pipefail
 
 VERSION_FILE=VERSION
-# The catalogue ships: a bot checks its argument hashes against the copy this server holds.
-RELEASE_PATHS=(src/main/ catalog/ build.gradle.kts VERSION)
+CHART=charts/mc-agents-mcp-server/Chart.yaml
+# The catalogue ships: a bot checks its argument hashes against the copy this server holds. The
+# chart ships too, since installing it is how the server gets run.
+RELEASE_PATHS=(src/main/ catalog/ charts/ build.gradle.kts VERSION)
 
 declared=$(tr -d '[:space:]' < "$VERSION_FILE")
 
 if ! printf '%s' "$declared" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
   echo "\"$declared\" is not a semantic version" >&2
+  exit 1
+fi
+
+# The chart's image tag falls back to its appVersion, so a chart that fell behind VERSION installs an
+# older server than the one it ships beside. It did: 0.8.0 against 0.43.0.
+chart_version=$(sed -n 's/^version: *//p' "$CHART" | tr -d '"[:space:]')
+chart_app_version=$(sed -n 's/^appVersion: *//p' "$CHART" | tr -d '"[:space:]')
+if [ "$chart_version" != "$declared" ] || [ "$chart_app_version" != "$declared" ]; then
+  echo "$CHART says version $chart_version and appVersion $chart_app_version; VERSION is $declared" >&2
   exit 1
 fi
 

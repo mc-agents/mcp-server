@@ -8,6 +8,9 @@ on:
 
 env:
   REGISTRY: junhyung.cloud
+  # Charts must not share a repository with the image: the same tag overwrites the other.
+  CHART_REPO: oci://junhyung.cloud/library/charts
+  CHART_REPO_HOST: junhyung.cloud/library/charts
   IMAGE: junhyung.cloud/library/mcp-server
 
 jobs:
@@ -41,6 +44,11 @@ jobs:
           fi
 
       - run: ./gradlew build
+
+      - name: chart renders
+        run: |
+          helm lint charts/mc-agents-mcp-server
+          helm template charts/mc-agents-mcp-server > /dev/null
 
       # What this proves is that every tool in the catalogue reaches something that answers. The
       # fake bot never touches Minecraft, so no server is needed and the world is never the
@@ -167,6 +175,7 @@ jobs:
       # Lets cosign fetch a short-lived certificate from Fulcio, so no key lives in the repo.
       id-token: write
     steps:
+      - uses: actions/checkout@v5
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -189,6 +198,23 @@ jobs:
 
       - name: sign image
         run: cosign sign --yes "${{ env.IMAGE }}@${{ steps.manifest.outputs.digest }}"
+
+      # Under the release version and pointing at it, so installing the chart at a version installs
+      # the server of that version. The chart used to say 0.8.0 while the server was forty releases
+      # past it, and nothing published it, so an install from the repository ran a server that old.
+      - name: push chart
+        env:
+          VERSION: ${{ needs.tag.outputs.version }}
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        run: |
+          helm package charts/mc-agents-mcp-server --version "$VERSION" --app-version "$VERSION" --destination dist-chart
+          printf '%s' "$REGISTRY_PASSWORD" \
+            | helm registry login "$REGISTRY" --username "$REGISTRY_USERNAME" --password-stdin
+          helm push "dist-chart/mc-agents-mcp-server-$VERSION.tgz" "$CHART_REPO" 2>&1 | tee push.log
+          digest=$(grep -o 'sha256:[0-9a-f]\{64\}' push.log | head -1)
+          test -n "$digest"
+          cosign sign --yes "$CHART_REPO_HOST/mc-agents-mcp-server@$digest"
 
       - env:
           TAG: ${{ needs.tag.outputs.value }}
