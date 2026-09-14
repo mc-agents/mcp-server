@@ -2327,6 +2327,11 @@ class BotEndToEndTest {
         /* A cast rod keeps a hook out until it is reeled in, which is a press. */
         agent.requires("press-input");
         forget("fx_catch", "fx_miss");
+        /*
+        Looking straight up. The bot keeps the rotation the case before left it with, and a cast at a
+        chest within reach opens the chest instead of casting.
+        */
+        world.run("tp " + BotWorld.BOT + " 2 -59 0 0 -90");
         world.run("item replace entity " + BotWorld.BOT + " weapon.mainhand with minecraft:fishing_rod");
         agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "fishing_rod", "timeoutMs", 10000));
 
@@ -2371,5 +2376,88 @@ class BotEndToEndTest {
         assertTrue(clicked.contains("; stopped at " + presses.group(1) + " of 100 when the actionBar feed matched"
             + " /enough/ (\"enough clicks\")."), clicked);
         assertEquals(Integer.parseInt(presses.group(1)), counted("fx_left"), clicked);
+    }
+
+    /**
+     * A click starts breaking a block and a held button finishes it. A bot's mouse is never grabbed,
+     * and the client only keeps breaking under a grabbed one, so a held attack in survival started on
+     * dirt and gave up the next tick. The server's world is what says the block went.
+     */
+    @Test
+    void aHeldAttackBreaksTheBlockAClickOnlyStarts() {
+        world.run("setblock 11 -60 2 minecraft:dirt");
+        world.run("gamemode survival " + BotWorld.BOT);
+        world.run("clear " + BotWorld.BOT);
+        world.run("tp " + BotWorld.BOT + " 11.5 -60 0.5");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("look-at", Map.of("bot", BotWorld.BOT, "x", 11, "y", -60, "z", 2));
+
+        agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "attack"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+        String clicked = world.run("execute if block 11 -60 2 minecraft:dirt");
+
+        agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "attack", "holdTicks", 60));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String held = world.run("execute if block 11 -60 2 minecraft:air");
+
+        world.run("setblock 11 -60 2 minecraft:air");
+        world.run("gamemode creative " + BotWorld.BOT);
+        world.run("function mcagents:setup");
+
+        assertTrue(clicked.startsWith("Test passed"), "one click broke the dirt: " + clicked);
+        assertTrue(held.startsWith("Test passed"), "holding the button did not break the dirt: " + held);
+    }
+
+    /** A dialog takes the keys on either kind of bot, so a press under one is refused on both. */
+    @Test
+    void aKeyPressedUnderADialogIsRefused() {
+        world.run("dialog show " + BotWorld.BOT + " mcagents:check");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String refused = agent.refusal("press-input", Map.of("bot", BotWorld.BOT, "key", "jump"));
+        world.run("dialog clear " + BotWorld.BOT);
+
+        assertTrue(refused.contains("a window is open, and keys go to it rather than to the game"), refused);
+    }
+
+    /**
+     * A right-click on a chest opens the chest and is spent there. Using the item as well after every
+     * click on a block threw a snowball at the chest it opened; on grass, which does nothing with a
+     * click, the snowball is thrown. Survival, because creative throws without using one up, and the
+     * count the server keeps is the proof.
+     */
+    @Test
+    void aChestTakesTheRightClickAndGrassPassesItOn() {
+        world.run("function mcagents:setup");
+        world.run("gamemode survival " + BotWorld.BOT);
+        world.run("clear " + BotWorld.BOT);
+        world.run("give " + BotWorld.BOT + " minecraft:snowball 16");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "snowball", "timeoutMs", 10000));
+        agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "hotbar", "slot", 0));
+
+        world.run("tp " + BotWorld.BOT + " 1.5 -60 1.0");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("look-at", Map.of("bot", BotWorld.BOT, "x", 1, "y", -60, "z", 3));
+        agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "use"));
+        String window = agent.mustCall("wait-for-window",
+            Map.of("bot", BotWorld.BOT, "titlePattern", "Probe Chest", "timeoutMs", 5000));
+        agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String kept = world.run("clear " + BotWorld.BOT + " minecraft:snowball 0");
+
+        world.run("tp " + BotWorld.BOT + " 11.5 -60 -0.5");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("look-at", Map.of("bot", BotWorld.BOT, "x", 11, "y", -61, "z", -2));
+        agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "use"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String thrown = world.run("clear " + BotWorld.BOT + " minecraft:snowball 0");
+
+        world.run("gamemode creative " + BotWorld.BOT);
+        world.run("kill @e[type=snowball]");
+        world.run("function mcagents:setup");
+
+        assertTrue(window.startsWith("window \"[gui/header] Probe Chest\""), window);
+        assertTrue(kept.contains("Found 16 "), "the chest click threw a snowball as well: " + kept);
+        assertTrue(thrown.contains("Found 15 "), "the click on grass threw nothing: " + thrown);
     }
 }
