@@ -8,7 +8,8 @@
       "description": "Right-click the block at a position, walking to it first when out of reach. Presses buttons and levers, opens doors, and triggers custom blocks.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -997,7 +998,8 @@
       "description": "Break the block at a position, walking to it first when out of reach.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -2958,7 +2960,8 @@
       "description": "Make the bot jump once.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -3274,7 +3277,8 @@
       "description": "Turn the bot to face a position.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -3340,7 +3344,8 @@
       "description": "Hold a movement key for a while. Use this when pathfinding is not wanted.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -3412,7 +3417,8 @@
       "description": "Walk the bot to a position using pathfinding.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -3843,7 +3849,8 @@
       "description": "Place the held block at a position, using an adjacent block as reference.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -5955,7 +5962,8 @@
       "description": "Respawn from the death screen and wait until the server has put the bot back in the world, then say where. A bot that is not dead is told so rather than refused. The bot never respawns by itself: a server under test may be checking what happens on death.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -6726,7 +6734,8 @@
       "description": "Hold the bot crouching or sprinting. Both stay on until turned off, so a plugin that only reacts to a crouching player can be reached. Nothing else here changes the stance.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -7064,7 +7073,8 @@
       "description": "Right-click with the item the bot is holding, optionally holding the button down for a while.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -7866,5 +7876,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:3c480a3f312218fc4286e2639c1f073d93104479b75116c8e9543f003c6499d1"
+  "catalogHash": "sha256:e0094d2b9d6ce1182400089991fa5b42d5148e047583db1e48e0467bcfb89b49"
 }
