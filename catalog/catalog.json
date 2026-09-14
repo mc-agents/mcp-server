@@ -194,7 +194,8 @@
       "description": "Check whether the bot can craft an item right now.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -294,7 +295,8 @@
       "description": "Press something a server wrote in chat: a quest's choices, a shop's items, a menu. Matches the text of the clickable part -- \"[Accept]\" -- exactly first, then by substring, newest line first. Only clicks that run a command or open a dialog can be pressed; one that would open a URL or a file is refused.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -974,7 +976,8 @@
       "description": "Craft an item, walking to a nearby crafting table when the recipe needs one.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -2651,7 +2654,8 @@
       "description": "Show every recipe for an item together with what the bot still needs.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -3428,7 +3432,8 @@
       "description": "List recipes the bot can craft right now with what it carries. Pass outputItem to inspect one item instead of scanning everything.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -4249,7 +4254,8 @@
       "description": "Press a button that an open menu draws for itself rather than keeps in a slot: one of an enchanting table's three offers, a stonecutter result, a loom pattern, or a lectern's page turns. Choose it by name; read-container-options lists the names, and a name that matches nothing is refused with the list. click-slot cannot reach these, and neither can press-dialog-button.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -5092,7 +5098,8 @@
       "description": "Read every page of the book that is open, whether it is held or on a lectern. A server with something long to say says it in a book -- a quest log, a rulebook, the guide handed out on join -- and the client draws one page at a time, so a screenshot shows one page and loses the components the rest were written with.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -5314,7 +5321,8 @@
       "description": "Read what the open menu offers to press rather than click: an enchanting table's three offers with their cost, a stonecutter's results, a loom's patterns, a lectern's page turns, a beacon's effects with the pyramid levels each needs. read-window shows slots and none of these are in one. Answers that nothing is open rather than failing.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -6208,7 +6216,8 @@
       "description": "Read every trade on the trading screen that is open: what each one costs, what it gives, how many times it can still be made, and the villager's level and experience. The trades are not in any slot, so read-window cannot show them, and they arrive a moment after the screen opens: a screen read in the same tick lists none yet.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -6886,7 +6895,8 @@
       "description": "Pick a trade on the trading screen that is open, as pressing it in the list does. The price is moved out of the inventory into the payment slots and the result slot fills if the trade can be made. Picking is not trading: take the result from slot 2 with click-slot afterwards -- a plain click trades once, a shift-click trades as many times as the payment slots cover.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": true,
@@ -7349,7 +7359,8 @@
       "description": "Choose and confirm the effects of the beacon whose window is open, as its confirm button does: a primary effect and, on a pyramid of four levels, a secondary one. The payment slot (slot 0) has to hold an iron ingot, gold ingot, emerald, diamond or netherite ingot, and one is used up. A choice the beacon would not take -- an effect its pyramid is too low for, a secondary that is neither regeneration nor the primary again, or nothing to pay with -- is refused with the reason before anything is sent. read-container-options lists the effects and what each needs. The window closes afterwards, as it does for a player.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -8695,5 +8706,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:a8f043e2eb592ee28ff93ec01477a3d8746b620ff26f3b3a6e54a51503ed3a22"
+  "catalogHash": "sha256:54b012ef98a13c7b286c449b3e4058390afe71a19dca12d129050883763e04cc"
 }

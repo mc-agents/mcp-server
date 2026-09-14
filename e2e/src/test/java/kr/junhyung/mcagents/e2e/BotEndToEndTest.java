@@ -1279,6 +1279,35 @@ class BotEndToEndTest {
     }
 
     /**
+     * A page turn is a button the server answers, so the page a lectern is open at is the server's.
+     * Asserted on the lectern the server keeps as well as on the book read in front of it, and closed
+     * the way any screen is, since a lectern is a book to the client and not a window.
+     */
+    @Test
+    void aLecternIsReadAtThePageTheServerTurnedItTo() {
+        world.run("function mcagents:setup");
+        world.run("clear " + BotWorld.BOT);
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("activate-block", Map.of("bot", BotWorld.BOT, "x", 0, "y", -60, "z", 7));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String options = agent.mustCall("read-container-options", Map.of("bot", BotWorld.BOT));
+        String pressed = agent.mustCall("press-container-button", Map.of("bot", BotWorld.BOT, "option", "page 2"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String book = agent.mustCall("read-book", Map.of("bot", BotWorld.BOT));
+        String kept = world.run("data get block 0 -60 7 Page");
+        String closed = agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+
+        world.run("function mcagents:setup");
+
+        assertTrue(options.contains("(type minecraft:lectern) offers 3 options, open at page 1 of 3"), options);
+        assertTrue(pressed.startsWith("Pressed \"page 2\" (button 101)"), pressed);
+        assertTrue(book.contains("open at page 2"), book);
+        assertTrue(kept.endsWith(": 1"), "the server's lectern is not at the second page: " + kept);
+        assertTrue(closed.startsWith("Closed the lectern"), closed);
+    }
+
+    /**
      * A loom's patterns are pressed by a number that means whichever pattern the list puts there,
      * and the list depends on the dye. Asserted on the banner the server hands back, because the
      * client shows the pattern it asked for whether or not the server agreed.
