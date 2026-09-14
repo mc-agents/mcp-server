@@ -52,7 +52,9 @@ jobs:
             curl -sf http://127.0.0.1:13000/actuator/health/liveness > /dev/null && break
             sleep 2
           done
-          python3 dev/bot.py 18765 ci mineflayer &
+          # fabric, because it is the kind every tool is offered to; a fake bot of any other kind
+          # offers only part of the catalogue and the sweep would call the rest into a refusal.
+          python3 dev/bot.py 18765 ci fabric &
           sleep 3
           ./dev/call.sh join-server '{"name":"ci","host":"127.0.0.1","port":25565}'
           python3 dev/sweep.py
@@ -67,6 +69,12 @@ jobs:
   e2e:
     needs: check
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every kind of bot, held to the same sentences. A case whose tools a kind does not run is
+        # skipped for that kind, so a tool that gains a kind is tested on it without editing this.
+        kind: [fabric, azalea]
     env:
       # The one Minecraft version the bots support. Moving to another is a release of its own.
       MINECRAFT: "26.1.2"
@@ -88,12 +96,13 @@ jobs:
         run: |
           ./gradlew :e2e:test \
             -Pe2e.minecraft.version=$MINECRAFT \
-            -Pe2e.bot.image=junhyung.cloud/library/bot-fabric:latest-mc$MINECRAFT
+            -Pe2e.bot.kind=${{ matrix.kind }} \
+            -Pe2e.bot.image=junhyung.cloud/library/bot-${{ matrix.kind }}:latest-mc$MINECRAFT
 
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: e2e-${{ env.MINECRAFT }}
+          name: e2e-${{ matrix.kind }}-${{ env.MINECRAFT }}
           path: e2e/build/reports/tests/test
 
   # The tag both publish jobs use. Computed once so two runners cannot disagree about the stamp.
