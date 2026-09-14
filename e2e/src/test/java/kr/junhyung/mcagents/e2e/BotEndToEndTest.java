@@ -1011,8 +1011,16 @@ class BotEndToEndTest {
      */
     @Test
     void aGivenItemIsInTheSlotTheServerFilledAndReadableAtOnce() {
+        /*
+        The slot the item lands in is the first empty one, so the bot has to hold everything setup gives
+        before it is asked. Setup's last give is the quest note, and emptying the inventory first means
+        a note left over from an earlier setup cannot answer the wait: the diamonds this used to wait
+        for arrive first, and were often still there from before.
+        */
+        world.run("clear " + BotWorld.BOT);
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
         world.run("function mcagents:setup");
-        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "diamond x3", "timeoutMs", 10000));
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "Quest Note", "timeoutMs", 10000));
 
         String put = agent.mustCall("give-item", Map.of("bot", BotWorld.BOT, "itemName", "golden_apple", "count", 2));
         String found = agent.mustCall("find-item", Map.of("bot", BotWorld.BOT, "nameOrType", "Golden Apple"));
