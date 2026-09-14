@@ -68,7 +68,12 @@ final class FishingBite implements Listener {
         waiting.put(id, Bukkit.getScheduler().runTaskLater(plugin, () -> {
             waiting.remove(id);
             if (hook.isValid() && player.isOnline()) {
-                player.playSound(hook.getLocation(), Sound.ENTITY_FISHING_BOBBER_SPLASH, 1.0F, 1.0F);
+                /*
+                At the angler, not the hook. A sound at volume 1 reaches players within sixteen blocks of
+                it, and a rod cast straight up still had its hook twenty blocks overhead when the bite came,
+                so the splash was never sent to the one player it was for.
+                */
+                player.playSound(player.getLocation(), Sound.ENTITY_FISHING_BOBBER_SPLASH, 1.0F, 1.0F);
                 bitAt.put(id, Bukkit.getCurrentTick());
             }
         }, BITE_AFTER_TICKS));
