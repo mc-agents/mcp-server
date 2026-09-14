@@ -1241,4 +1241,87 @@ class BotEndToEndTest {
 
         assertEquals(1, blobs, "screenshot returned no image");
     }
+    /**
+     * A quest shows its progress on the action bar, and a HUD is written in pieces: an icon glyph in
+     * the pack's own font with the labels after it. Sent after the waits start, so what they match
+     * is what the server drew and not a line some earlier case left behind.
+     */
+    @Test
+    void whatTheServerDrawsOnTheHudArrivesOnItsFeeds() {
+        new Thread(() -> {
+            sleep(1500);
+            world.run("function mcagents:hud");
+        }).start();
+
+        String actionBar = agent.mustCall("wait-for-action-bar",
+            Map.of("bot", BotWorld.BOT, "pattern", "Mana", "timeoutMs", 20000));
+        agent.mustCall("wait-for-title", Map.of("bot", BotWorld.BOT, "pattern", "survive", "timeoutMs", 10000));
+        String titles = agent.call("read-title", Map.of("bot", BotWorld.BOT, "count", 2));
+
+        assertTrue(actionBar.contains("[illageralt] Mana  | [illageralt] 40 | [illageralt] /40"), actionBar);
+        assertTrue(titles.contains("title: Wave 3"), titles);
+        assertTrue(titles.contains("subtitle: survive 60s"), titles);
+    }
+
+    /** A boss bar counting a quest up, read as it changes. */
+    @Test
+    void aBossBarIsReadAsItFills() {
+        /* The fixture adds everyone online when it loads, which is before the bot is. */
+        world.run("bossbar set minecraft:mcagents players " + BotWorld.BOT);
+
+        new Thread(() -> {
+            sleep(1500);
+            world.run("bossbar set minecraft:mcagents value 90");
+        }).start();
+
+        String bar = agent.mustCall("wait-for-boss-bars",
+            Map.of("bot", BotWorld.BOT, "pattern", "90%", "timeoutMs", 20000));
+        world.run("bossbar set minecraft:mcagents value 73");
+
+        assertTrue(bar.contains("boss bar \"Probe Bar\" (90%, purple, 10 notches)"), bar);
+    }
+
+    /** A command's answer is chat, and it comes back with the call that sent the command. */
+    @Test
+    void aCommandComesBackWithWhatTheServerSaid() {
+        String ran = agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "difficulty"));
+
+        assertTrue(ran.startsWith("Ran /difficulty."), ran);
+        assertTrue(ran.contains("The difficulty is Peaceful"), ran);
+    }
+
+    /** What completes a command is the server's to say, and it knows every command it has. */
+    @Test
+    void aPartialCommandIsCompletedByTheServer() {
+        String completed = agent.mustCall("complete-command", Map.of("bot", BotWorld.BOT, "text", "/weat"));
+
+        assertTrue(completed.startsWith("1 completions for \"/weat\""), completed);
+        assertTrue(completed.contains("weather"), completed);
+    }
+
+    @Test
+    void theTabListHasTheBotInIt() {
+        String players = agent.mustCall("read-player-list", Map.of("bot", BotWorld.BOT));
+
+        assertTrue(players.contains(BotWorld.BOT + " (this bot): creative, "), players);
+    }
+
+    /** The clock is the world's, and day and night are where the sky says they are. */
+    @Test
+    void theTimeOfDayIsTheWorlds() {
+        world.run("time set 1000");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 30));
+        String morning = agent.mustCall("get-world-state", Map.of("bot", BotWorld.BOT));
+
+        world.run("time set 14000");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 30));
+        String night = agent.mustCall("get-world-state", Map.of("bot", BotWorld.BOT));
+        world.run("time set 1000");
+
+        assertTrue(morning.startsWith("time: 07:0"), morning);
+        assertTrue(morning.contains(" of the day, day)"), morning);
+        assertTrue(morning.contains("weather: clear"), morning);
+        assertTrue(night.startsWith("time: 20:0"), night);
+        assertTrue(night.contains(" of the day, night)"), night);
+    }
 }
