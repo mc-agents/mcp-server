@@ -99,6 +99,9 @@ class BotEndToEndTest {
             throw new IllegalStateException(failed.getMessage() + "\n" + world.logs(LOG_TAIL), failed);
         }
 
+        /* The image's startup commands run whenever its RCON is up, which can be after the bot has
+           joined and run a command of its own; a case then read "Unknown or incomplete command". */
+        world.run("op " + BotWorld.BOT);
         world.run("tp " + BotWorld.BOT + " 2 -59 0");
     }
 
