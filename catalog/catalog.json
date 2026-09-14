@@ -4245,7 +4245,7 @@
     {
       "name": "press-input",
       "group": "movement",
-      "description": "Press a key the way a player does, tick by tick, through the client's own input: jump, sneak, sprint, the mouse buttons, a hotbar slot, the mouse wheel, the off-hand swap or drop. The server receives the packets a keyboard and mouse would make, so a game driven by input -- a jump that turns a conversation's page, a hotbar slot that picks an answer, a click inside a timing window -- sees a real player. after waits for a feed line and presses on the tick it arrives; until stops pressing when one does. Keys go to the game only while no window is open.",
+      "description": "Press a key the way a player does, tick by tick, through the client's own input: jump, sneak, sprint, the mouse buttons, a hotbar slot, the mouse wheel, the off-hand swap or drop. The server receives the packets a keyboard and mouse would make, so a game driven by input -- a jump that turns a conversation's page, a hotbar slot that picks an answer, a click inside a timing window -- sees a real player. after waits for an action bar, title or effect line and presses on the client tick it arrives, reacting inside the bot, so how narrow a window it can catch is bounded by the link's latency and not by an MCP round trip; until stops pressing when a line shows. Keys go to the game only while no window is open.",
       "route": "rpc",
       "kinds": [
         "fabric",
@@ -8443,5 +8443,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:ee0bd56f430eb7b8eb9bf0b3cda8e60e010c5fd075292f6f14a3189ca6620322"
+  "catalogHash": "sha256:e152bff76c15a4e4813d998a4787e445d1e550a50acdd9794bcd72f2e0800ea8"
 }
