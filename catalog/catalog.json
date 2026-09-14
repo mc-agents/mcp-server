@@ -787,7 +787,8 @@
       "description": "Ask the server what completes a partial command, which is how to find out what a plugin offers without being told. \"/\" lists every command the bot may run.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -2668,7 +2669,8 @@
       "description": "Report the in-game time and weather, for a feature that only happens at a certain time of day. This is the clock the world ticks on, not whatever a server may draw on its HUD.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -4031,7 +4033,8 @@
       "description": "Read the action bar text above the hotbar, which servers use for live status. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
       "route": "local",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -4478,7 +4481,8 @@
       "description": "Read every boss bar the server is showing above the hotbar.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -4843,7 +4847,8 @@
       "description": "Read the dialogs the server has opened on screen, with their title, body and the buttons they offer, and the point at which each was closed again. The bot cannot press those buttons: the packet that answers a dialog is serialised from a definition that does not match 26.1, and a server drops the connection rather than read it. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
       "route": "local",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -5061,7 +5066,8 @@
       "description": "List the players on the tab list, with their game mode and ping.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -5152,7 +5158,8 @@
       "description": "Read the scoreboard the server draws on screen, which most servers use for stats and quest progress.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -5443,7 +5450,8 @@
       "description": "Read the titles and subtitles the server has thrown across the screen, which is where servers put things the player must not miss. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
       "route": "local",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -5991,7 +5999,8 @@
       "description": "Run a slash command as the bot and return the messages the server sent back.",
       "route": "compose",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -6906,7 +6915,8 @@
       "description": "Send the bot to another backend server through the proxy and wait until it spawns there.",
       "route": "compose",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -7099,7 +7109,8 @@
       "description": "Wait until the action bar shows text matching a regular expression. Returns straight away if it already says so.",
       "route": "local",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -7138,7 +7149,8 @@
       "description": "Wait until a boss bar says something. Servers put phase, progress and timers there.",
       "route": "compose",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -7219,7 +7231,8 @@
       "description": "Wait until a dialog whose text matches a regular expression is opened. Returns straight away if it already says so.",
       "route": "local",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -7384,7 +7397,8 @@
       "description": "Wait until the tab list says something -- somebody joining, a rank appearing beside a name.",
       "route": "compose",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -7425,7 +7439,8 @@
       "description": "Wait until the scoreboard says something. A quest counting up, a balance changing, a timer: the sidebar is where a server writes progress and nothing pushes it, so this asks until it reads what you are waiting for.",
       "route": "compose",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -7515,7 +7530,8 @@
       "description": "Wait until a title or subtitle matching a regular expression is shown. Returns straight away if it already says so.",
       "route": "local",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -7835,5 +7851,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:b34274d7a7975858df71ee94705da644c34f258574fe4230cad43da027c0cc7c"
+  "catalogHash": "sha256:f263cd8aa285a416e06c3b050f5468aacf24e26b0a79667e12275916cc6b8972"
 }
