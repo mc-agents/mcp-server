@@ -1,0 +1,22 @@
+{
+  "tool": "press-input",
+  "note": "a press on a bite's splash, waited for inside the bot",
+  "data": {
+    "key": "use",
+    "slot": null,
+    "presses": 1,
+    "repeat": 1,
+    "holdTicks": 1,
+    "intervalTicks": 1,
+    "after": {
+      "feed": "effect",
+      "pattern": "fishing_bobber.splash",
+      "matched": "minecraft:entity.fishing_bobber.splash",
+      "waitedMs": 1520
+    },
+    "until": null,
+    "stopped": "done",
+    "selectedSlot": 0
+  },
+  "text": "Waited 1520ms for the effect feed to match /fishing_bobber.splash/ (\"minecraft:entity.fishing_bobber.splash\"), then pressed use once."
+}

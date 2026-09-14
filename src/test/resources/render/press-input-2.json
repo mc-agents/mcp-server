@@ -1,0 +1,17 @@
+{
+  "tool": "press-input",
+  "note": "a hotbar slot, and the selection it left",
+  "data": {
+    "key": "hotbar",
+    "slot": 3,
+    "presses": 1,
+    "repeat": 1,
+    "holdTicks": 1,
+    "intervalTicks": 1,
+    "after": null,
+    "until": null,
+    "stopped": "done",
+    "selectedSlot": 3
+  },
+  "text": "Pressed hotbar slot 3 once. Hotbar slot 3 is selected."
+}

@@ -78,6 +78,7 @@ class BotEndToEndTest {
         server = new Server(Path.of(System.getProperty("e2e.server.jar")));
         world = new BotWorld(
             Path.of(System.getProperty("e2e.fixture")),
+            Path.of(System.getProperty("e2e.fixture.plugin")),
             System.getProperty("e2e.minecraft.version"),
             System.getProperty("e2e.bot.image"),
             System.getProperty("e2e.bot.kind"),
@@ -1970,5 +1971,140 @@ class BotEndToEndTest {
 
         assertEquals(1, Pattern.compile("Fold probe").matcher(bars).results().count(), bars);
         assertTrue(Pattern.compile("Fold probe \\(shown ([2-9]|\\d\\d+) times").matcher(bars).find(), bars);
+    }
+
+    /**
+     * What the server counted for a player, from the fixture plugin's objectives: a client shows a
+     * jump or a slot it never sent as readily as one it did, so a case about input asks the server.
+     */
+    private int counted(String objective) {
+        String score = world.run("scoreboard players get " + BotWorld.BOT + " " + objective);
+        Matcher has = Pattern.compile("has (-?\\d+) ").matcher(score);
+        return has.find() ? Integer.parseInt(has.group(1)) : 0;
+    }
+
+    private void forget(String... objectives) {
+        for (String objective : objectives) {
+            world.run("scoreboard players reset " + BotWorld.BOT + " " + objective);
+        }
+    }
+
+    /**
+     * The jump tool moves the player and presses nothing, and a game that turns a page on the jump
+     * key hears nothing from it. Two presses with the key up between them are two rising edges.
+     */
+    @Test
+    void aJumpKeyReachesTheServerAsTwoPresses() {
+        forget("fx_jump");
+
+        String pressed = agent.mustCall("press-input",
+            Map.of("bot", BotWorld.BOT, "key", "jump", "repeat", 2, "intervalTicks", 4));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        /* Untrusted, because what an after or an until matched is server text: every answer carries the notice. */
+        assertTrue(pressed.startsWith("Pressed jump 2 times, 4 ticks apart."), pressed);
+        assertEquals(2, counted("fx_jump"));
+    }
+
+    /** A number key picks a slot, and the slot a server hears about is the one it keeps. */
+    @Test
+    void aHotbarKeySelectsTheSlotTheServerHolds() {
+        agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "hotbar", "slot", 0));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+
+        String pressed = agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "hotbar", "slot", 3));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String kept = world.run("data get entity " + BotWorld.BOT + " SelectedItemSlot");
+
+        assertTrue(pressed.startsWith("Pressed hotbar slot 3 once. Hotbar slot 3 is selected."), pressed);
+        assertEquals(3, counted("fx_slot"));
+        assertTrue(kept.endsWith(": 3"), kept);
+    }
+
+    /**
+     * hyperfarm's NPCs talk on the action bar and are answered with keys: jump for the next page, a
+     * hotbar slot for an answer, sneak to leave. The fixture plays one, and its tags are what the
+     * server made of the keys.
+     */
+    @Test
+    void aConversationIsDrivenByJumpAHotbarSlotAndSneak() {
+        /* Leaving is a sneak, so a bot that cannot press one would be left in the conversation. */
+        agent.requires("press-input", "wait-for-action-bar");
+        /* An answer is a change of slot, and slot 1 must not already be the one selected. */
+        agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "hotbar", "slot", 3));
+
+        world.run("fixture talk " + BotWorld.BOT);
+        agent.mustCall("wait-for-action-bar", Map.of("bot", BotWorld.BOT, "pattern", "Fine day", "timeoutMs", 10000));
+        agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "jump"));
+        agent.mustCall("wait-for-action-bar",
+            Map.of("bot", BotWorld.BOT, "pattern", "What will you plant", "timeoutMs", 10000));
+        agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "hotbar", "slot", 1));
+        String answered = agent.mustCall("wait-for-action-bar",
+            Map.of("bot", BotWorld.BOT, "pattern", "it is", "timeoutMs", 10000));
+        agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "sneak"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String tags = world.run("tag " + BotWorld.BOT + " list");
+
+        assertTrue(answered.contains("Carrot it is"), answered);
+        assertTrue(tags.contains("fixture_choice_1"), tags);
+        assertTrue(!tags.contains("fixture_choice_0"), tags);
+        assertTrue(tags.contains("fixture_talk_left"), tags);
+    }
+
+    /**
+     * A bite is a splash sound and a right-click inside the forty ticks after it. Waiting on the feed
+     * and then pressing is a round trip through this server and back, so the bot presses on the tick
+     * the sound arrives.
+     */
+    @Test
+    void aBiteIsCaughtOnTheTickItsSplashArrives() {
+        /* A cast rod keeps a hook out until it is reeled in, which is a press. */
+        agent.requires("press-input");
+        forget("fx_catch", "fx_miss");
+        world.run("item replace entity " + BotWorld.BOT + " weapon.mainhand with minecraft:fishing_rod");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "fishing_rod", "timeoutMs", 10000));
+
+        agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "use"));
+        String caught = agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "use",
+            "after", Map.of("feed", "effect", "pattern", "entity\\.fishing_bobber\\.splash"), "timeoutMs", 10000));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        int catches = counted("fx_catch");
+        int misses = counted("fx_miss");
+        world.run("function mcagents:setup");
+
+        assertTrue(caught.startsWith("Waited "), caught);
+        assertTrue(caught.contains("for the effect feed to match /entity\\.fishing_bobber\\.splash/"
+            + " (\"minecraft:entity.fishing_bobber.splash\"), then pressed use once."), caught);
+        assertEquals(1, catches, "the server counted " + misses + " reel(s) outside the window");
+    }
+
+    /**
+     * Clicks into the air until a line says to stop, which is how a fish on the line is fought. Every
+     * click the answer reports is one the server received, and none after the line.
+     */
+    @Test
+    void leftClicksStopWhenTheActionBarSaysSo() {
+        /* Looking straight up, so a click in creative breaks nothing under the bot. */
+        world.run("tp " + BotWorld.BOT + " 2 -59 0 0 -90");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+        forget("fx_left");
+
+        new Thread(() -> {
+            sleep(1500);
+            world.run("title " + BotWorld.BOT + " actionbar \"enough clicks\"");
+        }).start();
+
+        String clicked = agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "attack",
+            "repeat", 100, "intervalTicks", 2, "until", Map.of("feed", "actionBar", "pattern", "enough"),
+            "timeoutMs", 20000));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        Matcher presses = Pattern.compile("Pressed attack (\\d+) times").matcher(clicked);
+        assertTrue(presses.find(), clicked);
+        assertTrue(clicked.contains("; stopped at " + presses.group(1) + " of 100 when the actionBar feed matched"
+            + " /enough/ (\"enough clicks\")."), clicked);
+        assertEquals(Integer.parseInt(presses.group(1)), counted("fx_left"), clicked);
     }
 }

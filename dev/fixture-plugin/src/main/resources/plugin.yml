@@ -1,0 +1,12 @@
+name: McAgentsFixture
+version: "1"
+main: kr.junhyung.mcagents.fixture.FixturePlugin
+api-version: "26.1"
+commands:
+  fixture:
+    description: Start the fixture's conversation for a player
+    usage: /fixture talk <player>
+    permission: mcagents.fixture
+permissions:
+  mcagents.fixture:
+    default: op

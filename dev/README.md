@@ -35,6 +35,32 @@ draws it. Two quests are advancements under `mcagents:quest/`, granted by nothin
 The action bar it sends is in `minecraft:illageralt` with the label and the numbers as separate
 pieces, which is the case a plain-text reader gets wrong.
 
+## `fixture-plugin` — what the server received from the keys
+
+```
+./gradlew :fixture-plugin:jar      # dev/fixture-plugin/build/libs/mcagents-fixture.jar
+```
+
+A datapack can put things in the world but cannot see a player's input, and a client shows a jump
+or a hotbar slot it never sent as readily as one it did. This Paper plugin counts, per player, in
+scoreboard objectives rcon reads back:
+
+| objective | counts |
+| --- | --- |
+| `fx_jump`, `fx_sneak`, `fx_sprint` | rising edges of the input packet's flags |
+| `fx_slot`, `fx_slots` | the hotbar slot last selected, and how many selections |
+| `fx_left`, `fx_right` | clicks into the air with the main hand |
+| `fx_swing` | every arm swing |
+| `fx_catch`, `fx_miss` | reels inside and outside a bite's window |
+
+It also plays two pieces of hyperfarm just far enough to test against. `/fixture talk <player>`
+opens a conversation on the action bar: jump turns the page, hotbar slot 0 or 1 answers and tags
+the player `fixture_choice_<n>`, and sneaking leaves and tags `fixture_talk_left`. A cast rod gets a
+bite thirty ticks later -- `entity.fishing_bobber.splash` played to the angler -- and a reel within
+forty ticks of it counts as a catch.
+
+The end-to-end suite builds it and loads it into its server.
+
 ## What replaced `compare.py`
 
 There used to be a script here that asked two kinds of bot the same questions and diffed the

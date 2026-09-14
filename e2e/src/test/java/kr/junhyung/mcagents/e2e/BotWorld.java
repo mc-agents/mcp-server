@@ -21,6 +21,9 @@ import org.testcontainers.containers.wait.strategy.Wait;
  * datapack list is read when the world loads, so copying it in needs a reload, and a dialog
  * definition needs a restart on top of that -- neither of which is worth doing when the world does
  * not exist yet and the mount is simply there when it is created.
+ *
+ * <p>The plugin beside it records what the server received from the bot's keys, which no datapack
+ * can see: an input packet's rising edges, the hotbar slot chosen, a click into the air.
  */
 final class BotWorld implements AutoCloseable {
 
@@ -41,7 +44,7 @@ final class BotWorld implements AutoCloseable {
     private final GenericContainer<?> server;
     private final GenericContainer<?> bot;
 
-    BotWorld(Path fixture, String minecraftVersion, String botImage, String botKind, int linkPort) {
+    BotWorld(Path fixture, Path fixturePlugin, String minecraftVersion, String botImage, String botKind, int linkPort) {
         /*
         The bot dials this process, which is not in a container. Host networking would do it on a
         Linux runner and not on a Mac, where a container's localhost is the virtual machine's;
@@ -70,6 +73,8 @@ final class BotWorld implements AutoCloseable {
             */
             .withEnv("DATAPACKS", "/fixture")
             .withFileSystemBind(fixture.toString(), "/fixture", BindMode.READ_ONLY)
+            /* Copied into the server's plugins by the image at start, for the same ownership reason. */
+            .withFileSystemBind(fixturePlugin.toString(), "/plugins/mcagents-fixture.jar", BindMode.READ_ONLY)
             .withNetwork(network)
             .withNetworkAliases(SERVER_ALIAS)
             .waitingFor(Wait.forLogMessage(".*RCON running.*\\n", 1).withStartupTimeout(SERVER_START));

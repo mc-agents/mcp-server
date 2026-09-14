@@ -1,0 +1,21 @@
+{
+  "tool": "press-input",
+  "note": "clicks stopped by the action bar before they ran out",
+  "data": {
+    "key": "attack",
+    "slot": null,
+    "presses": 4,
+    "repeat": 20,
+    "holdTicks": 2,
+    "intervalTicks": 3,
+    "after": null,
+    "until": {
+      "feed": "actionBar",
+      "pattern": "Caught",
+      "matched": "Caught a Carp!"
+    },
+    "stopped": "until",
+    "selectedSlot": 0
+  },
+  "text": "Pressed attack 4 times, each held for 2 ticks, 3 ticks apart; stopped at 4 of 20 when the actionBar feed matched /Caught/ (\"Caught a Carp!\")."
+}

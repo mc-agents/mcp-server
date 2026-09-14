@@ -1,0 +1,21 @@
+{
+  "tool": "press-input",
+  "note": "every click made and the line never showed",
+  "data": {
+    "key": "attack",
+    "slot": null,
+    "presses": 3,
+    "repeat": 3,
+    "holdTicks": 1,
+    "intervalTicks": 1,
+    "after": null,
+    "until": {
+      "feed": "title",
+      "pattern": "Done",
+      "matched": null
+    },
+    "stopped": "done",
+    "selectedSlot": 0
+  },
+  "text": "Pressed attack 3 times, 1 tick apart; the title feed never matched /Done/."
+}

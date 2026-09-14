@@ -37,6 +37,10 @@ tasks.test {
     systemProperty("e2e.server.jar", rootProject.tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar")
         .get().archiveFile.get().asFile.absolutePath)
     systemProperty("e2e.fixture", rootProject.file("dev/fixture").absolutePath)
+    /* The plugin half of the fixture, built from source so a case and what it asserts against move together. */
+    val fixturePlugin = project(":fixture-plugin").tasks.named<Jar>("jar")
+    dependsOn(fixturePlugin)
+    systemProperty("e2e.fixture.plugin", fixturePlugin.get().archiveFile.get().asFile.absolutePath)
 
     /* Which bot to drive. CI passes the tag it has just published. */
     systemProperty("e2e.bot.image", providers.gradleProperty("e2e.bot.image")

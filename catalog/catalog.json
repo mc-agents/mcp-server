@@ -4243,6 +4243,377 @@
       "wireSchemaHash": "sha256:1010547a2695089153ad40d50abaa241830dddac1a875129be6cb7b41961789a"
     },
     {
+      "name": "press-input",
+      "group": "movement",
+      "description": "Press a key the way a player does, tick by tick, through the client's own input: jump, sneak, sprint, the mouse buttons, a hotbar slot, the mouse wheel, the off-hand swap or drop. The server receives the packets a keyboard and mouse would make, so a game driven by input -- a jump that turns a conversation's page, a hotbar slot that picks an answer, a click inside a timing window -- sees a real player. after waits for a feed line and presses on the tick it arrives; until stops pressing when one does. Keys go to the game only while no window is open.",
+      "route": "rpc",
+      "kinds": [
+        "fabric",
+        "azalea"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 10000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "key": {
+            "description": "The key to press. jump, sneak and sprint are the movement keys the server receives as input; use and attack are the right and left mouse buttons, clicking at whatever the bot is looking at or into the air; hotbar selects the hotbar slot given by slot, as its number key does; scroll-up and scroll-down move the selection one slot as the mouse wheel does; swap-offhand swaps the held item into the off-hand; drop throws one of the held item.",
+            "type": "string",
+            "enum": [
+              "jump",
+              "sneak",
+              "sprint",
+              "use",
+              "attack",
+              "hotbar",
+              "scroll-up",
+              "scroll-down",
+              "swap-offhand",
+              "drop"
+            ]
+          },
+          "slot": {
+            "description": "The hotbar slot for hotbar, 0 being the leftmost. Only hotbar takes it.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 8
+          },
+          "holdTicks": {
+            "description": "How many ticks each press keeps the key down (default: 1). Held use repeats every four ticks, as holding the button does; a wheel notch has nothing to hold.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1200
+          },
+          "repeat": {
+            "description": "How many times to press (default: 1)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200
+          },
+          "intervalTicks": {
+            "description": "How many ticks the key stays up between presses, so each one reaches the server as a press of its own (default: 1)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1200
+          },
+          "after": {
+            "description": "Press nothing until this shows, then press on the very tick it arrives, inside the bot rather than after a round trip: a bite's splash sound, or a timing window drawn on the action bar. Fails if it does not show within timeoutMs.",
+            "type": "object",
+            "properties": {
+              "feed": {
+                "description": "The feed to watch",
+                "type": "string",
+                "enum": [
+                  "actionBar",
+                  "title",
+                  "effect"
+                ]
+              },
+              "pattern": {
+                "description": "Regular expression, matched against the feed's text without font labels or glyphs; a sound or particle is its id, such as minecraft:entity.fishing_bobber.splash",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            },
+            "required": [
+              "feed",
+              "pattern"
+            ],
+            "additionalProperties": false
+          },
+          "until": {
+            "description": "Stop as soon as this shows, letting go of a held key and skipping the presses left, on the tick it arrives.",
+            "type": "object",
+            "properties": {
+              "feed": {
+                "description": "The feed to watch",
+                "type": "string",
+                "enum": [
+                  "actionBar",
+                  "title",
+                  "effect"
+                ]
+              },
+              "pattern": {
+                "description": "Regular expression, matched against the feed's text without font labels or glyphs; a sound or particle is its id, such as minecraft:entity.fishing_bobber.splash",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            },
+            "required": [
+              "feed",
+              "pattern"
+            ],
+            "additionalProperties": false
+          },
+          "timeoutMs": {
+            "description": "How long the whole call may take, waiting for after included (default: 10000). Presses still to come when it runs out are not made.",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 120000
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The key to press. jump, sneak and sprint are the movement keys the server receives as input; use and attack are the right and left mouse buttons, clicking at whatever the bot is looking at or into the air; hotbar selects the hotbar slot given by slot, as its number key does; scroll-up and scroll-down move the selection one slot as the mouse wheel does; swap-offhand swaps the held item into the off-hand; drop throws one of the held item.",
+            "type": "string",
+            "enum": [
+              "jump",
+              "sneak",
+              "sprint",
+              "use",
+              "attack",
+              "hotbar",
+              "scroll-up",
+              "scroll-down",
+              "swap-offhand",
+              "drop"
+            ]
+          },
+          "slot": {
+            "description": "The hotbar slot for hotbar, 0 being the leftmost. Only hotbar takes it.",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 8,
+            "default": null
+          },
+          "holdTicks": {
+            "description": "How many ticks each press keeps the key down (default: 1). Held use repeats every four ticks, as holding the button does; a wheel notch has nothing to hold.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1200,
+            "default": 1
+          },
+          "repeat": {
+            "description": "How many times to press (default: 1)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 1
+          },
+          "intervalTicks": {
+            "description": "How many ticks the key stays up between presses, so each one reaches the server as a press of its own (default: 1)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1200,
+            "default": 1
+          },
+          "after": {
+            "description": "Press nothing until this shows, then press on the very tick it arrives, inside the bot rather than after a round trip: a bite's splash sound, or a timing window drawn on the action bar. Fails if it does not show within timeoutMs.",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "feed": {
+                "description": "The feed to watch",
+                "type": "string",
+                "enum": [
+                  "actionBar",
+                  "title",
+                  "effect"
+                ]
+              },
+              "pattern": {
+                "description": "Regular expression, matched against the feed's text without font labels or glyphs; a sound or particle is its id, such as minecraft:entity.fishing_bobber.splash",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            },
+            "required": [
+              "feed",
+              "pattern"
+            ],
+            "additionalProperties": false,
+            "default": null
+          },
+          "until": {
+            "description": "Stop as soon as this shows, letting go of a held key and skipping the presses left, on the tick it arrives.",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "feed": {
+                "description": "The feed to watch",
+                "type": "string",
+                "enum": [
+                  "actionBar",
+                  "title",
+                  "effect"
+                ]
+              },
+              "pattern": {
+                "description": "Regular expression, matched against the feed's text without font labels or glyphs; a sound or particle is its id, such as minecraft:entity.fishing_bobber.splash",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            },
+            "required": [
+              "feed",
+              "pattern"
+            ],
+            "additionalProperties": false,
+            "default": null
+          },
+          "timeoutMs": {
+            "description": "How long the whole call may take, waiting for after included (default: 10000). Presses still to come when it runs out are not made.",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 120000,
+            "default": 10000
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "after",
+          "holdTicks",
+          "intervalTicks",
+          "key",
+          "repeat",
+          "slot",
+          "timeoutMs",
+          "until"
+        ]
+      },
+      "wireSchemaHash": "sha256:ea757831c961f520be874a32ce99049baf387d71eca9e1b17f64dc9c430c9210",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "slot": {
+            "description": "The slot hotbar was given, null for every other key",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "presses": {
+            "description": "How many presses were made",
+            "type": "integer"
+          },
+          "repeat": {
+            "description": "How many were asked for",
+            "type": "integer"
+          },
+          "holdTicks": {
+            "type": "integer"
+          },
+          "intervalTicks": {
+            "type": "integer"
+          },
+          "after": {
+            "description": "What the presses waited for, or null when nothing was",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "feed": {
+                "type": "string"
+              },
+              "pattern": {
+                "type": "string"
+              },
+              "matched": {
+                "description": "The text that matched",
+                "type": "string"
+              },
+              "waitedMs": {
+                "description": "How long it took to show",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "feed",
+              "matched",
+              "pattern",
+              "waitedMs"
+            ],
+            "additionalProperties": false
+          },
+          "until": {
+            "description": "What the presses stopped on, or null when nothing was watched for",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "feed": {
+                "type": "string"
+              },
+              "pattern": {
+                "type": "string"
+              },
+              "matched": {
+                "description": "The text that matched, or null when it never showed",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "feed",
+              "matched",
+              "pattern"
+            ],
+            "additionalProperties": false
+          },
+          "stopped": {
+            "description": "Why the presses ended: every one was made, until showed, or timeoutMs ran out",
+            "type": "string",
+            "enum": [
+              "done",
+              "until",
+              "timeout"
+            ]
+          },
+          "selectedSlot": {
+            "description": "The hotbar slot selected once the keys were let go",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "after",
+          "holdTicks",
+          "intervalTicks",
+          "key",
+          "presses",
+          "repeat",
+          "selectedSlot",
+          "slot",
+          "stopped",
+          "until"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "read-action-bar",
       "group": "hud",
       "description": "Read the action bar text above the hotbar, which servers use for live status. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
@@ -8072,5 +8443,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:e4d159b6b704efc18594190b944065de1be5152304a23fb45d8630d7a3449d98"
+  "catalogHash": "sha256:ee0bd56f430eb7b8eb9bf0b3cda8e60e010c5fd075292f6f14a3189ca6620322"
 }

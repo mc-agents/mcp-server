@@ -1,0 +1,21 @@
+{
+  "tool": "press-input",
+  "note": "a wheel notch and a line that showed before the first press",
+  "data": {
+    "key": "scroll-down",
+    "slot": null,
+    "presses": 0,
+    "repeat": 1,
+    "holdTicks": 1,
+    "intervalTicks": 1,
+    "after": null,
+    "until": {
+      "feed": "actionBar",
+      "pattern": "ready",
+      "matched": "ready"
+    },
+    "stopped": "until",
+    "selectedSlot": 8
+  },
+  "text": "Did not press scroll-down; stopped at 0 of 1 when the actionBar feed matched /ready/ (\"ready\"). Hotbar slot 8 is selected."
+}

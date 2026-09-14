@@ -1,0 +1,17 @@
+{
+  "tool": "press-input",
+  "note": "a long sneak cut short by the timeout",
+  "data": {
+    "key": "sneak",
+    "slot": null,
+    "presses": 2,
+    "repeat": 5,
+    "holdTicks": 40,
+    "intervalTicks": 20,
+    "after": null,
+    "until": null,
+    "stopped": "timeout",
+    "selectedSlot": 0
+  },
+  "text": "Pressed sneak 2 times, each held for 40 ticks, 20 ticks apart; timeoutMs ran out after 2 of 5."
+}
