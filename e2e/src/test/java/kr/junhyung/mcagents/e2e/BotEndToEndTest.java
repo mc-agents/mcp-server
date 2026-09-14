@@ -783,6 +783,177 @@ class BotEndToEndTest {
     }
 
     /**
+     * A click answers with the slot and the other stack of a swap as they came out. A client that
+     * reports its own guess reads a number key as a window slot, and answered this swap with the
+     * sword still in the chest while the server had already traded it for the diamonds.
+     */
+    @Test
+    void aNumberKeySwapIsAnsweredWithWhatTheServerDid() {
+        world.run("function mcagents:setup");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "diamond x3", "timeoutMs", 10000));
+        agent.mustCall("open-container", Map.of("bot", BotWorld.BOT, "x", 1, "y", -60, "z", 3));
+
+        String awaited = agent.mustCall("wait-for-window",
+            Map.of("bot", BotWorld.BOT, "titlePattern", "Probe Chest", "timeoutMs", 2000));
+        String clicked = agent.mustCall("click-slot",
+            Map.of("bot", BotWorld.BOT, "slot", 0, "mode", "swap-hotbar", "hotbar", 1));
+        agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+
+        String chest = world.run("data get block 1 -60 3 Items[{Slot:0b}].id");
+        world.run("function mcagents:setup");
+
+        assertTrue(awaited.startsWith("window \"[gui/header] Probe Chest\""), awaited);
+        assertTrue(clicked.contains("  slot 0: Excalibur [diamond_sword] x1 -> diamond x3"), clicked);
+        assertTrue(clicked.contains("  hotbar 1: diamond x3 -> Excalibur [diamond_sword] x1"), clicked);
+        assertTrue(chest.contains("minecraft:diamond\""), chest);
+    }
+
+    /**
+     * A drag answers with what each slot came out holding. Guessed on the client, a drag onto empty
+     * slots moved nothing and the planks stayed on the cursor, in an answer about a chest the server
+     * had already filled.
+     */
+    @Test
+    void aDragIsAnsweredWithWhatTheServerSharedOut() {
+        world.run("function mcagents:setup");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "oak_planks x24", "timeoutMs", 10000));
+        agent.mustCall("open-container", Map.of("bot", BotWorld.BOT, "x", 1, "y", -60, "z", 3));
+
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 55));
+        String dragged = agent.mustCall("drag-slots", Map.of("bot", BotWorld.BOT, "slots", List.of(1, 2, 3)));
+        agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+
+        String second = world.run("data get block 1 -60 3 Items[{Slot:2b}].count");
+        world.run("function mcagents:setup");
+
+        assertTrue(dragged.contains("  slot 1: empty -> oak_planks x8"), dragged);
+        assertTrue(dragged.contains("  slot 3: empty -> oak_planks x8"), dragged);
+        assertTrue(dragged.contains("  cursor: oak_planks x24 -> empty"), dragged);
+        assertTrue(second.endsWith(": 8"), second);
+    }
+
+    /** The cursor is emptied by a click outside the window, and the whole stack goes with it. */
+    @Test
+    void droppingTheCursorThrowsTheStackItHeld() {
+        world.run("function mcagents:setup");
+        world.run("tp " + BotWorld.BOT + " 2 -59 0");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+        agent.mustCall("open-container", Map.of("bot", BotWorld.BOT, "x", 1, "y", -60, "z", 3));
+
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 4));
+        String dropped = agent.mustCall("drop-held-item", Map.of("bot", BotWorld.BOT));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+
+        String ground = world.run(
+            "execute if entity @e[type=item,nbt={Item:{id:\"minecraft:cooked_beef\",count:12}}]");
+        world.run("function mcagents:setup");
+
+        assertEquals("Dropped cooked_beef x12 from the cursor.", dropped);
+        assertTrue(ground.startsWith("Test passed"), ground);
+    }
+
+    /**
+     * Equipping is clicks in the inventory window, and only the server says where the item went:
+     * the off-hand is a swap with the off-hand key, and a helmet is picked up and put down.
+     */
+    @Test
+    void anEquippedItemIsWhereTheServerWearsIt() {
+        world.run("function mcagents:setup");
+        world.run("item replace entity " + BotWorld.BOT + " inventory.5 with minecraft:iron_helmet");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "iron_helmet", "timeoutMs", 10000));
+
+        String offhand = agent.mustCall("equip-item",
+            Map.of("bot", BotWorld.BOT, "itemName", "bow", "destination", "off-hand"));
+        String head = agent.mustCall("equip-item",
+            Map.of("bot", BotWorld.BOT, "itemName", "iron_helmet", "destination", "head"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String held = world.run("execute if items entity " + BotWorld.BOT + " weapon.offhand minecraft:bow");
+        String worn = world.run("execute if items entity " + BotWorld.BOT + " armor.head minecraft:iron_helmet");
+        world.run("function mcagents:setup");
+
+        assertEquals("Equipped bow to off-hand.", offhand);
+        assertEquals("Equipped iron_helmet to head.", head);
+        assertTrue(held.startsWith("Test passed"), held);
+        assertTrue(worn.startsWith("Test passed"), worn);
+    }
+
+    /**
+     * The server sends nothing back for a creative stack, so the client puts it in the slot itself.
+     * Sent without that, the server held the stack and every read on the bot said the slot was empty.
+     * It is found by the name on its tooltip as well as by its id.
+     */
+    @Test
+    void aGivenItemIsInTheSlotTheServerFilledAndReadableAtOnce() {
+        world.run("function mcagents:setup");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "diamond x3", "timeoutMs", 10000));
+
+        String put = agent.mustCall("give-item", Map.of("bot", BotWorld.BOT, "itemName", "golden_apple", "count", 2));
+        String found = agent.mustCall("find-item", Map.of("bot", BotWorld.BOT, "nameOrType", "Golden Apple"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String held = world.run("data get entity " + BotWorld.BOT + " Inventory[{Slot:4b}]");
+
+        world.run("gamemode survival " + BotWorld.BOT);
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+        String refused = agent.refusal("give-item", Map.of("bot", BotWorld.BOT, "itemName", "golden_apple"));
+        world.run("gamemode creative " + BotWorld.BOT);
+        world.run("function mcagents:setup");
+
+        assertEquals("Put 2 golden_apple in slot 40.", put);
+        assertTrue(found.startsWith("Found golden_apple x2 in slot 40."), found);
+        assertTrue(held.contains("minecraft:golden_apple") && held.contains("count: 2"), held);
+        assertTrue(refused.contains("The bot is in survival mode; give-item needs creative."), refused);
+    }
+
+    /** A swing lands only within reach, so a mob a few blocks off is walked to first. */
+    @Test
+    void aMobOutOfReachIsWalkedToAndKilled() {
+        world.run("tp " + BotWorld.BOT + " 4 -60 -8");
+        world.run("kill @e[type=chicken,tag=mcagents]");
+        world.run("summon chicken 9 -60 -8 {Tags:[\"mcagents\"],NoAI:1b,Silent:1b,Health:1f}");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String hit = agent.mustCall("attack-entity", Map.of("bot", BotWorld.BOT, "name", "chicken"));
+
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(10));
+        String alive = "";
+        while (Instant.now().isBefore(deadline)) {
+            alive = world.run("execute if entity @e[type=chicken,tag=mcagents]");
+            if (alive.startsWith("Test failed")) {
+                break;
+            }
+            sleep(250);
+        }
+        world.run("kill @e[type=chicken,tag=mcagents]");
+        world.run("function mcagents:setup");
+
+        assertEquals("Hit chicken 1 time(s).", hit);
+        assertTrue(alive.startsWith("Test failed"), "the chicken outlived the hit: " + alive);
+    }
+
+    /**
+     * A right-click is walked into reach of the entity it names, and only the server says whether it
+     * arrived: an interaction entity keeps the player that clicked it.
+     */
+    @Test
+    void aRightClickIsRecordedByTheEntityItReached() {
+        world.run("tp " + BotWorld.BOT + " 4 -60 -6");
+        world.run("kill @e[type=interaction,tag=mcagents]");
+        world.run("summon interaction 9 -60 -6 {Tags:[\"mcagents\"],width:1f,height:2f}");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String clicked = agent.mustCall("interact-entity", Map.of("bot", BotWorld.BOT, "name", "interaction"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+
+        String recorded = world.run("data get entity @e[type=interaction,tag=mcagents,limit=1] interaction");
+        world.run("kill @e[type=interaction,tag=mcagents]");
+
+        assertEquals("Right-clicked interaction.", clicked);
+        assertTrue(recorded.contains("player"), recorded);
+    }
+
+    /**
      * A dead bot is still a player to the client, so every tool went on acting for it. A walk sent
      * the server nothing, waited out its whole deadline and reported a timeout, and nothing
      * anywhere said the bot was lying behind a death screen.

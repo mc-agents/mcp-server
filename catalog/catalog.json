@@ -74,7 +74,8 @@
       "description": "Attack the nearest entity whose name matches, walking to it first when out of reach.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -296,7 +297,8 @@
       "description": "Click one slot of the window that is currently open, or press a key over it the way a player does: a number key, the offhand key, drop, a double-click or a creative middle-click.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -722,7 +724,8 @@
       "description": "Close whatever the bot has open -- a container, a book, a sign editor, a dialog -- the way Escape would. Answers that there was none rather than failing, because asking to close nothing is a no-op and not a mistake. A screen that does not close on Escape, such as the death screen, is refused.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -1060,7 +1063,8 @@
       "description": "Drag the stack on the cursor across several slots of the open window, the way a player spreads items by holding a mouse button down.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -1370,7 +1374,8 @@
       "description": "Drop whatever the cursor is holding, or the stack in a given slot. The window stays open.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -1484,7 +1489,8 @@
       "description": "Equip an item from the inventory.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -1674,7 +1680,8 @@
       "description": "Find nearby entities, optionally filtered by type or name.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -1825,7 +1832,8 @@
       "description": "Look for an item in the bot's inventory by exact or partial name.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -2744,7 +2752,8 @@
       "description": "Put an item straight into the inventory. Creative mode only, which is what makes it useful: a test can start from the state it needs instead of gathering its way there.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": false,
@@ -2823,7 +2832,8 @@
       "description": "Right-click the nearest entity whose name matches, walking to it first when out of reach. This is what opens an NPC dialogue.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": false,
@@ -3025,7 +3035,8 @@
       "description": "List every item in the bot's inventory with slot numbers.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -3493,7 +3504,8 @@
       "description": "Open the chest-like block at a position, walking to it first when out of reach, and list what it holds.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": true,
       "untrusted": true,
@@ -5795,7 +5807,8 @@
       "description": "Read the window that is currently open: its title, its type, and every slot that has something in it. Answers that nothing is open rather than failing, because that is a state worth reporting.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -7356,7 +7369,8 @@
       "description": "Wait until the bot is carrying something. The condition half of most quests: collect ten of these, be given that.",
       "route": "compose",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -7609,7 +7623,8 @@
       "description": "Wait until a GUI window opens and return its contents. Returns straight away if a matching window is already open.",
       "route": "rpc",
       "kinds": [
-        "fabric"
+        "fabric",
+        "azalea"
       ],
       "exclusive": false,
       "untrusted": true,
@@ -7851,5 +7866,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:f263cd8aa285a416e06c3b050f5468aacf24e26b0a79667e12275916cc6b8972"
+  "catalogHash": "sha256:3c480a3f312218fc4286e2639c1f073d93104479b75116c8e9543f003c6499d1"
 }
