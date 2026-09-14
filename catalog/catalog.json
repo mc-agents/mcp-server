@@ -3174,7 +3174,7 @@
     {
       "name": "join-server",
       "group": "sessions",
-      "description": "Send a bot into a Minecraft server and wait until it has spawned. A bot already running under this name is used as it is; otherwise one is started, which in a cluster means the operator creates it and takes a few seconds longer. A failure says how far it got, because a bot that never started and a server that refused the login have different fixes.",
+      "description": "Send a bot into a Minecraft server and wait until it has spawned. A bot already running under this name is used as it is; otherwise one is started, which in a cluster means the operator creates it. A fabric client takes about a minute to link, longer than one call waits: a call that runs out of patience says the bot is still starting, and calling join-server again with the same arguments waits for that bot rather than starting another. A failure says how far it got, because a bot that never started and a server that refused the login have different fixes.",
       "route": "orchestrate",
       "kinds": [
         "fabric",
@@ -8710,5 +8710,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:17d7c9eb7ad2862c942b28abf79107f4d97ca9798206415ba41ab58c2faec60e"
+  "catalogHash": "sha256:aab96050ef4f8eb1acf670f2f0db451faaff7f4b134143c688a06982c5b70c1e"
 }

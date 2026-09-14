@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,7 @@ class OrchestrationTest {
     private final Catalog catalog = Catalog.load();
     private final BotRegistry bots = new BotRegistry(8);
     private final FakeCluster cluster = new FakeCluster();
-    private final Orchestration orchestration = new Orchestration(bots, cluster);
+    private final Orchestration orchestration = new Orchestration(bots, cluster, Duration.ofMillis(200));
 
     /** The cluster as the provisioner sees it: which bots it was asked for, and what came of them. */
     private static final class FakeCluster extends BotProvisioner {
@@ -41,6 +42,7 @@ class OrchestrationTest {
         private final List<String> declared = new ArrayList<>();
         private final List<String> released = new ArrayList<>();
         private String failure;
+        private Duration age = Duration.ofMinutes(10);
 
         FakeCluster() {
             super(null, null, null, 0);
@@ -63,6 +65,11 @@ class OrchestrationTest {
         @Override
         public String failure(String name) {
             return failure;
+        }
+
+        @Override
+        public Duration age(String name) {
+            return declared.contains(name) ? age : null;
         }
 
         @Override
@@ -128,6 +135,28 @@ class OrchestrationTest {
         assertTrue(joined.isError(), text(joined));
         assertTrue(text(joined).contains("image not found"), text(joined));
         assertEquals(List.of("qa-fail-1"), cluster.released);
+    }
+
+    /** A booting bot outlasts one call's patience; the call says so and leaves the bot to link. */
+    @Test
+    void aJoinThatRunsOutOfPatienceLeavesTheBootingBotForTheNextCall() {
+        cluster.age = Duration.ofSeconds(30);
+
+        McpSchema.CallToolResult joined = orchestration.call(catalog.get("join-server"),
+                Map.of("name", "qa-slow-1", "host", "paper.mc-agents.svc", "kind", "fabric"));
+
+        assertTrue(joined.isError(), text(joined));
+        assertTrue(text(joined).contains("is still starting") && text(joined).contains("Call join-server again"), text(joined));
+        assertTrue(cluster.released.isEmpty(), cluster.released::toString);
+    }
+
+    @Test
+    void aBotThatNeverLinksWithinTheWholeStartIsGivenBack() {
+        McpSchema.CallToolResult joined = orchestration.call(catalog.get("join-server"),
+                Map.of("name", "qa-dead-1", "host", "paper.mc-agents.svc", "kind", "fabric"));
+
+        assertTrue(text(joined).contains("never dialled in"), text(joined));
+        assertEquals(List.of("qa-dead-1"), cluster.released);
     }
 
     /** One asked for by an earlier join is that join's to give back, not this one's. */

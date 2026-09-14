@@ -5,6 +5,8 @@ import io.fabric8.kubernetes.api.model.GenericKubernetesResourceBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -114,6 +116,19 @@ public class BotProvisioner {
         Object said = fields.get("lastError");
 
         return said == null ? "the operator reported it failed and did not say why" : said.toString();
+    }
+
+    /**
+     * How long ago the object that stands for a bot was created, or null when there is none. What
+     * a join that has run out of patience asks before calling a bot that is still booting lost.
+     */
+    public Duration age(String name) {
+        GenericKubernetesResource bot = find(name);
+
+        if (bot == null || bot.getMetadata().getCreationTimestamp() == null) {
+            return null;
+        }
+        return Duration.between(Instant.parse(bot.getMetadata().getCreationTimestamp()), Instant.now());
     }
 
     /**

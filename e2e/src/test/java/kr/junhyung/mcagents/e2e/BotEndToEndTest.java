@@ -2134,6 +2134,22 @@ class BotEndToEndTest {
         assertTrue(completed.contains("weather"), completed);
     }
 
+    /**
+     * A plugin command's arguments are completed by asking the server, and the answer comes back as a
+     * packet. One kind of bot waited for that packet on the thread that handles packets, and froze:
+     * the call timed out and so did every call after it, restart-bot included.
+     */
+    @Test
+    void anArgumentThePluginCompletesIsAskedForWithoutStoppingTheBot() {
+        agent.requires("complete-command");
+        String completed = agent.mustCall("complete-command",
+            Map.of("bot", BotWorld.BOT, "text", "/fixture talk ", "timeoutMs", 10000));
+        String after = agent.mustCall("get-position", Map.of("bot", BotWorld.BOT));
+
+        assertTrue(completed.contains(BotWorld.BOT), completed);
+        assertTrue(after.startsWith("Position: "), after);
+    }
+
     @Test
     void theTabListHasTheBotInIt() {
         String players = agent.mustCall("read-player-list", Map.of("bot", BotWorld.BOT));

@@ -1,6 +1,7 @@
 package kr.junhyung.mcagents.tool;
 
 import io.modelcontextprotocol.spec.McpSchema;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -14,6 +15,7 @@ import kr.junhyung.mcagents.bot.JoinStage;
 import kr.junhyung.mcagents.catalog.ToolSpec;
 import kr.junhyung.mcagents.protocol.Messages;
 import kr.junhyung.mcagents.render.Text;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -41,10 +43,25 @@ public class Orchestration {
 
     private static final int START_POLL_MS = 500;
 
+    /*
+    How long one join-server call waits for a bot it had to start. A fabric client takes about a
+    minute to link, longer than an MCP client waits for a call: the first join was reported as timed
+    out while the bot went on to link, and the retry found it already there. So a call gives up well
+    inside that, says the bot is still starting, and the next call picks the same bot up.
+    */
+    private static final Duration JOIN_PATIENCE = Duration.ofSeconds(40);
+
     private final BotRegistry bots;
     private final BotProvisioner provisioner;
+    private final Duration patience;
 
+    @Autowired
     public Orchestration(BotRegistry bots, BotProvisioner provisioner) {
+        this(bots, provisioner, JOIN_PATIENCE);
+    }
+
+    Orchestration(BotRegistry bots, BotProvisioner provisioner, Duration patience) {
+        this.patience = patience;
         this.bots = bots;
         this.provisioner = provisioner;
     }
@@ -57,7 +74,7 @@ public class Orchestration {
                 case "restart-bot" -> restart(spec, arguments);
                 default -> ToolDispatcher.failure("%s is not an orchestration tool".formatted(spec.name()));
             };
-        } catch (JoinFailure e) {
+        } catch (JoinFailure | StillStarting e) {
             return ToolDispatcher.failure(e.getMessage());
         }
     }
@@ -285,7 +302,7 @@ public class Orchestration {
      * and an operator status that says Running would be a more encouraging lie.
      */
     private BotSession awaitLink(String name, String kind) {
-        long deadline = System.currentTimeMillis() + START_TIMEOUT_MS;
+        long deadline = System.currentTimeMillis() + patience.toMillis();
 
         while (System.currentTimeMillis() < deadline) {
             try {
@@ -306,9 +323,26 @@ public class Orchestration {
             }
         }
 
+        /* Measured from when the bot was asked for, so a call that picks a booting bot up does not start the clock again. */
+        Duration age = provisioner.age(name);
+        if (age != null && age.toMillis() < START_TIMEOUT_MS) {
+            throw new StillStarting(
+                    "a %s bot named \"%s\" is still starting (asked for %ds ago; a fabric client takes about a minute to link). Call join-server again with the same arguments: it waits for this bot rather than starting another."
+                            .formatted(kind, name, age.toSeconds()));
+        }
         throw new JoinFailure(JoinStage.LINK,
                 "a %s bot named \"%s\" was asked for but never dialled in within %dms. Look at the MinecraftBot: \"kubectl describe minecraftbot %s\" says whether the pod started and what stopped it."
                         .formatted(kind, name, START_TIMEOUT_MS, name));
+    }
+
+    /** Not a failure of the bot, so nothing is given back: the next call waits for the same one. */
+    private static final class StillStarting extends RuntimeException {
+
+        private static final long serialVersionUID = 1L;
+
+        StillStarting(String message) {
+            super(message);
+        }
     }
 
     private static String orDefault(String value, String fallback) {
