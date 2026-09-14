@@ -7,7 +7,7 @@
 # At fixed coordinates north of everything else, clear of the pool and the mobs the attack cases
 # summon, on dry ground a bot can walk round. Forceloaded for the same reason the pool is: a summon
 # into a chunk nothing has loaded yet places nothing, and the setup at boot runs before any player.
-forceload add 2 -17 6 -16
+forceload add 2 -17 10 -16
 # Out of the way before it dies: a killed mannequin lies where it stood for a second of dying, and a
 # case that put the NPCs back found that one under the label, and clicked it as it left the world.
 tp @e[type=mannequin,tag=mcagents_npc] 2.5 -250 -16.5
@@ -25,3 +25,8 @@ summon text_display 2.5 -57.6 -16.5 {Tags:["mcagents_npc"],billboard:"center",te
 # is clicked through, and it keeps the last player that right-clicked or hit it.
 summon interaction 6.5 -60 -16.5 {Tags:["mcagents_npc"],width:0.8f,height:1.9f}
 summon text_display 6.5 -57.6 -16.5 {Tags:["mcagents_npc"],billboard:"center",text:{text:"Well Keeper",color:"gold"}}
+
+# The older way to float a name: an invisible marker armor stand showing its own. Over a hitbox of
+# its own, tagged apart so a case reading the one under Well Keeper does not read this one.
+summon interaction 10.5 -60 -16.5 {Tags:["mcagents_npc","mcagents_hologram"],width:0.8f,height:1.9f}
+summon armor_stand 10.5 -58.2 -16.5 {Tags:["mcagents_npc"],Invisible:1b,Marker:1b,NoGravity:1b,CustomNameVisible:1b,CustomName:{text:"Seed Merchant",color:"green"}}

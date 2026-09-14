@@ -116,6 +116,11 @@ class BotEndToEndTest {
             agent.call("close-window", Map.of("bot", BotWorld.BOT));
         }
         world.run("dialog clear " + BotWorld.BOT);
+        /*
+        Through survival, which is what takes flight away: two jump presses a few ticks apart are a
+        double-tap to a creative player, and the walk after them glided three blocks for two.
+        */
+        world.run("gamemode survival " + BotWorld.BOT);
         world.run("gamemode creative " + BotWorld.BOT);
         /*
         In the overworld: a plain tp moves a bot within whatever dimension a case left it in. And
@@ -1027,7 +1032,8 @@ class BotEndToEndTest {
     }
 
     private static final String MANNEQUIN = "@e[type=mannequin,tag=mcagents_npc,limit=1]";
-    private static final String HITBOX = "@e[type=interaction,tag=mcagents_npc,limit=1]";
+    private static final String HITBOX = "@e[type=interaction,tag=mcagents_npc,tag=!mcagents_hologram,limit=1]";
+    private static final String UNDER_HOLOGRAM = "@e[type=interaction,tag=mcagents_hologram,limit=1]";
 
     /**
      * The fixture's two NPCs, unclicked, with the bot a few blocks from both and a named name tag in
@@ -1162,6 +1168,51 @@ class BotEndToEndTest {
         assertEquals("Right-clicked interaction.", hitbox);
         assertTrue(sky.contains("The crosshair is not on an entity within reach."), sky);
         assertTrue(named.contains("clicked"), "the mannequin was never clicked: " + named);
+        assertTrue(clicked.contains("player"), "the hitbox was never clicked: " + clicked);
+    }
+
+    /**
+     * A label that is not a text display: an invisible armor stand showing its name, which is how a
+     * server floated text before displays existed and how many still do. It is read the same way,
+     * and the marker stand itself is never what gets clicked.
+     */
+    @Test
+    void anNpcIsRightClickedByTheHologramOverIt() {
+        standBesideTheNpcs();
+        world.run("tp " + BotWorld.BOT + " 8.5 -60 -12.5");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String found = agent.mustCall("find-entity",
+            Map.of("bot", BotWorld.BOT, "type", "interaction", "maxDistance", 8, "count", 5));
+        String clicked = agent.mustCall("interact-entity", Map.of("bot", BotWorld.BOT, "label", "seed merchant"));
+        String recorded = awaitRecord(UNDER_HOLOGRAM, "interaction", read -> read.contains("player"));
+        world.run("function mcagents:setup");
+
+        assertTrue(Pattern.compile(
+            "- interaction labelled \"Seed Merchant\" at \\(10, -60, -17\\), [\\d.]+ blocks away, id \\d+")
+            .matcher(found).find(), found);
+        assertEquals("Right-clicked interaction.", clicked);
+        assertTrue(recorded.contains("player"), "the hitbox under the hologram was never clicked: " + recorded);
+    }
+
+    /**
+     * A key press clicks whatever the crosshair is on, and on a model that is an interaction
+     * hitbox. One kind of bot took the crosshair from a pick that gives such an entity no size, so a
+     * right-click passed through it to the ground behind.
+     */
+    @Test
+    void aUseKeyRightClicksTheHitboxUnderTheCrosshair() {
+        agent.requires("look-at", "press-input");
+        world.run("function mcagents:npc");
+        world.run("tp " + BotWorld.BOT + " 6.5 -60 -14.0");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("look-at", Map.of("bot", BotWorld.BOT, "x", 6, "y", -60, "z", -17));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 2));
+
+        agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "use"));
+        String clicked = awaitRecord(HITBOX, "interaction", read -> read.contains("player"));
+        world.run("function mcagents:npc");
+
         assertTrue(clicked.contains("player"), "the hitbox was never clicked: " + clicked);
     }
 
