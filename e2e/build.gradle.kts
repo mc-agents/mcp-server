@@ -57,7 +57,14 @@ tasks.test {
     timeout = Duration.ofMinutes(30)
     outputs.upToDateWhen { false }
     /* The diagnosis a failure prints has to reach whoever reads the job. */
-    testLogging { showStandardStreams = true }
+    // A failed case in CI otherwise prints the exception's class and line and nothing else, and
+    // the message is where a case says what the bot answered and what the server held.
+    testLogging {
+        showStandardStreams = true
+        events("failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showCauses = true
+    }
 }
 
 /*
