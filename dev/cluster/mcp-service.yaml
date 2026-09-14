@@ -1,0 +1,15 @@
+# The MCP port on the Mac. k3d forwards 127.0.0.1:13000 on the host to port 13000 on the nodes, and
+# the cluster's service load balancer answers there for this Service. A port-forward would do the
+# same until it dies, and an agent registered against it then fails with a connection refused that
+# says nothing about why.
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-public
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: mc-agents-mcp-server
+    app.kubernetes.io/instance: mcp
+  ports:
+    - { name: mcp, port: 13000, targetPort: mcp }

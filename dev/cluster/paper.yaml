@@ -1,0 +1,89 @@
+# The test server the cluster's bots join: Paper at the one version both kinds are built for, with
+# the fixture datapack that the end-to-end suite reads. It matches e2e/BotWorld so that what a case
+# proves there is what an agent sees here.
+#
+# /data is a claim so a restart keeps the world and the fixture that `make fixture` copied in; an
+# emptyDir would hand back a blank flat world that every reading tool answers "nothing" about.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paper-data
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paper
+  labels:
+    app.kubernetes.io/name: paper
+spec:
+  replicas: 1
+  # Two servers on one world directory corrupt it.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: paper
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: paper
+    spec:
+      containers:
+        - name: paper
+          image: itzg/minecraft-server:java25
+          env:
+            - { name: EULA, value: "TRUE" }
+            - { name: TYPE, value: PAPER }
+            - { name: VERSION, value: "26.1.2" }
+            # Bots authenticate offline; an online-mode server turns every one of them away.
+            - { name: ONLINE_MODE, value: "FALSE" }
+            - { name: MODE, value: creative }
+            - { name: LEVEL_TYPE, value: "minecraft:flat" }
+            - { name: GENERATE_STRUCTURES, value: "false" }
+            - { name: SPAWN_PROTECTION, value: "0" }
+            - { name: SPAWN_MONSTERS, value: "FALSE" }
+            - { name: VIEW_DISTANCE, value: "6" }
+            - { name: MEMORY, value: 2G }
+            - name: RCON_CMDS_STARTUP
+              value: |-
+                difficulty peaceful
+                weather clear 1000000
+            # Bots are named per scenario, so no ops list can name them in advance. run-command
+            # answers "Unknown or incomplete command" to a player who is not op, which reads as a
+            # wrong command rather than a missing permission.
+            - { name: RCON_CMDS_ON_CONNECT, value: "op @a" }
+            - { name: RCON_CMDS_PERIOD, value: "2" }
+          ports:
+            - { name: minecraft, containerPort: 25565 }
+          readinessProbe:
+            exec:
+              command: ["mc-health"]
+            initialDelaySeconds: 30
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              memory: 3Gi
+          volumeMounts:
+            - { name: data, mountPath: /data }
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: paper-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paper
+spec:
+  selector:
+    app.kubernetes.io/name: paper
+  ports:
+    - { name: minecraft, port: 25565, targetPort: minecraft }

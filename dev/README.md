@@ -107,3 +107,16 @@ the tool does. Nothing else in `dev/` needs this running.
 
 `ping-server` and `wait-for-server` talk to a Minecraft server directly, so they need one. Any
 server will do, including one already running for something else.
+
+## `cluster/` — the development cluster
+
+```
+k3d cluster create mc-agents --agents 1     once
+make -C dev/cluster up                      operator, this server, Paper with the fixture
+make -C dev/cluster names                   the MCP address and the `claude mcp add` line
+```
+
+The server answers on `127.0.0.1:13000/mcp` with the token from the `mcp-auth` Secret, and bots are
+started by calling `join-server` with host `paper.mc-agents.svc`; the operator makes the pod, of
+either kind. `make fixture` copies an edited datapack in and reloads it. Anyone who connects is made
+op, because a scenario names its bots and no ops list could name them in advance.
