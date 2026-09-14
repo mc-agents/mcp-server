@@ -1,5 +1,7 @@
 package kr.junhyung.mcagents.render;
 
+import java.util.List;
+
 public final class FoundItemRenderer implements Renderer<FoundItemRenderer.View> {
 
     public record View(String query, Stack item) {}
@@ -12,6 +14,10 @@ public final class FoundItemRenderer implements Renderer<FoundItemRenderer.View>
             return "No inventory item matches \"" + view.query() + "\".";
         }
 
-        return "Found " + Stack.describe(item) + " x" + item.count() + " in slot " + item.slot() + ".";
+        List<String> notes = Stack.notes(item);
+        String noted = notes.isEmpty() ? "" : " (" + String.join(", ", notes) + ")";
+
+        return "Found " + Stack.describe(item) + " x" + item.count() + " in slot " + item.slot() + noted + "."
+            + Stack.lore(item);
     }
 }

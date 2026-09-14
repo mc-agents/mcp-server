@@ -49,6 +49,15 @@ setblock 3 -60 0 oak_sign[rotation=8]{front_text:{messages:[{text:"Welcome",colo
 kill @e[type=text_display,tag=mcagents]
 summon text_display 3 -58 3 {Tags:["mcagents"],billboard:"center",text:{text:"Hologram line",color:"aqua"}}
 
+# --- furniture made of displays: find-entity ---
+# Every display is called item_display or block_display, and what tells a chair from a signpost is
+# what it shows: the item and the model it is drawn with, or the block state. Clear of the villager
+# below and dry, the pool being further along the negative axes.
+kill @e[type=item_display,tag=mcagents]
+summon item_display 3 -58 -3 {Tags:["mcagents"],item:{id:"minecraft:paper",count:1,components:{"minecraft:custom_name":"Probe Chair","minecraft:item_model":"hyperfarm:furniture/chair"}}}
+kill @e[type=block_display,tag=mcagents]
+summon block_display 4 -60 -3 {Tags:["mcagents"],block_state:{Name:"minecraft:oak_stairs",Properties:{facing:"east",half:"bottom",shape:"straight",waterlogged:"false"}}}
+
 # --- an entity to find and interact with: find-entity, attack-entity, interact-entity ---
 kill @e[type=cow,tag=mcagents]
 # The nameplate carries a rank glyph in front of the name, which is what an NPC looks like on a
@@ -136,7 +145,9 @@ give @a minecraft:oak_planks 24
 give @a minecraft:bow 1
 # A carried item with a name of its own, so list-inventory has a label to read rather than only an
 # item id. This is what a quest item looks like: named by the server, in the pack's own font.
-give @a minecraft:paper[custom_name={text:"",extra:[{text:"",font:"hyperfarm:gui/icons"},{text:"Quest Note",font:"hyperfarm:gui/label"}]}] 1
+# It carries lore with a blank line and a model of its own too, which is how a server tells one
+# piece of paper from another: the id says paper and the model says what the player sees.
+give @a minecraft:paper[custom_name={text:"",extra:[{text:"",font:"hyperfarm:gui/icons"},{text:"Quest Note",font:"hyperfarm:gui/label"}]},lore=[{text:"Bring this to the smith",color:"gray"},{text:""}],item_model="hyperfarm:quest/note"] 1
 kill @e[type=item]
 
 # --- a wall to walk around: move-to-position ---

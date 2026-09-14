@@ -1,0 +1,17 @@
+{
+  "tool": "click-slot",
+  "note": "a right click outside the window drops one item from the cursor",
+  "data": {
+    "slot": null,
+    "outside": true,
+    "button": "right",
+    "shift": false,
+    "mode": "click",
+    "hotbar": null,
+    "before": {"name": "cooked_beef", "count": 12, "label": null, "labelComponent": null, "lore": [], "loreComponents": []},
+    "after": {"name": "cooked_beef", "count": 11, "label": null, "labelComponent": null, "lore": [], "loreComponents": []},
+    "cursor": {"name": "cooked_beef", "count": 11, "label": null, "labelComponent": null, "lore": [], "loreComponents": []},
+    "swapped": null
+  },
+  "text": "Right-clicked outside the window.\n  cursor: cooked_beef x12 -> cooked_beef x11"
+}

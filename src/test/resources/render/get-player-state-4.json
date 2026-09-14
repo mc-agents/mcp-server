@@ -1,0 +1,34 @@
+{
+  "tool": "get-player-state",
+  "note": "sat on a plugin's seat entity, which rides the mount",
+  "data": {
+    "health": 20,
+    "food": 20,
+    "saturation": 5,
+    "experience": {
+      "level": 0,
+      "progress": 0,
+      "points": 0
+    },
+    "gameMode": "survival",
+    "dimension": "overworld",
+    "position": {
+      "x": 3,
+      "y": -60,
+      "z": -6
+    },
+    "oxygen": null,
+    "dead": false,
+    "causeOfDeath": null,
+    "causeOfDeathComponent": null,
+    "vehicle": {
+      "type": "pig",
+      "id": 412,
+      "seat": {
+        "type": "armor_stand",
+        "id": 413
+      }
+    }
+  },
+  "text": "health: 20 / 20\nfood: 20 / 20 (saturation 5)\nhealth bar: 100%\nexperience: level 0, 0% to the next level, 0 points\ngameMode: survival / dimension: overworld\nposition: (3, -60, -6)\noxygen: full / 20\nriding: pig (id 412), seated on armor_stand (id 413)"
+}

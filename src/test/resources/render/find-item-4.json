@@ -1,0 +1,25 @@
+{
+  "tool": "find-item",
+  "note": "an item drawn with a model of its own, cooling down, with lore under it",
+  "data": {
+    "query": "horn",
+    "item": {
+      "name": "goat_horn",
+      "count": 1,
+      "slot": 40,
+      "label": null,
+      "labelComponent": null,
+      "lore": [
+        "Rally the guards"
+      ],
+      "loreComponents": [
+        {
+          "text": "Rally the guards"
+        }
+      ],
+      "itemModel": "hyperfarm:horn/rally",
+      "cooldownTicks": 140
+    }
+  },
+  "text": "Found goat_horn x1 in slot 40 (model hyperfarm:horn/rally, cooling down for 140 more ticks).\n    Rally the guards"
+}

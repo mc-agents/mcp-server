@@ -336,7 +336,7 @@ The same goes for everything else a server writes and a bot used to flatten on i
 sends `titleComponent` for its header and `close-window` for the one it closed, a sign face sends
 `lineComponents`, an entity sends `labelComponent` for its nameplate, a scoreboard sends
 `titleComponent` and a `nameComponent` per entry, the inventory's stacks send `label` and
-`labelComponent`, and the tab list sends `displayName` with its component beside the username. The username stays because it is the identity every other tool
+`labelComponent` with `lore` and `loreComponents` beside them, and the tab list sends `displayName` with its component beside the username. The username stays because it is the identity every other tool
 takes; the drawn name is where a server puts a rank.
 
 **`join-server` waits three minutes for a spawn.** A bot on a machine with a graphics card is in
@@ -344,6 +344,11 @@ the world a few seconds after it dials. Without one it is another matter: the cl
 four-core CI runner that took eighty-nine seconds -- so the bot arrived in the world one second
 after its own ninety-second deadline had fired, and disconnected itself on the way in. The number
 is what a client without a card costs, not slack.
+
+**An item's model is part of what it is.** A server that draws its own item gives paper a model of its
+own, and the id alone reads a quest note, a menu icon and a sheet of paper as one thing. So the
+inventory's stacks and the item an `item_display` holds send `itemModel`, the `item_model` component
+as the game resolves it -- which for a plain item is its own id, and the server leaves that unsaid.
 
 **A blank lore line is a line.** It is where a menu puts its spacing, and the line below it sits
 where the server put it -- the same reason a blank sign face line is reported rather than dropped.

@@ -1,0 +1,59 @@
+{
+  "tool": "list-inventory",
+  "note": "a quest item drawn with a model of its own and a lore spacer, and a snowball cooling down",
+  "data": {
+    "items": [
+      {
+        "name": "paper",
+        "count": 1,
+        "slot": 36,
+        "label": "Quest Note",
+        "labelComponent": {
+          "text": "",
+          "extra": [
+            {
+              "text": "",
+              "font": "hyperfarm:gui/icons"
+            },
+            {
+              "text": "Quest Note",
+              "font": "hyperfarm:gui/label"
+            }
+          ]
+        },
+        "lore": [
+          "Bring this to the smith",
+          "",
+          "Right-click to read"
+        ],
+        "loreComponents": [
+          {
+            "text": "Bring this to the smith",
+            "color": "gray"
+          },
+          {
+            "text": ""
+          },
+          {
+            "text": "Right-click to read",
+            "color": "dark_gray"
+          }
+        ],
+        "itemModel": "hyperfarm:quest/note",
+        "cooldownTicks": null
+      },
+      {
+        "name": "snowball",
+        "count": 16,
+        "slot": 37,
+        "label": null,
+        "labelComponent": null,
+        "lore": [],
+        "loreComponents": [],
+        "itemModel": "minecraft:snowball",
+        "cooldownTicks": 35
+      }
+    ]
+  },
+  "text": "2 item stack(s):\n- [gui/label] Quest Note [paper] x1 (slot 36, model hyperfarm:quest/note)\n    Bring this to the smith\n    \n    Right-click to read\n- snowball x16 (slot 37, cooling down for 35 more ticks)"
+}

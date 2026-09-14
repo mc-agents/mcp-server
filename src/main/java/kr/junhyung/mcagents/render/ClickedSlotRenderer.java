@@ -17,13 +17,23 @@ import java.util.List;
  */
 public final class ClickedSlotRenderer implements Renderer<ClickedSlotRenderer.View> {
 
-    public record View(int slot, String button, boolean shift, String mode, Integer hotbar,
+    /** {@code outside} is boxed because a bot built before it existed sends none, and means false then. */
+    public record View(Integer slot, Boolean outside, String button, boolean shift, String mode, Integer hotbar,
         Held before, Held after, Held cursor, Swapped swapped) {}
 
     public record Swapped(Held before, Held after) {}
 
+    /**
+     * A click outside the window lands on no slot, so the one line is the cursor's: what it held and
+     * what the drop left on it.
+     */
     @Override
     public String render(View view) {
+        if (Boolean.TRUE.equals(view.outside())) {
+            return capitalised(view.button()) + "-clicked outside the window.\n  cursor: "
+                + Held.describe(view.before()) + " -> " + Held.describe(view.after());
+        }
+
         List<String> lines = new ArrayList<>();
         lines.add("  slot " + view.slot() + ": " + Held.describe(view.before()) + " -> " + Held.describe(view.after()));
 

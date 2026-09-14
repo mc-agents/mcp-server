@@ -1,0 +1,31 @@
+{
+  "tool": "get-player-state",
+  "note": "in a minecart, sat on the vehicle itself",
+  "data": {
+    "health": 20,
+    "food": 20,
+    "saturation": 5,
+    "experience": {
+      "level": 0,
+      "progress": 0,
+      "points": 0
+    },
+    "gameMode": "creative",
+    "dimension": "overworld",
+    "position": {
+      "x": 3,
+      "y": -60,
+      "z": -6
+    },
+    "oxygen": null,
+    "dead": false,
+    "causeOfDeath": null,
+    "causeOfDeathComponent": null,
+    "vehicle": {
+      "type": "minecart",
+      "id": 77,
+      "seat": null
+    }
+  },
+  "text": "health: 20 / 20\nfood: 20 / 20 (saturation 5)\nhealth bar: 100%\nexperience: level 0, 0% to the next level, 0 points\ngameMode: creative / dimension: overworld\nposition: (3, -60, -6)\noxygen: full / 20\nriding: minecart (id 77)"
+}

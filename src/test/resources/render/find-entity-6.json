@@ -1,0 +1,66 @@
+{
+  "tool": "find-entity",
+  "note": "furniture made of displays: an item drawn with a model of its own, and a block state",
+  "data": {
+    "query": "display",
+    "maxDistance": 16,
+    "entities": [
+      {
+        "label": "item_display",
+        "type": "item_display",
+        "position": {
+          "x": 3,
+          "y": -58,
+          "z": -3
+        },
+        "distance": 3.2,
+        "labelComponent": null,
+        "item": {
+          "name": "paper",
+          "count": 1,
+          "label": "Probe Chair",
+          "labelComponent": {
+            "text": "Probe Chair"
+          },
+          "itemModel": "hyperfarm:furniture/chair"
+        },
+        "block": null
+      },
+      {
+        "label": "block_display",
+        "type": "block_display",
+        "position": {
+          "x": 4,
+          "y": -60,
+          "z": -3
+        },
+        "distance": 3.7,
+        "labelComponent": null,
+        "item": null,
+        "block": {
+          "name": "oak_stairs",
+          "properties": {
+            "waterlogged": "false",
+            "facing": "east",
+            "half": "bottom",
+            "shape": "straight"
+          }
+        }
+      },
+      {
+        "label": "text_display",
+        "type": "text_display",
+        "position": {
+          "x": 3,
+          "y": -58,
+          "z": 3
+        },
+        "distance": 3.3,
+        "labelComponent": null,
+        "item": null,
+        "block": null
+      }
+    ]
+  },
+  "text": "Found 3 entity/entities:\n- item_display at (3, -58, -3), 3.2 blocks away, showing Probe Chair [paper] x1 (model hyperfarm:furniture/chair)\n- block_display at (4, -60, -3), 3.7 blocks away, showing oak_stairs[facing=east,half=bottom,shape=straight,waterlogged=false]\n- text_display at (3, -58, 3), 3.3 blocks away"
+}

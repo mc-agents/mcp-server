@@ -1765,4 +1765,216 @@ class BotEndToEndTest {
         assertTrue(night.startsWith("time: 20:0"), night);
         assertTrue(night.contains(" of the day, night)"), night);
     }
+
+    /**
+     * A plugin names paper after a quest and gives it a model of its own, and its lore is where the
+     * instructions go. An inventory that said "paper x1" could not tell that note from any other
+     * sheet, and one that dropped the blank lore line read a spaced tooltip as a different one.
+     */
+    @Test
+    void aCarriedItemReadsWithItsLoreAndItsModel() {
+        world.run("function mcagents:setup");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "Quest Note", "timeoutMs", 10000));
+
+        String inventory = agent.mustCall("list-inventory", Map.of("bot", BotWorld.BOT));
+        String found = agent.mustCall("find-item", Map.of("bot", BotWorld.BOT, "nameOrType", "Quest Note"));
+        String held = world.run("data get entity " + BotWorld.BOT + " Inventory[{id:\"minecraft:paper\"}].components");
+
+        assertTrue(held.contains("\"hyperfarm:quest/note\""), held);
+        assertTrue(inventory.contains("Quest Note [paper] x1 (slot ") && inventory.contains(
+            ", model hyperfarm:quest/note)\n    Bring this to the smith\n    "), inventory);
+        assertTrue(inventory.contains("- diamond x3 (slot 36)\n"), "a plain stack gained notes: " + inventory);
+        /* The untrusted-content notice goes at the end of the first line, before the lore. */
+        assertTrue(found.contains(" (model hyperfarm:quest/note).") && found.contains("\n    Bring this to the smith"), found);
+    }
+
+    /**
+     * A cooldown is the server's, and it says so with a packet nothing else reads. Thrown in survival
+     * so that the snowball the server takes says the use was accepted, which is what starts it.
+     */
+    @Test
+    void anItemThatWasJustUsedIsCoolingDown() {
+        agent.requires("use-held-item", "equip-item", "list-inventory");
+        world.run("clear " + BotWorld.BOT);
+        world.run("give " + BotWorld.BOT
+            + " snowball[use_cooldown={seconds:60,cooldown_group:\"mcagents:probe\"}] 4");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "snowball", "timeoutMs", 10000));
+        agent.mustCall("equip-item", Map.of("bot", BotWorld.BOT, "itemName", "snowball"));
+        world.run("gamemode survival " + BotWorld.BOT);
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+
+        agent.mustCall("use-held-item", Map.of("bot", BotWorld.BOT));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String inventory = agent.mustCall("list-inventory", Map.of("bot", BotWorld.BOT));
+        String left = world.run("execute if items entity " + BotWorld.BOT + " weapon.mainhand minecraft:snowball[count=3]");
+
+        world.run("gamemode creative " + BotWorld.BOT);
+        world.run("function mcagents:setup");
+
+        Matcher ticks = Pattern.compile("snowball x3 \\(slot \\d+, cooling down for (\\d+) more ticks\\)").matcher(inventory);
+        assertTrue(left.startsWith("Test passed"), "the server did not take the snowball: " + left);
+        assertTrue(ticks.find(), inventory);
+        assertTrue(Integer.parseInt(ticks.group(1)) > 1000 && Integer.parseInt(ticks.group(1)) <= 1200, inventory);
+    }
+
+    /**
+     * A click outside the window drops the cursor: one item for the right button and the rest for
+     * the left. Asked of the ground and of the bot's inventory, since the cursor the client shows is
+     * its own guess, and a cursor still holding something when the window closes goes back there.
+     */
+    @Test
+    void aClickOutsideTheWindowDropsWhatTheCursorHolds() {
+        world.run("function mcagents:setup");
+        world.run("tp " + BotWorld.BOT + " 2 -59 0");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+        agent.mustCall("open-container", Map.of("bot", BotWorld.BOT, "x", 1, "y", -60, "z", 3));
+
+        agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 4));
+        String one = agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "outside", true, "button", "right"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+        /* Counted before the rest follows it down, because two stacks on the ground merge into one. */
+        String single = world.run(
+            "execute if entity @e[type=item,nbt={Item:{id:\"minecraft:cooked_beef\",count:1}}]");
+
+        String rest = agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "outside", true));
+        String refused = agent.refusal("click-slot", Map.of("bot", BotWorld.BOT, "outside", true, "slot", 4));
+        agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+
+        String kept = world.run("execute if items entity " + BotWorld.BOT + " container.* minecraft:cooked_beef");
+        String chest = world.run("data get block 1 -60 3 Items[{Slot:4b}]");
+        world.run("function mcagents:setup");
+
+        assertEquals("Right-clicked outside the window.\n  cursor: cooked_beef x12 -> cooked_beef x11", one);
+        assertEquals("Left-clicked outside the window.\n  cursor: cooked_beef x11 -> empty", rest);
+        assertTrue(refused.contains("takes no slot"), refused);
+        assertTrue(single.startsWith("Test passed"), "one item did not reach the ground: " + single);
+        assertTrue(kept.startsWith("Test failed"), "the rest came back to the inventory: " + kept);
+        assertTrue(chest.startsWith("Found no elements"), chest);
+    }
+
+    /**
+     * With a chest open the server takes clicks for the chest only, and drops a click meant for the
+     * player's own inventory without a word. equip-item used to answer "Equipped" all the same.
+     */
+    @Test
+    void equippingBehindAnOpenWindowIsRefused() {
+        world.run("function mcagents:setup");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "bow", "timeoutMs", 10000));
+        agent.mustCall("open-container", Map.of("bot", BotWorld.BOT, "x", 1, "y", -60, "z", 3));
+
+        String refused = agent.refusal("equip-item",
+            Map.of("bot", BotWorld.BOT, "itemName", "bow", "destination", "off-hand"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        agent.mustCall("close-window", Map.of("bot", BotWorld.BOT));
+
+        String held = world.run("execute if items entity " + BotWorld.BOT + " weapon.offhand minecraft:bow");
+        world.run("function mcagents:setup");
+
+        assertTrue(refused.contains("Close it with close-window first."), refused);
+        assertTrue(held.startsWith("Test failed"), "the bow moved after all: " + held);
+    }
+
+    /**
+     * What the bot rides, and what it sits on: a plugin seats a player on an invisible entity riding
+     * the mount. Asked of the server as well, which is the one that says who rides what.
+     */
+    @Test
+    void theBotSaysWhatItIsRidingAndWhatItSitsOn() {
+        world.run("kill @e[tag=mcagents_ride]");
+        world.run("tp " + BotWorld.BOT + " 3 -60 -6");
+        world.run("summon pig 3 -60 -7 {Tags:[\"mcagents_ride\"],NoAI:1b,Silent:1b,Invulnerable:1b,"
+            + "Passengers:[{id:\"minecraft:armor_stand\",Tags:[\"mcagents_ride\",\"mcagents_seat\"],Invisible:1b}]}");
+        world.run("summon minecart 5 -60 -7 {Tags:[\"mcagents_ride\",\"mcagents_cart\"]}");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        world.run("ride " + BotWorld.BOT + " mount @e[type=armor_stand,tag=mcagents_seat,limit=1]");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String seated = agent.mustCall("get-player-state", Map.of("bot", BotWorld.BOT));
+        String onSeat = world.run("execute as " + BotWorld.BOT + " on vehicle if entity @s[type=armor_stand]");
+        String onPig = world.run("execute as " + BotWorld.BOT + " on vehicle on vehicle if entity @s[type=pig]");
+
+        world.run("ride " + BotWorld.BOT + " dismount");
+        world.run("ride " + BotWorld.BOT + " mount @e[type=minecart,tag=mcagents_cart,limit=1]");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String carted = agent.mustCall("get-player-state", Map.of("bot", BotWorld.BOT));
+
+        world.run("ride " + BotWorld.BOT + " dismount");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String walking = agent.mustCall("get-player-state", Map.of("bot", BotWorld.BOT));
+        world.run("kill @e[tag=mcagents_ride]");
+
+        assertTrue(onSeat.startsWith("Test passed") && onPig.startsWith("Test passed"), onSeat + " / " + onPig);
+        assertTrue(Pattern.compile("\nriding: pig \\(id \\d+\\), seated on armor_stand \\(id \\d+\\)$")
+            .matcher(seated).find(), seated);
+        assertTrue(Pattern.compile("\nriding: minecart \\(id \\d+\\)$").matcher(carted).find(), carted);
+        assertTrue(!walking.contains("riding:"), walking);
+    }
+
+    /**
+     * Furniture is displays, and every one is called item_display or block_display. What tells a
+     * chair from a signpost is what it shows, so that is read, and checked against the entity the
+     * server holds.
+     */
+    @Test
+    void aDisplayIsFoundWithWhatItShows() {
+        world.run("function mcagents:setup");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String item = agent.mustCall("find-entity",
+            Map.of("bot", BotWorld.BOT, "type", "item_display", "maxDistance", 16));
+        String block = agent.mustCall("find-entity",
+            Map.of("bot", BotWorld.BOT, "type", "block_display", "maxDistance", 16));
+        String model = world.run("data get entity @e[type=item_display,tag=mcagents,limit=1] item.components");
+        String state = world.run("data get entity @e[type=block_display,tag=mcagents,limit=1] block_state");
+
+        assertTrue(model.contains("\"hyperfarm:furniture/chair\""), model);
+        assertTrue(state.contains("facing: \"east\""), state);
+        assertTrue(item.contains("- item_display at (3, -58, -3), ")
+            && item.contains(" blocks away, showing Probe Chair [paper] x1 (model hyperfarm:furniture/chair)"), item);
+        assertTrue(block.contains(
+            " blocks away, showing oak_stairs[facing=east,half=bottom,shape=straight,waterlogged=false]"), block);
+    }
+
+    /**
+     * The below-name slot is spelled below_name by the game, and one kind of bot looked it up as
+     * belowName and found nothing there, whatever the server had put in it.
+     */
+    @Test
+    void theBelowNameSlotIsRead() {
+        world.run("scoreboard objectives remove mcagents_below");
+        world.run("scoreboard objectives add mcagents_below dummy \"Probe Below\"");
+        world.run("scoreboard objectives setdisplay below_name mcagents_below");
+        world.run("scoreboard players set " + BotWorld.BOT + " mcagents_below 5");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String board = agent.mustCall("read-scoreboard", Map.of("bot", BotWorld.BOT, "slot", "belowName"));
+        String score = world.run("scoreboard players get " + BotWorld.BOT + " mcagents_below");
+        world.run("scoreboard objectives remove mcagents_below");
+
+        assertTrue(score.contains("has 5"), score);
+        assertTrue(board.startsWith("scoreboard \"Probe Below\" (belowName, 1 entries)"), board);
+        assertTrue(board.contains("  " + BotWorld.BOT + ": 5"), board);
+    }
+
+    /**
+     * An action bar a plugin holds up is the same packet every few ticks, and it is one thing
+     * showing. The bot folds the repeats into one line; sent as a line each, twenty of them pushed
+     * everything else out of what a caller reads and woke a waiter on a line that was already up.
+     */
+    @Test
+    void anActionBarHeldUpIsOneLineShownManyTimes() {
+        world.run("scoreboard objectives remove mcagents_fold");
+        world.run("scoreboard objectives add mcagents_fold dummy");
+        world.run("scoreboard players set #fold mcagents_fold 20");
+        world.run("function mcagents:fold");
+        sleep(3000);
+
+        String bars = agent.mustCall("read-action-bar", Map.of("bot", BotWorld.BOT, "count", 5));
+        world.run("scoreboard players set #fold mcagents_fold 0");
+        world.run("scoreboard objectives remove mcagents_fold");
+
+        assertEquals(1, Pattern.compile("Fold probe").matcher(bars).results().count(), bars);
+        assertTrue(Pattern.compile("Fold probe \\(shown ([2-9]|\\d\\d+) times").matcher(bars).find(), bars);
+    }
 }

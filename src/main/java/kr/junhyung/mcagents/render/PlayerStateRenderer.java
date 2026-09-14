@@ -10,9 +10,19 @@ public final class PlayerStateRenderer implements Renderer<PlayerStateRenderer.V
 
     public record Experience(int level, double progress, int points) {}
 
+    public record Ridden(String type, int id) {
+
+        @Override
+        public String toString() {
+            return type + " (id " + id + ")";
+        }
+    }
+
+    public record Vehicle(String type, int id, Ridden seat) {}
+
     public record View(double health, double food, double saturation, Experience experience, String gameMode,
         String dimension, Point position, Double oxygen, Boolean dead, String causeOfDeath,
-        JsonNode causeOfDeathComponent) {}
+        JsonNode causeOfDeathComponent, Vehicle vehicle) {}
 
     /**
      * A dead bot's health reads 0 / 20 and nothing else about it looks wrong, so the first line
@@ -45,6 +55,16 @@ public final class PlayerStateRenderer implements Renderer<PlayerStateRenderer.V
             "position: " + (view.position() == null ? "unknown" : view.position().toString()),
             "oxygen: " + (view.oxygen() == null ? "full" : Text.number(view.oxygen())) + " / 20"));
 
+        /* Only while riding, so a bot on its feet reads exactly as it did before vehicles were reported. */
+        if (view.vehicle() != null) {
+            lines.add("riding: " + riding(view.vehicle()));
+        }
+
         return String.join("\n", lines);
+    }
+
+    private static String riding(Vehicle vehicle) {
+        String ridden = new Ridden(vehicle.type(), vehicle.id()).toString();
+        return vehicle.seat() == null ? ridden : ridden + ", seated on " + vehicle.seat();
     }
 }

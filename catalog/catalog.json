@@ -295,7 +295,7 @@
     {
       "name": "click-slot",
       "group": "slot",
-      "description": "Click one slot of the window that is currently open, or press a key over it the way a player does: a number key, the offhand key, drop, a double-click or a creative middle-click.",
+      "description": "Click one slot of the window that is currently open, or outside it to drop what the cursor holds, or press a key over it the way a player does: a number key, the offhand key, drop, a double-click or a creative middle-click.",
       "route": "rpc",
       "kinds": [
         "fabric",
@@ -317,7 +317,11 @@
           "slot": {
             "type": "integer",
             "minimum": 0,
-            "description": "Slot number as listed by the window contents"
+            "description": "Slot number as listed by the window contents. Leave it out only for a click outside the window"
+          },
+          "outside": {
+            "description": "Click outside the window instead of on a slot, which drops what the cursor holds: the whole stack with the left button, one item with the right. Only a plain click takes it, and it takes no slot (default: false)",
+            "type": "boolean"
           },
           "button": {
             "description": "Which mouse button to press for a click (default: 'left')",
@@ -351,18 +355,24 @@
             "maximum": 9
           }
         },
-        "required": [
-          "slot"
-        ],
         "additionalProperties": false
       },
       "wireSchema": {
         "type": "object",
         "properties": {
           "slot": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 0,
-            "description": "Slot number as listed by the window contents"
+            "description": "Slot number as listed by the window contents. Leave it out only for a click outside the window",
+            "default": null
+          },
+          "outside": {
+            "description": "Click outside the window instead of on a slot, which drops what the cursor holds: the whole stack with the left button, one item with the right. Only a plain click takes it, and it takes no slot (default: false)",
+            "type": "boolean",
+            "default": false
           },
           "button": {
             "description": "Which mouse button to press for a click (default: 'left')",
@@ -407,17 +417,25 @@
           "button",
           "hotbar",
           "mode",
+          "outside",
           "shift",
           "slot"
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:e73d8185908341ecc5ec628d7447dc888db0d4753fa468983a53b05c659a0af7",
+      "wireSchemaHash": "sha256:1daccb57f61d8687ddb3b0e5a2206ad465fdecd3d6caf83568032c987e70f54b",
       "resultSchema": {
         "type": "object",
         "properties": {
           "slot": {
-            "type": "integer"
+            "description": "The slot clicked, null for a click outside the window",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "outside": {
+            "type": "boolean"
           },
           "button": {
             "type": "string",
@@ -430,7 +448,7 @@
             "type": "boolean"
           },
           "before": {
-            "description": "What the slot held before the click, null when it was empty",
+            "description": "What the slot held before the click, null when it was empty. For a click outside the window, what the cursor held",
             "type": [
               "object",
               "null"
@@ -479,7 +497,7 @@
             ]
           },
           "after": {
-            "description": "What the slot holds now, null when the click emptied it",
+            "description": "What the slot holds now, null when the click emptied it. For a click outside the window, what the cursor holds",
             "type": [
               "object",
               "null"
@@ -713,6 +731,7 @@
           "cursor",
           "hotbar",
           "mode",
+          "outside",
           "shift",
           "slot",
           "swapped"
@@ -1807,10 +1826,83 @@
                     "string",
                     "null"
                   ]
+                },
+                "item": {
+                  "description": "What an item_display shows, null for every other entity and for one holding nothing. A display is how a server puts a model into the world, and its item_model is what says which one.",
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "label": {
+                      "description": "The custom name the server gave it, if any",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "labelComponent": {
+                      "description": "The component that name was written as, as Minecraft's own JSON. Null when there is none.",
+                      "type": [
+                        "object",
+                        "array",
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "itemModel": {
+                      "description": "The item_model component, namespaced. A plain item's is its own id.",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "count",
+                    "itemModel",
+                    "label",
+                    "labelComponent",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                },
+                "block": {
+                  "description": "What a block_display shows, null for every other entity",
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "name": {
+                      "description": "The block's registry id without the namespace",
+                      "type": "string"
+                    },
+                    "properties": {
+                      "description": "The block state's properties, facing and the like, as the game names them",
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "properties"
+                  ],
+                  "additionalProperties": false
                 }
               },
               "required": [
+                "block",
                 "distance",
+                "item",
                 "label",
                 "labelComponent",
                 "position",
@@ -1914,12 +2006,41 @@
                   "string",
                   "null"
                 ]
+              },
+              "lore": {
+                "description": "The lines the server wrote under the name, in order. A blank line is a line: it is where a menu puts its spacing.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "loreComponents": {
+                "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                "type": "array"
+              },
+              "itemModel": {
+                "description": "The item_model component, namespaced: the model the client draws the item with. A server dresses paper as a quest item or a menu icon by setting it, and the item id alone cannot tell those apart. Every item has one, and a plain item's is its own id.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "cooldownTicks": {
+                "description": "Ticks left before the item can be used again, null when it is not cooling down. A cooldown belongs to the item's cooldown group, so every stack in that group reads the same.",
+                "type": [
+                  "integer",
+                  "null"
+                ]
               }
             },
             "required": [
+              "cooldownTicks",
               "count",
+              "itemModel",
               "label",
               "labelComponent",
+              "lore",
+              "loreComponents",
               "name",
               "slot"
             ],
@@ -2214,7 +2335,7 @@
     {
       "name": "get-player-state",
       "group": "hud",
-      "description": "Report the health, hunger, experience and position the bot sees for itself, and whether it is dead.",
+      "description": "Report the health, hunger, experience and position the bot sees for itself, what it is riding, and whether it is dead.",
       "route": "rpc",
       "kinds": [
         "fabric",
@@ -2331,6 +2452,51 @@
               "string",
               "null"
             ]
+          },
+          "vehicle": {
+            "description": "What the bot is riding, null when it stands on its own feet. type and id are the bottom of the stack, the thing that moves.",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "type": {
+                "description": "The entity's registry id without the namespace",
+                "type": "string"
+              },
+              "id": {
+                "description": "The entity's network id, which the server assigns and every client in that world shares",
+                "type": "integer"
+              },
+              "seat": {
+                "description": "The entity the bot sits on when that is not the vehicle itself: a plugin seats a player on an invisible entity riding the mount. Null when the bot sits on the vehicle directly.",
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "type": {
+                    "description": "The entity's registry id without the namespace",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "The entity's network id, which the server assigns and every client in that world shares",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "id",
+                  "type"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "id",
+              "seat",
+              "type"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -2344,7 +2510,8 @@
           "health",
           "oxygen",
           "position",
-          "saturation"
+          "saturation",
+          "vehicle"
         ],
         "additionalProperties": false
       }
@@ -3096,12 +3263,41 @@
                     "string",
                     "null"
                   ]
+                },
+                "lore": {
+                  "description": "The lines the server wrote under the name, in order. A blank line is a line: it is where a menu puts its spacing.",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "loreComponents": {
+                  "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                  "type": "array"
+                },
+                "itemModel": {
+                  "description": "The item_model component, namespaced: the model the client draws the item with. A server dresses paper as a quest item or a menu icon by setting it, and the item id alone cannot tell those apart. Every item has one, and a plain item's is its own id.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "cooldownTicks": {
+                  "description": "Ticks left before the item can be used again, null when it is not cooling down. A cooldown belongs to the item's cooldown group, so every stack in that group reads the same.",
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
                 }
               },
               "required": [
+                "cooldownTicks",
                 "count",
+                "itemModel",
                 "label",
                 "labelComponent",
+                "lore",
+                "loreComponents",
                 "name",
                 "slot"
               ],
@@ -7876,5 +8072,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:e0094d2b9d6ce1182400089991fa5b42d5148e047583db1e48e0467bcfb89b49"
+  "catalogHash": "sha256:e4d159b6b704efc18594190b944065de1be5152304a23fb45d8630d7a3449d98"
 }
