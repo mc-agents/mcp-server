@@ -23,7 +23,11 @@ import org.bukkit.scheduler.BukkitTask;
  */
 final class FishingBite implements Listener {
 
-    private static final long BITE_AFTER_TICKS = 30;
+    /*
+    Half this was shorter than a cast's answer and the next call reaching a bot on a loaded machine,
+    and the splash went by before the press waiting for it was listening.
+    */
+    private static final long BITE_AFTER_TICKS = 60;
     private static final int WINDOW_TICKS = 40;
 
     private final Plugin plugin;

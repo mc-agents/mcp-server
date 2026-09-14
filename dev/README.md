@@ -56,7 +56,7 @@ scoreboard objectives rcon reads back:
 It also plays two pieces of hyperfarm just far enough to test against. `/fixture talk <player>`
 opens a conversation on the action bar: jump turns the page, hotbar slot 0 or 1 answers and tags
 the player `fixture_choice_<n>`, and sneaking leaves and tags `fixture_talk_left`. A cast rod gets a
-bite thirty ticks later -- `entity.fishing_bobber.splash` played to the angler -- and a reel within
+bite sixty ticks later -- `entity.fishing_bobber.splash` played to the angler -- and a reel within
 forty ticks of it counts as a catch.
 
 The end-to-end suite builds it and loads it into its server.
