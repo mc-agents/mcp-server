@@ -90,6 +90,9 @@ say; the Minecraft version is the one the bots support, 26.1.2:
 ./gradlew :e2e:test -Pe2e.bot.image=<image>
 ```
 
+CI shares a fabric bot's cases out between four runners, each with a server and a bot of its own,
+and a failure names the shard it happened in. The same share runs locally with `-Pe2e.shard=2/4`.
+
 ## Status
 
 The server answers the whole catalogue. `join-server` sends a bot that has linked into a world, and
