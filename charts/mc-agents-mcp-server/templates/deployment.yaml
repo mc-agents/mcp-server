@@ -66,6 +66,12 @@ spec:
               value: {{ default .Release.Namespace .Values.bots.namespace | quote }}
             - name: MCP_BOTS_MCP_HOST
               value: {{ default (printf "%s.%s.svc" (include "mc-agents-mcp-server.fullname" .) .Release.Namespace) .Values.bots.mcpHost | quote }}
+            {{- with .Values.bots.profile.name }}
+            - name: MCP_BOTS_PROFILE_KIND
+              value: {{ $.Values.bots.profile.kind | quote }}
+            - name: MCP_BOTS_PROFILE_NAME
+              value: {{ . | quote }}
+            {{- end }}
             - name: MCP_LOG_LEVEL
               value: {{ .Values.logLevel | quote }}
             - name: BOT_LINK_REPEAT_FLUSH_MS

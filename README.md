@@ -92,9 +92,14 @@ say; the Minecraft version is the one the bots support, 26.1.2:
 
 ## Status
 
-The server answers the whole catalogue. `join-server` sends a bot that has linked into a world;
-creating the bot process is the [operator](https://github.com/mc-agents/operator)'s job and is not
-wired up yet, so for now a bot is started by hand and `join-server` finds it by name.
+The server answers the whole catalogue. `join-server` sends a bot that has linked into a world, and
+in a cluster it starts one first when none is running under that name, by creating a
+`MinecraftBot` for the [operator](https://github.com/mc-agents/operator) to run.
+
+In a cluster, run this server through the operator: an `MCPServer` in the namespace that uses the
+bots gets a server, its token and the RBAC to create bots there, and nowhere else. The chart in
+[`charts/`](charts/mc-agents-mcp-server) is for running the server without the operator managing
+it; creating bots still needs the operator's CRDs.
 
 ### Known limits
 

@@ -53,6 +53,11 @@ mcagents:
     namespace: ${MCP_BOTS_NAMESPACE:}
     # What the bot is told to dial. Empty derives the chart's Service name in that namespace.
     mcp-host: ${MCP_BOTS_MCP_HOST:}
+    # The MinecraftBotProfile (or ClusterMinecraftBotProfile, by kind) every bot started here is built
+    # from. Empty leaves it to the operator: the namespace's "default", then the cluster's.
+    profile:
+      kind: ${MCP_BOTS_PROFILE_KIND:}
+      name: ${MCP_BOTS_PROFILE_NAME:}
   auth:
     token: ${MCP_AUTH_TOKEN:}
 

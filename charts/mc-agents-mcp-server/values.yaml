@@ -30,10 +30,15 @@ bots:
   provision: true
   # Where join-server creates MinecraftBots. Empty is this release's namespace. A bot belongs with
   # whatever uses it, not with the server that starts it, so a game in namespace "game" sets "game"
-  # here and the operator's watchNamespace to match. The Role that allows it goes there too.
+  # here. The Role that allows it goes there too.
   namespace: ""
   # What a bot is told to dial. Empty derives this release's own Service.
   mcpHost: ""
+  # The profile every bot started here is built from. An empty name leaves it to the operator: the
+  # namespace's MinecraftBotProfile "default", then the ClusterMinecraftBotProfile "default".
+  profile:
+    kind: MinecraftBotProfile
+    name: ""
 
 # A shared bearer token on /mcp. /actuator is never behind it: a probe cannot carry one.
 auth:

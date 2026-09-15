@@ -10,7 +10,7 @@ metadata:
 rules:
   # join-server creates a MinecraftBot when none is running under that name, and leave-server
   # takes back the ones it created. Pods are the operator's; this never touches one.
-  - apiGroups: ["mc-agents.dev"]
+  - apiGroups: ["mc-agents.junhyung.cloud"]
     resources: ["minecraftbots"]
     verbs: ["get", "list", "create", "delete"]
 ---

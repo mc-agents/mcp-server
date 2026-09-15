@@ -9,7 +9,7 @@ metadata:
 spec:
   type: LoadBalancer
   selector:
-    app.kubernetes.io/name: mc-agents-mcp-server
-    app.kubernetes.io/instance: mcp
+    app.kubernetes.io/name: mcp-server
+    app.kubernetes.io/instance: mc-agents
   ports:
     - { name: mcp, port: 13000, targetPort: mcp }

@@ -103,10 +103,12 @@ public class Wiring {
             @Value("${mcagents.bots.provision:auto}") String provision,
             @Value("${mcagents.bots.namespace:}") String namespace,
             @Value("${mcagents.bots.mcp-host:}") String mcpHost,
+            @Value("${mcagents.bots.profile.kind:}") String profileKind,
+            @Value("${mcagents.bots.profile.name:}") String profileName,
             @Value("${mcagents.bot-link.port:8765}") int port) {
         if (!wanted(provision)) {
             log.info("not running in a cluster, so join-server uses bots that dial in");
-            return new BotProvisioner(null, null, null, port);
+            return new BotProvisioner(null, null, null, port, null);
         }
 
         try {
@@ -115,16 +117,19 @@ public class Wiring {
 
             if (where == null) {
                 log.info("no Kubernetes namespace is in scope, so join-server cannot start a bot");
-                return new BotProvisioner(null, null, null, port);
+                return new BotProvisioner(null, null, null, port, null);
             }
 
             client.getKubernetesVersion();
             log.info("bots can be started in namespace {}", where);
 
-            return new BotProvisioner(client, where, mcpHost.isBlank() ? defaultHost(where) : mcpHost, port);
+            BotProvisioner.Profile profile = profileName.isBlank() ? null
+                    : new BotProvisioner.Profile(profileKind.isBlank() ? "MinecraftBotProfile" : profileKind, profileName);
+
+            return new BotProvisioner(client, where, mcpHost.isBlank() ? defaultHost(where) : mcpHost, port, profile);
         } catch (RuntimeException e) {
             log.info("no cluster to start bots in ({}), so join-server uses bots that dial in", e.getMessage());
-            return new BotProvisioner(null, null, null, port);
+            return new BotProvisioner(null, null, null, port, null);
         }
     }
 

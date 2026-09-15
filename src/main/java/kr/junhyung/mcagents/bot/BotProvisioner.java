@@ -27,8 +27,12 @@ public class BotProvisioner {
 
     private static final Logger log = LoggerFactory.getLogger(BotProvisioner.class);
 
+    private static final String GROUP = "mc-agents.junhyung.cloud";
+
+    private static final String REQUESTED_BY = GROUP + "/requested-by";
+
     private static final CustomResourceDefinitionContext BOTS = new CustomResourceDefinitionContext.Builder()
-            .withGroup("mc-agents.dev")
+            .withGroup(GROUP)
             .withVersion("v1alpha1")
             .withPlural("minecraftbots")
             .withScope("Namespaced")
@@ -39,12 +43,21 @@ public class BotProvisioner {
     private final String namespace;
     private final String mcpHost;
     private final int mcpPort;
+    private final Profile profile;
 
-    public BotProvisioner(KubernetesClient client, String namespace, String mcpHost, int mcpPort) {
+    /**
+     * The profile a bot takes its image and pod settings from, written into every MinecraftBot this
+     * asks for. Null leaves the choice to the operator: the namespace's default, then the cluster's.
+     */
+    public record Profile(String kind, String name) {
+    }
+
+    public BotProvisioner(KubernetesClient client, String namespace, String mcpHost, int mcpPort, Profile profile) {
         this.client = client;
         this.namespace = namespace;
         this.mcpHost = mcpHost;
         this.mcpPort = mcpPort;
+        this.profile = profile;
     }
 
     /** Whether there is a cluster with the operator's CRD installed. Checked once, at startup. */
@@ -139,7 +152,7 @@ public class BotProvisioner {
         GenericKubernetesResource existing = find(name);
 
         if (existing == null || existing.getMetadata().getLabels() == null || !"mcp-server".equals(
-                existing.getMetadata().getLabels().get("mc-agents.dev/requested-by"))) {
+                existing.getMetadata().getLabels().get(REQUESTED_BY))) {
             return false;
         }
         client.genericKubernetesResources(BOTS).inNamespace(namespace).resource(existing).delete();
@@ -177,17 +190,20 @@ public class BotProvisioner {
         if (dialled != null) {
             spec.put("botName", dialled);
         }
+        if (profile != null) {
+            spec.put("profileRef", Map.of("kind", profile.kind(), "name", profile.name()));
+        }
 
         Map<String, String> labels = new LinkedHashMap<>();
         labels.put("app.kubernetes.io/managed-by", "mc-agents-mcp-server");
         /* What release() checks. A bot somebody declared by hand is not this server's to delete. */
-        labels.put("mc-agents.dev/requested-by", "mcp-server");
+        labels.put(REQUESTED_BY, "mcp-server");
 
         Map<String, String> annotations = owner == null ? Map.of()
-                : Map.of("mc-agents.dev/owner", owner);
+                : Map.of(GROUP + "/owner", owner);
 
         return new GenericKubernetesResourceBuilder()
-                .withApiVersion("mc-agents.dev/v1alpha1")
+                .withApiVersion(GROUP + "/v1alpha1")
                 .withKind("MinecraftBot")
                 .withNewMetadata()
                 .withName(objectName)

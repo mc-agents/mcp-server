@@ -1,0 +1,22 @@
+# The tenant's server and the bots it starts. Pinned, not latest: a bot tag is <tag>-mc<version>, which
+# Kubernetes does not treat as :latest, so a node that already pulled it once keeps running that build
+# no matter what was published since.
+apiVersion: mc-agents.junhyung.cloud/v1alpha1
+kind: MCPServer
+metadata:
+  name: mc-agents
+spec:
+  image:
+    tag: "0.55.0"
+  auth:
+    existingSecret: mcp-auth
+---
+apiVersion: mc-agents.junhyung.cloud/v1alpha1
+kind: MinecraftBotProfile
+metadata:
+  name: default
+spec:
+  fabric:
+    tag: 0.64.0
+  azalea:
+    tag: 0.16.0

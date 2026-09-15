@@ -46,7 +46,7 @@ class OrchestrationTest {
         private Duration age = Duration.ofMinutes(10);
 
         FakeCluster() {
-            super(null, null, null, 0);
+            super(null, null, null, 0, null);
         }
 
         @Override

@@ -6,26 +6,20 @@
 # The cluster itself is created once and never by this file: `k3d cluster create mc-agents --agents 1`.
 # Recreating it is the one step here that throws away a world, so it stays a deliberate command.
 #
-# Releases keep the names the cluster was first set up with (operator, mcp), so this upgrades what
-# is running instead of installing a second copy beside it.
-#
-# Trying a local build means `kubectl set image` on one of them, which takes the image field away
-# from Helm's server-side apply. --force-conflicts is how an install here puts the release back.
+# The layout is the one every tenant gets. The operator lives alone in mc-agents-system; the namespace
+# mc-agents is the tenant, holding the test server, an MCPServer and the bots it starts. Which image
+# tags those bots run is mcpserver.yaml's MinecraftBotProfile, not a flag here.
 K3D_CLUSTER ?= mc-agents
 CONTEXT     := k3d-$(K3D_CLUSTER)
+SYSTEM      := mc-agents-system
 NAMESPACE   := mc-agents
 HERE        := $(abspath $(CURDIR))
 
 KUBECTL := kubectl --context $(CONTEXT) -n $(NAMESPACE)
-HELM    := helm --kube-context $(CONTEXT) -n $(NAMESPACE)
+HELM    := helm --kube-context $(CONTEXT) -n $(SYSTEM)
 
 CHARTS                 := oci://junhyung.cloud/library/charts
-OPERATOR_CHART_VERSION := 0.9.0-20260914025831.g8637fb66
-SERVER_CHART_VERSION   := 0.50.0
-# Pinned, not latest: the tag is latest-mc<version>, which Kubernetes does not treat as :latest, so
-# a node that already pulled it once keeps running that build no matter what was published since.
-FABRIC_TAG             := 0.59.0
-AZALEA_TAG             := 0.11.0
+OPERATOR_CHART_VERSION := 0.11.0-20260915032442.g10b48907
 
 # Loopback only. k3d binds 0.0.0.0 unless told otherwise, and the token is the only thing between
 # that port and a bot that runs commands as op.
@@ -42,29 +36,26 @@ port:
 	@docker port k3d-$(K3D_CLUSTER)-serverlb | grep -q '127.0.0.1:$(MCP_HOST_PORT)$$' || \
 		k3d node edit k3d-$(K3D_CLUSTER)-serverlb --port-add 127.0.0.1:$(MCP_HOST_PORT):$(MCP_HOST_PORT)
 
-# Helm installs crds/ once and never upgrades them, so a new bot kind would be refused by the enum
+# Helm installs crds/ once and never upgrades them, so a new field would be dropped by the schema
 # the cluster was first given. `helm show` prints what it pulled ahead of the documents.
 operator:
-	$(KUBECTL) get namespace $(NAMESPACE) >/dev/null 2>&1 || kubectl --context $(CONTEXT) create namespace $(NAMESPACE)
 	helm show crds $(CHARTS)/mc-agents-operator --version $(OPERATOR_CHART_VERSION) \
 		| sed -n '/^---$$/,$$p' | kubectl --context $(CONTEXT) apply --server-side --force-conflicts -f -
-	$(HELM) upgrade --install operator $(CHARTS)/mc-agents-operator \
-		--version $(OPERATOR_CHART_VERSION) \
-		--set watchNamespace=$(NAMESPACE) \
-		--set bots.fabricTag=$(FABRIC_TAG) --set bots.azaleaTag=$(AZALEA_TAG) \
+	$(HELM) upgrade --install mc-agents-operator $(CHARTS)/mc-agents-operator \
+		--version $(OPERATOR_CHART_VERSION) --create-namespace \
 		--force-conflicts --wait --timeout 5m
 
-# The chart will not invent a token, and a token in this file would be one every clone shares. So
-# it is made here once, and upgrades read the same Secret.
+# The token is made here once rather than by the operator, so the one Claude Code is registered with
+# survives deleting and recreating the MCPServer.
 token:
+	@kubectl --context $(CONTEXT) get namespace $(NAMESPACE) >/dev/null 2>&1 || \
+		kubectl --context $(CONTEXT) create namespace $(NAMESPACE)
 	@$(KUBECTL) get secret mcp-auth >/dev/null 2>&1 || \
 		$(KUBECTL) create secret generic mcp-auth --from-literal=token="$$(openssl rand -hex 32)"
 
 server: token
-	$(HELM) upgrade --install mcp $(CHARTS)/mc-agents-mcp-server \
-		--version $(SERVER_CHART_VERSION) \
-		--set auth.token= --set auth.existingSecret=mcp-auth \
-		--force-conflicts --wait --timeout 5m
+	$(KUBECTL) apply -f $(HERE)/mcpserver.yaml
+	$(KUBECTL) wait mcpserver/mc-agents --for=condition=Ready --timeout 5m
 	$(KUBECTL) apply -f $(HERE)/mcp-service.yaml
 
 paper:
