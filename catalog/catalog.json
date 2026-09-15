@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "4.3.0",
+  "catalogVersion": "4.4.0",
   "protocol": 1,
   "tools": [
     {
@@ -1629,7 +1629,7 @@
     {
       "name": "find-blocks",
       "group": "block",
-      "description": "Find nearby blocks of a given type.",
+      "description": "Find nearby blocks of a given type. The block is the one the client was sent, which a plugin can make different from the one the server holds: a custom block (CraftEngine, ItemsAdder, Nexo) is usually sent as a vanilla block such as stone or a note block. When what the server holds matters -- a quest objective counting a block, say -- ask the server, for example run-command \"/execute if block X Y Z minecraft:stone\".",
       "route": "rpc",
       "kinds": [
         "fabric",
@@ -2241,7 +2241,7 @@
     {
       "name": "get-block-info",
       "group": "block",
-      "description": "Describe the block at a position.",
+      "description": "Describe the block at a position. The block is the one the client was sent, which a plugin can make different from the one the server holds: a custom block (CraftEngine, ItemsAdder, Nexo) is usually sent as a vanilla block such as stone or a note block. When what the server holds matters -- a quest objective counting a block, say -- ask the server, for example run-command \"/execute if block X Y Z minecraft:stone\".",
       "route": "rpc",
       "kinds": [
         "fabric",
@@ -3188,9 +3188,13 @@
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
+          "bot": {
+            "description": "Name used to address this bot in other tools, where the same argument is called bot",
+            "type": "string"
+          },
           "name": {
             "type": "string",
-            "description": "Name used to address this bot in other tools"
+            "description": "The same as bot, which is the name every other tool uses for it. Give one of the two."
           },
           "host": {
             "type": "string",
@@ -3230,7 +3234,6 @@
           }
         },
         "required": [
-          "name",
           "host"
         ],
         "additionalProperties": false
@@ -8710,5 +8713,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:aab96050ef4f8eb1acf670f2f0db451faaff7f4b134143c688a06982c5b70c1e"
+  "catalogHash": "sha256:ba9f3b4316c9ea6319df646bfe59ada6490c3bc4839f2c2bcf38fc68a5504b29"
 }

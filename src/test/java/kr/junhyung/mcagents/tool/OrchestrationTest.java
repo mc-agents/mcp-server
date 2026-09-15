@@ -170,6 +170,19 @@ class OrchestrationTest {
         assertThrows(IllegalArgumentException.class, () -> Orchestration.hostAndPort("paper.mc-agents.svc:25565", 25566));
     }
 
+    @Test
+    void aJoinTakesTheBotByTheNameEveryOtherToolUsesForIt() {
+        IllegalArgumentException conflicting = assertThrows(IllegalArgumentException.class, () -> orchestration.call(
+                catalog.get("join-server"), Map.of("bot", "qa-a", "name", "qa-b", "host", "paper.mc-agents.svc")));
+        assertTrue(conflicting.getMessage().contains("give one of them"), conflicting.getMessage());
+
+        cluster.failure = "image not found";
+        McpSchema.CallToolResult byBot = orchestration.call(catalog.get("join-server"),
+                Map.of("bot", "qa-bot-arg", "host", "paper.mc-agents.svc", "kind", "azalea"));
+
+        assertTrue(text(byBot).contains("qa-bot-arg"), text(byBot));
+    }
+
     /** One asked for by an earlier join is that join's to give back, not this one's. */
     @Test
     void aJoinThatFoundTheBotAlreadyAskedForLeavesItAlone() {

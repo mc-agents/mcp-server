@@ -287,6 +287,46 @@ class BotEndToEndTest {
     }
 
     /**
+     * A move between worlds changes none of what the status used to be sent for -- a join, a death, a
+     * disconnect -- so get-bot-status went on naming the world the bot had left, the way it named a
+     * town after a proxy moved the bot to an island.
+     */
+    @Test
+    void theStatusFollowsTheBotIntoAnotherDimension() {
+        agent.requires("get-bot-status");
+        world.run("execute in minecraft:the_nether run tp " + BotWorld.BOT + " 0.5 120 0.5");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 140));
+
+        String status = agent.mustCall("get-bot-status", Map.of("bot", BotWorld.BOT));
+
+        assertTrue(status.contains("the_nether"), status);
+    }
+
+    /**
+     * A plugin menu cancels every click, and the client moves the item anyway until the server puts
+     * it back. One kind of bot answered with the client's move: an item picked up, or swapped into the
+     * offhand, that the next read found where it had been.
+     */
+    @Test
+    void aClickAPluginCancelsIsAnsweredWithWhatTheServerKept() {
+        agent.requires("click-slot", "close-window");
+        world.run("clear " + BotWorld.BOT);
+        world.run("fixture locked " + BotWorld.BOT);
+        agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "titlePattern", "Locked Menu", "timeoutMs", 10000));
+
+        String picked = agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 5));
+        String swapped = agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 5, "mode", "swap-offhand"));
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        String offhand = world.run("data get entity " + BotWorld.BOT + " equipment.offhand");
+
+        assertTrue(picked.contains("slot 5: emerald x1 -> emerald x1"), picked);
+        assertTrue(picked.contains("cursor: empty"), picked);
+        assertTrue(swapped.contains("slot 5: emerald x1 -> emerald x1"), swapped);
+        assertTrue(swapped.contains("offhand: empty -> empty"), swapped);
+        assertTrue(!offhand.contains("emerald"), offhand);
+    }
+
+    /**
      * A space can be a component of its own, which is how a plugin that appends one builds a line.
      * Both kinds of bot dropped a piece that was nothing but whitespace, and "Cleared 0 [Track]" read
      * "Cleared 0[Track]" while the screen showed the gap.

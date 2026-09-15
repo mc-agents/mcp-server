@@ -22,10 +22,12 @@ public final class FixturePlugin extends JavaPlugin {
         Scores scores = new Scores(Bukkit.getScoreboardManager().getMainScoreboard());
         Conversation conversation = new Conversation(this);
         Gathering gathering = new Gathering(this, scores);
+        LockedMenu locked = new LockedMenu();
 
         getServer().getPluginManager().registerEvents(new InputRecorder(scores, conversation), this);
         getServer().getPluginManager().registerEvents(new FishingBite(this, scores), this);
         getServer().getPluginManager().registerEvents(gathering, this);
+        getServer().getPluginManager().registerEvents(locked, this);
 
         PluginCommand command = getCommand("fixture");
         if (command != null) {
@@ -41,6 +43,7 @@ public final class FixturePlugin extends JavaPlugin {
                 switch (args[0]) {
                     case "talk" -> conversation.talk(sender, player);
                     case "gather" -> gathering.start(sender, player);
+                    case "locked" -> locked.open(sender, player);
                     default -> {
                         return false;
                     }

@@ -85,7 +85,7 @@ public class Orchestration {
     }
 
     private McpSchema.CallToolResult join(ToolSpec spec, Map<String, Object> arguments) {
-        String name = required(arguments, "name");
+        String name = botName(arguments);
         String[] address = hostAndPort(required(arguments, "host"), arguments.get("port"));
         String host = address[0];
         int port = Integer.parseInt(address[1]);
@@ -391,6 +391,22 @@ public class Orchestration {
             body.append(" in ").append(status.gameMode()).append(" mode");
         }
         return body.append('.').toString();
+    }
+
+    /*
+    join-server called the bot "name" while every other tool calls it "bot", so a caller that used
+    one word everywhere failed schema validation on one side or the other. Both are taken here.
+    */
+    private static String botName(Map<String, Object> arguments) {
+        String bot = ToolDispatcher.stringArg(arguments, "bot");
+        String name = ToolDispatcher.stringArg(arguments, "name");
+        if (bot != null && name != null && !bot.equals(name)) {
+            throw new IllegalArgumentException("bot says \"%s\" and name says \"%s\"; give one of them".formatted(bot, name));
+        }
+        if (bot == null && name == null) {
+            throw new IllegalArgumentException("\"bot\" is required");
+        }
+        return bot != null ? bot : name;
     }
 
     private static String required(Map<String, Object> arguments, String name) {
