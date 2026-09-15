@@ -113,11 +113,17 @@ jobs:
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - name: what an agent gets
+        env:
+          BOT_IMAGE: junhyung.cloud/library/bot-${{ matrix.kind }}:latest-mc${{ env.MINECRAFT }}
         run: |
+          # The bot is the slowest pull of the run, nearly two minutes for fabric, and the suite asks
+          # for it only once its server is up. Started here it downloads while Gradle and the server
+          # start, and the suite's own pull waits on this one rather than beginning again.
+          docker pull --quiet "$BOT_IMAGE" > /dev/null &
           ./gradlew :e2e:test \
             -Pe2e.minecraft.version=$MINECRAFT \
             -Pe2e.bot.kind=${{ matrix.kind }} \
-            -Pe2e.bot.image=junhyung.cloud/library/bot-${{ matrix.kind }}:latest-mc$MINECRAFT \
+            -Pe2e.bot.image=$BOT_IMAGE \
             -Pe2e.shard=${{ matrix.shard }}/${{ matrix.shards }}
 
       - uses: actions/upload-artifact@v4
