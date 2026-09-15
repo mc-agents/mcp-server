@@ -18,11 +18,17 @@ import org.bukkit.inventory.ItemStack;
  *
  * <p>The client moves the item as it sends the click and the server puts it back. A bot that answers
  * with what the client predicted says the item was picked up.
+ *
+ * <p>And a toggle beside it, which a click flips between two items while still refusing the click,
+ * the way a menu's buttons redraw themselves. A bot that read "the slot changed" as "the swap
+ * happened" said the paper had gone to the offhand.
  */
 final class LockedMenu implements Listener {
 
     /** Where the item sits, and what it is. */
     static final int SLOT = 5;
+
+    static final int TOGGLE = 6;
 
     private static final class Holder implements InventoryHolder {
 
@@ -38,14 +44,22 @@ final class LockedMenu implements Listener {
         Holder holder = new Holder();
         holder.inventory = Bukkit.createInventory(holder, 27, Component.text("Locked Menu"));
         holder.inventory.setItem(SLOT, new ItemStack(Material.EMERALD));
+        holder.inventory.setItem(TOGGLE, new ItemStack(Material.PAPER));
         player.openInventory(holder.inventory);
         sender.sendMessage("opened the locked menu for " + player.getName());
     }
 
     @EventHandler
     void click(InventoryClickEvent event) {
-        if (event.getView().getTopInventory().getHolder() instanceof Holder) {
-            event.setCancelled(true);
+        if (!(event.getView().getTopInventory().getHolder() instanceof Holder)) {
+            return;
+        }
+        event.setCancelled(true);
+        Inventory top = event.getView().getTopInventory();
+        if (event.getClickedInventory() == top && event.getSlot() == TOGGLE) {
+            ItemStack shown = top.getItem(TOGGLE);
+            boolean paper = shown != null && shown.getType() == Material.PAPER;
+            top.setItem(TOGGLE, new ItemStack(paper ? Material.DIAMOND : Material.PAPER));
         }
     }
 

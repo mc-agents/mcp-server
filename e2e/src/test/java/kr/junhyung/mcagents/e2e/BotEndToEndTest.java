@@ -361,6 +361,27 @@ class BotEndToEndTest {
     }
 
     /**
+     * A menu's button refuses the click and redraws itself with another item. Read as "the slot
+     * changed, so the swap happened", an offhand key over it said the paper had gone to the offhand,
+     * and the offhand was empty.
+     */
+    @Test
+    void aRefusedSwapThatRedrawsTheSlotLeavesTheOffhandAlone() {
+        agent.requires("click-slot", "close-window");
+        world.run("clear " + BotWorld.BOT);
+        world.run("fixture locked " + BotWorld.BOT);
+        agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "titlePattern", "Locked Menu", "timeoutMs", 10000));
+
+        String swapped = agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 6, "mode", "swap-offhand"));
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        String offhand = world.run("data get entity " + BotWorld.BOT + " equipment.offhand");
+
+        assertTrue(swapped.contains("slot 6: paper x1 -> diamond x1"), swapped);
+        assertTrue(swapped.contains("offhand: empty -> empty"), swapped);
+        assertTrue(!offhand.contains("paper"), offhand);
+    }
+
+    /**
      * A plugin's shop answers a click with another window: the item opens the buy screen, and +1 opens
      * that screen again with the count moved on. Neither sends back the window clicked, so a bot waiting
      * for it failed the first click after two seconds, and answered the second with slots it had only
