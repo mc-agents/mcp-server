@@ -14,7 +14,8 @@ import java.util.stream.Collectors;
  */
 public final class DraggedSlotsRenderer implements Renderer<DraggedSlotsRenderer.View> {
 
-    public record View(String button, List<Entry> slots, Held carried, Held cursor) {}
+    /** {@code window} is null from a bot built before it, and when the drag was answered in the window dragged. */
+    public record View(String button, List<Entry> slots, Held carried, Held cursor, ClickedSlotRenderer.Replaced window) {}
 
     public record Entry(int slot, Held before, Held after) {}
 
@@ -27,6 +28,11 @@ public final class DraggedSlotsRenderer implements Renderer<DraggedSlotsRenderer
             + "-dragged across slots " + across + ".";
 
         List<String> lines = new ArrayList<>();
+        if (view.window() != null) {
+            lines.add("  " + view.window().describe());
+            lines.add("  cursor: " + Held.describe(view.carried()) + " -> " + Held.describe(view.cursor()));
+            return Text.withLines(header, lines);
+        }
         for (Entry entry : view.slots()) {
             lines.add("  slot " + entry.slot() + ": " + Held.describe(entry.before()) + " -> "
                 + Held.describe(entry.after()));

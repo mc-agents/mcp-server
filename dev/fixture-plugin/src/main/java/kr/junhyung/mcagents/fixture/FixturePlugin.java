@@ -23,11 +23,13 @@ public final class FixturePlugin extends JavaPlugin {
         Conversation conversation = new Conversation(this);
         Gathering gathering = new Gathering(this, scores);
         LockedMenu locked = new LockedMenu();
+        ShopMenu shop = new ShopMenu();
 
         getServer().getPluginManager().registerEvents(new InputRecorder(scores, conversation), this);
         getServer().getPluginManager().registerEvents(new FishingBite(this, scores), this);
         getServer().getPluginManager().registerEvents(gathering, this);
         getServer().getPluginManager().registerEvents(locked, this);
+        getServer().getPluginManager().registerEvents(shop, this);
 
         PluginCommand command = getCommand("fixture");
         if (command != null) {
@@ -44,6 +46,7 @@ public final class FixturePlugin extends JavaPlugin {
                     case "talk" -> conversation.talk(sender, player);
                     case "gather" -> gathering.start(sender, player);
                     case "locked" -> locked.open(sender, player);
+                    case "shop" -> shop.open(sender, player);
                     default -> {
                         return false;
                     }

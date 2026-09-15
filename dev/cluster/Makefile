@@ -38,11 +38,13 @@ port:
 
 # Helm installs crds/ once and never upgrades them, so a new field would be dropped by the schema
 # the cluster was first given. `helm show` prints what it pulled ahead of the documents.
+# --reset-values: an upgrade otherwise keeps the --set of whatever installed it last, which after
+# `make k3d-deploy` in the operator repository is a local image that is not the pinned release.
 operator:
 	helm show crds $(CHARTS)/mc-agents-operator --version $(OPERATOR_CHART_VERSION) \
 		| sed -n '/^---$$/,$$p' | kubectl --context $(CONTEXT) apply --server-side --force-conflicts -f -
 	$(HELM) upgrade --install mc-agents-operator $(CHARTS)/mc-agents-operator \
-		--version $(OPERATOR_CHART_VERSION) --create-namespace \
+		--version $(OPERATOR_CHART_VERSION) --create-namespace --reset-values \
 		--force-conflicts --wait --timeout 5m
 
 # The token is made here once rather than by the operator, so the one Claude Code is registered with

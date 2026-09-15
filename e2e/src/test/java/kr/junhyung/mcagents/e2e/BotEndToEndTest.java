@@ -327,6 +327,31 @@ class BotEndToEndTest {
     }
 
     /**
+     * A plugin's shop answers a click with another window: the item opens the buy screen, and +1 opens
+     * that screen again with the count moved on. Neither sends back the window clicked, so a bot waiting
+     * for it failed the first click after two seconds, and answered the second with slots it had only
+     * guessed at.
+     */
+    @Test
+    void aClickThatOpensAnotherWindowIsAnsweredWithThatWindow() {
+        agent.requires("click-slot", "close-window");
+        world.run("clear " + BotWorld.BOT);
+        world.run("fixture shop " + BotWorld.BOT);
+        agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "titlePattern", "^Shop$", "timeoutMs", 10000));
+
+        String opened = agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 5));
+        agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "titlePattern", "^Buy$", "timeoutMs", 10000));
+        String stepped = agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 13));
+        String window = agent.mustCall("read-window", Map.of("bot", BotWorld.BOT));
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+
+        assertTrue(opened.contains("The server opened window \"Buy\" instead"), opened);
+        assertTrue(stepped.contains("The server opened window \"Buy\" instead"), stepped);
+        assertTrue(!stepped.contains("slot 13:"), stepped);
+        assertTrue(window.contains("22: cod x2"), window);
+    }
+
+    /**
      * A space can be a component of its own, which is how a plugin that appends one builds a line.
      * Both kinds of bot dropped a piece that was nothing but whitespace, and "Cleared 0 [Track]" read
      * "Cleared 0[Track]" while the screen showed the gap.
@@ -2552,6 +2577,30 @@ class BotEndToEndTest {
         assertTrue(caught.startsWith("Waited "), caught);
         assertTrue(caught.contains("for the effect feed to match /entity\\.fishing_bobber\\.splash/"
             + " (\"minecraft:entity.fishing_bobber.splash\"), then pressed use once."), caught);
+        assertEquals(1, catches, "the server counted " + misses + " reel(s) outside the window");
+    }
+
+    /**
+     * A plugin that runs its own fishing bites the way vanilla looks -- the bobber pulled under and a
+     * splash -- without the hook's biting flag, which belongs to vanilla's loot roll. A bot that read
+     * only the flag waited out every bite on hyperfarm.
+     */
+    @Test
+    void theFishToolReelsInABiteAPluginGives() {
+        agent.requires("fish");
+        forget("fx_catch", "fx_miss");
+        /* On the pool's east rim, facing into it and a little down, so the bobber lands in the water. */
+        world.run("tp " + BotWorld.BOT + " -0.5 -60 -5.5 90 20");
+        world.run("item replace entity " + BotWorld.BOT + " weapon.mainhand with minecraft:fishing_rod");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "fishing_rod", "timeoutMs", 10000));
+
+        String fished = agent.mustCall("fish", Map.of("bot", BotWorld.BOT, "timeoutMs", 20000));
+
+        int catches = counted("fx_catch");
+        int misses = counted("fx_miss");
+        world.run("function mcagents:setup");
+
+        assertTrue(fished.contains("Reeled in"), fished);
         assertEquals(1, catches, "the server counted " + misses + " reel(s) outside the window");
     }
 

@@ -1,0 +1,15 @@
+{
+  "tool": "drag-slots",
+  "note": "a plugin answers the drag by opening another window, so the slots dragged across are not described",
+  "data": {
+    "button": "left",
+    "slots": [
+      {"slot": 1, "before": null, "after": null},
+      {"slot": 2, "before": null, "after": null}
+    ],
+    "carried": {"name": "oak_planks", "count": 16, "label": null, "lore": []},
+    "cursor": {"name": "oak_planks", "count": 16, "label": null, "lore": []},
+    "window": {"closed": false, "title": "Storage", "titleComponent": null}
+  },
+  "text": "Left-dragged across slots 1, 2.\n  The server opened window \"Storage\" instead; read-window shows it.\n  cursor: oak_planks x16 -> oak_planks x16"
+}

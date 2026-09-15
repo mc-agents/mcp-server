@@ -1,0 +1,18 @@
+{
+  "tool": "click-slot",
+  "note": "a plugin's shop answers the click by opening its buy screen, so the slot clicked is not described",
+  "data": {
+    "slot": 22,
+    "outside": false,
+    "button": "left",
+    "shift": false,
+    "mode": "click",
+    "hotbar": null,
+    "before": {"name": "lime_dye", "count": 1, "label": "+1", "labelComponent": null, "lore": [], "loreComponents": []},
+    "after": null,
+    "cursor": null,
+    "swapped": null,
+    "window": {"closed": false, "title": "Buy", "titleComponent": null}
+  },
+  "text": "Left-clicked slot 22.\n  The server opened window \"Buy\" instead; read-window shows it.\n  cursor: empty"
+}

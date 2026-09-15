@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "4.4.0",
+  "catalogVersion": "4.5.0",
   "protocol": 1,
   "tools": [
     {
@@ -768,6 +768,40 @@
               "after",
               "before"
             ]
+          },
+          "window": {
+            "description": "Null when the server answered in the window that was clicked. Otherwise the server answered with another window, as a plugin's menu does when a click opens the next screen or opens its own screen again, or it closed the window: then the slots of the window clicked are not described, because it is gone, and after is null.",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "closed": {
+                "description": "True when the server closed the window rather than opening another",
+                "type": "boolean"
+              },
+              "title": {
+                "description": "The title of the window now open, null when the server closed it",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "titleComponent": {
+                "description": "The component the title was written as, as Minecraft's own JSON. Null when the server closed the window.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "closed",
+              "title",
+              "titleComponent"
+            ]
           }
         },
         "required": [
@@ -780,7 +814,8 @@
           "outside",
           "shift",
           "slot",
-          "swapped"
+          "swapped",
+          "window"
         ]
       }
     },
@@ -1426,13 +1461,48 @@
               "loreComponents",
               "name"
             ]
+          },
+          "window": {
+            "description": "Null when the server answered in the window that was clicked. Otherwise the server answered with another window, as a plugin's menu does when a click opens the next screen or opens its own screen again, or it closed the window: then the slots of the window clicked are not described, because it is gone, and after is null.",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "closed": {
+                "description": "True when the server closed the window rather than opening another",
+                "type": "boolean"
+              },
+              "title": {
+                "description": "The title of the window now open, null when the server closed it",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "titleComponent": {
+                "description": "The component the title was written as, as Minecraft's own JSON. Null when the server closed the window.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "closed",
+              "title",
+              "titleComponent"
+            ]
           }
         },
         "required": [
           "button",
           "carried",
           "cursor",
-          "slots"
+          "slots",
+          "window"
         ]
       }
     },
@@ -8713,5 +8783,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:ba9f3b4316c9ea6319df646bfe59ada6490c3bc4839f2c2bcf38fc68a5504b29"
+  "catalogHash": "sha256:665b23ce4ffc02cf422dfa138361404d1cf6bf451b6489194ef57a16845d467a"
 }
