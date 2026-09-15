@@ -76,6 +76,7 @@ jobs:
   # It drives the published bot image, so a change that needs both sides fails here until the bot
   # is published. That is the coupling the shared catalogue already has, made visible.
   e2e:
+    name: e2e (${{ matrix.kind }} ${{ matrix.shard }}/${{ matrix.shards }})
     needs: check
     runs-on: ubuntu-latest
     strategy:
@@ -83,7 +84,17 @@ jobs:
       matrix:
         # Every kind of bot, held to the same sentences. A case whose tools a kind does not run is
         # skipped for that kind, so a tool that gains a kind is tested on it without editing this.
-        kind: [fabric, azalea]
+        #
+        # A fabric bot spends five seconds on a case an azalea bot answers in one or two, and took a
+        # quarter of an hour over all of them, so its cases are shared out between shards that each
+        # start a server and a bot of their own. Azalea's one job still finishes before the fabric
+        # shards do, so a second shard of it would only pay for another start.
+        include:
+          - { kind: fabric, shard: 1, shards: 4 }
+          - { kind: fabric, shard: 2, shards: 4 }
+          - { kind: fabric, shard: 3, shards: 4 }
+          - { kind: fabric, shard: 4, shards: 4 }
+          - { kind: azalea, shard: 1, shards: 1 }
     env:
       # The one Minecraft version the bots support. Moving to another is a release of its own.
       MINECRAFT: "26.1.2"
@@ -106,12 +117,13 @@ jobs:
           ./gradlew :e2e:test \
             -Pe2e.minecraft.version=$MINECRAFT \
             -Pe2e.bot.kind=${{ matrix.kind }} \
-            -Pe2e.bot.image=junhyung.cloud/library/bot-${{ matrix.kind }}:latest-mc$MINECRAFT
+            -Pe2e.bot.image=junhyung.cloud/library/bot-${{ matrix.kind }}:latest-mc$MINECRAFT \
+            -Pe2e.shard=${{ matrix.shard }}/${{ matrix.shards }}
 
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: e2e-${{ matrix.kind }}-${{ env.MINECRAFT }}
+          name: e2e-${{ matrix.kind }}-${{ matrix.shard }}of${{ matrix.shards }}-${{ env.MINECRAFT }}
           path: e2e/build/reports/tests/test
 
   # The tag both publish jobs use. Computed once so two runners cannot disagree about the stamp.

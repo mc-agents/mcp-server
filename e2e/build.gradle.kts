@@ -22,7 +22,8 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("org.slf4j:slf4j-simple:2.0.17")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    /* Compiled against as well as run: the shard filter is one of the launcher's. */
+    testImplementation("org.junit.platform:junit-platform-launcher")
 }
 
 java {
@@ -52,6 +53,10 @@ tasks.test {
     systemProperty("e2e.minecraft.version", providers.gradleProperty("e2e.minecraft.version")
         .orElse(providers.environmentVariable("E2E_MINECRAFT_VERSION"))
         .getOrElse("26.1.2"))
+    /* Which share of the cases to go through, as 2/4. CI runs every share at once, each in a world of its own. */
+    systemProperty("e2e.shard", providers.gradleProperty("e2e.shard")
+        .orElse(providers.environmentVariable("E2E_SHARD"))
+        .getOrElse("1/1"))
 
     /* Minutes, not seconds: a server boots, a bot downloads a client and joins a world. */
     timeout = Duration.ofMinutes(30)
