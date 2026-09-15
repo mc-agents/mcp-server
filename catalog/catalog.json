@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "4.5.0",
+  "catalogVersion": "4.6.0",
   "protocol": 1,
   "tools": [
     {
@@ -4509,7 +4509,7 @@
                 ]
               },
               "pattern": {
-                "description": "Regular expression, matched against the feed's text without font labels or glyphs; a sound or particle is its id, such as minecraft:entity.fishing_bobber.splash",
+                "description": "Regular expression. It matches when it matches the line as read-action-bar and read-title show it, font labels included, or the line's plain text; a sound or particle is its id, such as minecraft:entity.fishing_bobber.splash",
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 256
@@ -4535,7 +4535,7 @@
                 ]
               },
               "pattern": {
-                "description": "Regular expression, matched against the feed's text without font labels or glyphs; a sound or particle is its id, such as minecraft:entity.fishing_bobber.splash",
+                "description": "Regular expression. It matches when it matches the line as read-action-bar and read-title show it, font labels included, or the line's plain text; a sound or particle is its id, such as minecraft:entity.fishing_bobber.splash",
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 256
@@ -6003,19 +6003,34 @@
                 "type": "string"
               },
               "entries": {
-                "description": "Highest score first",
+                "description": "The lines as drawn, top first: highest score first, and on the sidebar without entries whose owner starts with '#' and at most 15",
                 "type": "array",
                 "items": {
                   "type": "object",
                   "properties": {
                     "name": {
+                      "description": "What the line draws, in plain text: on the sidebar the entry's team prefix, its display name or else its owner, and its team suffix",
                       "type": "string"
                     },
                     "score": {
+                      "description": "The score itself, whether or not the line shows it",
                       "type": "integer"
                     },
                     "nameComponent": {
-                      "description": "The component the entry's name was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.",
+                      "description": "The component the line's name was drawn as, as Minecraft's own JSON: on the sidebar the team prefix, the name and the team suffix in the team's colour. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.",
+                      "type": [
+                        "object",
+                        "array",
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "scoreText": {
+                      "description": "What the score column shows, in plain text: the number, the fixed text the objective or the entry puts in its place, or empty when the number is hidden",
+                      "type": "string"
+                    },
+                    "scoreComponent": {
+                      "description": "The component the score column was drawn as, as Minecraft's own JSON. Empty text when the number is hidden. Null when there is none.",
                       "type": [
                         "object",
                         "array",
@@ -8557,7 +8572,7 @@
             "type": "string"
           },
           "titlePattern": {
-            "description": "JavaScript regular expression the window title must match (default: any window)",
+            "description": "Regular expression the window title must match. It matches when it matches the title as read-window shows it, font labels such as [gui/header] included, or the title's plain text (default: any window)",
             "type": "string",
             "minLength": 1,
             "maxLength": 256
@@ -8783,5 +8798,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:665b23ce4ffc02cf422dfa138361404d1cf6bf451b6489194ef57a16845d467a"
+  "catalogHash": "sha256:be1bbb344df45f0be675402c760a564ec8220915228f2210a9f52b1dbe07c6b6"
 }

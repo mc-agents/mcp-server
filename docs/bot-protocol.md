@@ -347,6 +347,30 @@ sends `titleComponent` for its header and `close-window` for the one it closed, 
 `labelComponent` with `lore` and `loreComponents` beside them, and the tab list sends `displayName` with its component beside the username. The username stays because it is the identity every other tool
 takes; the drawn name is where a server puts a rank.
 
+**A scoreboard entry is the line as the client draws it, not the score as the objective keeps it.**
+A plugin writes a quest log on the sidebar one team per line: the owner of each score is a colour
+code nobody sees, the team it is on carries the line as its prefix and suffix, and the objective
+hides the numbers. Read as owners and scores that was three colour codes counting down. So
+`read-scoreboard` sends what the sidebar shows: `name` and `nameComponent` are the drawn name -- on
+the sidebar the entry's team prefix, its display name or else its owner, and its team suffix, in the
+team's colour -- and `score` is the number whether or not the line shows it. `scoreText` and
+`scoreComponent` are the score column: the number in the slot's default style, the fixed text the
+objective or the entry puts in its place, or empty text when the format is blank. Both null is a bot
+built before the column was sent, and the server prints the number then. The entries come in the
+client's order, highest score first and owners case-insensitively after that; the sidebar leaves out
+every owner starting with `#` and stops at fifteen, and the objective it shows is the one for the
+local player's team colour when that slot has one. The list and below-name slots are sent whole,
+unfiltered and without team formatting, because that is not how the client draws them.
+
+**A pattern matches what the tools show.** `wait-for-window`'s `titlePattern` and the `after` and
+`until` patterns of `press-input` are matched by the bot, against three candidates, and any one
+matching is a match: the title or line as `read-window`, `read-action-bar` and `read-title` show it,
+font labels and ` | ` separators included, which is the server's `Flatten` and `Piece` rule mirrored
+in each bot; the plain text with the glyphs and colour codes taken out, which is what the patterns
+used to be matched against; and the raw string as the game holds it, so a pattern written against a
+glyph goes on working. An agent copies what one tool showed into the next, and matched against the
+plain text alone a wait for `[ui/page_6] 2/2` never came. A sound or a particle is still its id.
+
 **An NPC is picked by the label over it, and the rule for "over" is the catalogue's.** On a server
 that draws with a resource pack an NPC has no name of its own: it is a mannequin, or a model clicked
 through an invisible base or an `interaction` hitbox, and the name a player reads is a separate

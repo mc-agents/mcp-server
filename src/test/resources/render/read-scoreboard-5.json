@@ -1,0 +1,73 @@
+{
+  "tool": "read-scoreboard",
+  "note": "a sidebar drawn one team per line: each line is a team's prefix and suffix over an owner made of colour codes, with the number hidden or replaced",
+  "data": {
+    "slot": "sidebar",
+    "board": {
+      "title": "Quest",
+      "titleComponent": {
+        "text": "Quest",
+        "font": "hyperfarm:sidebar/title"
+      },
+      "entries": [
+        {
+          "name": "Harvest wheat3/10",
+          "score": 3,
+          "nameComponent": {
+            "text": "",
+            "extra": [
+              {
+                "text": "Harvest wheat",
+                "font": "hyperfarm:sidebar/label"
+              },
+              "§7",
+              {
+                "text": "3/10",
+                "color": "yellow"
+              }
+            ]
+          },
+          "scoreText": "",
+          "scoreComponent": {
+            "text": ""
+          }
+        },
+        {
+          "name": "",
+          "score": 2,
+          "nameComponent": {
+            "text": "",
+            "color": "gray",
+            "extra": [
+              "",
+              "§8",
+              ""
+            ]
+          },
+          "scoreText": "",
+          "scoreComponent": {
+            "text": ""
+          }
+        },
+        {
+          "name": "» Reward",
+          "score": 1,
+          "nameComponent": {
+            "text": "",
+            "extra": [
+              "» ",
+              {
+                "text": "Reward",
+                "color": "gold"
+              },
+              ""
+            ]
+          },
+          "scoreText": "50g",
+          "scoreComponent": "50g"
+        }
+      ]
+    }
+  },
+  "text": "scoreboard \"[sidebar/title] Quest\" (sidebar, 3 entries)\n  [sidebar/label] Harvest wheat | 3/10\n  (blank)\n  » Reward: 50g"
+}

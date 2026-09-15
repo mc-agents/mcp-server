@@ -220,6 +220,40 @@ class BotEndToEndTest {
         assertTrue(board.contains("Coins: 1200"), board);
     }
 
+    /**
+     * A plugin writes a quest log on the sidebar one team per line: the owner of each score is a
+     * colour code nobody sees, the team it is on carries the line as prefix and suffix, and the
+     * objective hides the numbers. Read as owners and scores, it was three colour codes counting
+     * down under a counter the plugin keeps out of sight, and a wait on the line as it is shown
+     * never matched.
+     */
+    @Test
+    void aSidebarDrawnOneTeamPerLineReadsWhatTheLinesShow() {
+        agent.requires("read-scoreboard", "wait-for-scoreboard");
+        world.run("function mcagents:team_sidebar");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        try {
+            String board = agent.mustCall("read-scoreboard", Map.of("bot", BotWorld.BOT));
+
+            assertTrue(board.startsWith("scoreboard \"[sidebar/title] Quest\" (sidebar, 3 entries)"), board);
+            assertTrue(board.contains("\n  [sidebar/label] Harvest wheat | 3/10\n  (blank)\n  \u00bb Reward: 50g"), board);
+            assertTrue(!board.contains("\u00a7") && !board.contains("hidden") && !board.contains(": 3"), board);
+
+            world.run("team modify mcagents_l3 suffix \"4/10\"");
+            String counted = agent.mustCall("wait-for-scoreboard",
+                Map.of("bot", BotWorld.BOT, "pattern", "Harvest wheat \\| 4/10", "timeoutMs", 10000));
+
+            assertTrue(counted.contains("  [sidebar/label] Harvest wheat | 4/10"), counted);
+        } finally {
+            world.run("scoreboard objectives remove mcagents_lines");
+            world.run("team remove mcagents_l3");
+            world.run("team remove mcagents_l2");
+            world.run("team remove mcagents_l1");
+            world.run("scoreboard objectives setdisplay sidebar mcagents");
+        }
+    }
+
     /** A sign is where a server writes into the world, and it writes in its own font. */
     @Test
     void aSignReportsBothFacesAndItsBlankLines() {
@@ -349,6 +383,53 @@ class BotEndToEndTest {
         assertTrue(stepped.contains("The server opened window \"Buy\" instead"), stepped);
         assertTrue(!stepped.contains("slot 13:"), stepped);
         assertTrue(window.contains("22: cod x2"), window);
+    }
+
+    /**
+     * hyperfarm turns a menu's page by redrawing the title under the window's own id: an open-screen
+     * packet for a container the client already has, and then its contents. The client builds a new
+     * menu for that packet and keeps its prediction on the old one, so a bot that answered from the
+     * menu it clicked reported the page button on the cursor, and one that waited for the server to
+     * answer in that menu waited out its timeout.
+     */
+    @Test
+    void aClickThatRedrawsTheWindowUnderItsOwnIdIsAnsweredWithTheRedrawnWindow() {
+        agent.requires("click-slot", "close-window");
+        world.run("clear " + BotWorld.BOT);
+        world.run("fixture paged " + BotWorld.BOT);
+        agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "titlePattern", "ui/page_6", "timeoutMs", 10000));
+
+        String turned = agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 51));
+        String window = agent.mustCall("read-window", Map.of("bot", BotWorld.BOT));
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+        String paper = world.run("execute if items entity " + BotWorld.BOT + " container.* minecraft:paper");
+
+        assertTrue(turned.contains("The server opened window \"[ui/page_6] 2/2\" instead"), turned);
+        assertTrue(turned.contains("cursor: empty"), turned);
+        assertTrue(!turned.contains("slot 51:"), turned);
+        assertTrue(window.contains("  0: diamond x1"), window);
+        assertTrue(paper.startsWith("Test failed"), "the page button reached the inventory: " + paper);
+    }
+
+    /**
+     * A window is waited for by the title an agent has read off read-window, font labels included,
+     * and the plain text still matches: a pattern copied from one tool into the next has to find
+     * what that tool showed, and a pattern written before there were labels has to go on working.
+     */
+    @Test
+    void aWindowIsAwaitedByTheTitleItShows() {
+        agent.requires("close-window");
+        world.run("fixture paged " + BotWorld.BOT);
+
+        String shown = agent.mustCall("wait-for-window",
+            Map.of("bot", BotWorld.BOT, "titlePattern", "^\\[ui/page_6\\] 1/2$", "timeoutMs", 10000));
+        String plain = agent.mustCall("wait-for-window",
+            Map.of("bot", BotWorld.BOT, "titlePattern", "^1/2$", "timeoutMs", 10000));
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+
+        assertTrue(shown.startsWith("window \"[ui/page_6] 1/2\""), shown);
+        assertTrue(plain.startsWith("window \"[ui/page_6] 1/2\""), plain);
     }
 
     /**
@@ -2593,6 +2674,27 @@ class BotEndToEndTest {
             "after", Map.of("feed", "effect", "pattern", "block\\.note_block\\.pling"), "timeoutMs", 10000));
 
         assertTrue(pressed.contains("(\"minecraft:block.note_block.pling\")"), pressed);
+    }
+
+    /**
+     * A press waits for a line as read-action-bar shows it, font labels included: what an agent read
+     * off one tool is what it writes into the next. Matched against the plain text alone, a pattern
+     * copied from the reading tool never matched, and the press waited out its timeout.
+     */
+    @Test
+    void aPressWaitsForTheLineAsItIsShown() {
+        agent.requires("press-input");
+        new Thread(() -> {
+            sleep(1500);
+            world.run("function mcagents:hud");
+        }).start();
+
+        String pressed = agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "sneak",
+            "after", Map.of("feed", "actionBar", "pattern", "^\\[illageralt\\] Mana"), "timeoutMs", 20000));
+
+        assertTrue(pressed.startsWith("Waited "), pressed);
+        assertTrue(pressed.contains("for the actionBar feed to match /^\\[illageralt\\] Mana/"), pressed);
+        assertTrue(pressed.contains(", then pressed sneak once."), pressed);
     }
 
     /**

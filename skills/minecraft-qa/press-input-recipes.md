@@ -7,8 +7,9 @@ options make it react inside the bot rather than after an MCP round trip:
   `title` or `effect`, then press on that tick. Fails if it does not show within `timeoutMs`.
 - `until: {feed, pattern}` -- stop pressing, and let go of a held key, on the tick a line shows.
 
-`pattern` is a regular expression matched against the text without font labels or glyphs; a sound
-is its id, `minecraft:entity.fishing_bobber.splash`. The answer says why the presses ended: every
+`pattern` is a regular expression; it matches the line as `read-action-bar` and `read-title` show
+it, font labels included, or the line's plain text. A sound or particle is its id,
+`minecraft:entity.fishing_bobber.splash`. The answer says why the presses ended: every
 one was made, `until` showed ("stopped at 14 of 100 when ..."), or `timeoutMs` ran out.
 
 Every recipe below ran against the fixture plugin on the development cluster. Its objectives
