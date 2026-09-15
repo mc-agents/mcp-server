@@ -62,6 +62,8 @@ spec:
               value: {{ .Values.maxBots | quote }}
             - name: MCP_BOTS_PROVISION
               value: {{ ternary "auto" "never" .Values.bots.provision | quote }}
+            - name: MCP_BOTS_NAMESPACE
+              value: {{ default .Release.Namespace .Values.bots.namespace | quote }}
             - name: MCP_BOTS_MCP_HOST
               value: {{ default (printf "%s.%s.svc" (include "mc-agents-mcp-server.fullname" .) .Release.Namespace) .Values.bots.mcpHost | quote }}
             - name: MCP_LOG_LEVEL

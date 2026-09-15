@@ -3,6 +3,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ include "mc-agents-mcp-server.fullname" . }}
+  # In the namespace the bots are made in, which is not always this release's.
+  namespace: {{ default .Release.Namespace .Values.bots.namespace }}
   labels:
     {{- include "mc-agents-mcp-server.labels" . | nindent 4 }}
 rules:
@@ -16,6 +18,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ include "mc-agents-mcp-server.fullname" . }}
+  namespace: {{ default .Release.Namespace .Values.bots.namespace }}
   labels:
     {{- include "mc-agents-mcp-server.labels" . | nindent 4 }}
 roleRef:
