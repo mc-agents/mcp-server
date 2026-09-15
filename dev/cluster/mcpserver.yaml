@@ -19,4 +19,4 @@ spec:
   fabric:
     tag: 0.67.1
   azalea:
-    tag: 0.19.0
+    tag: 0.19.1
