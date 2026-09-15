@@ -2581,6 +2581,21 @@ class BotEndToEndTest {
     }
 
     /**
+     * A sound played at a player rather than at a place is a packet of its own, and neither kind of bot
+     * read it: hyperfarm's gathering fever chimes that way, and a press waiting on the chime never heard it.
+     */
+    @Test
+    void aSoundPlayedAtThePlayerIsOnTheEffectFeed() {
+        agent.requires("press-input");
+        world.run("fixture pling " + BotWorld.BOT);
+
+        String pressed = agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "sneak",
+            "after", Map.of("feed", "effect", "pattern", "block\\.note_block\\.pling"), "timeoutMs", 10000));
+
+        assertTrue(pressed.contains("(\"minecraft:block.note_block.pling\")"), pressed);
+    }
+
+    /**
      * A plugin that runs its own fishing bites the way vanilla looks -- the bobber pulled under and a
      * splash -- without the hook's biting flag, which belongs to vanilla's loot roll. A bot that read
      * only the flag waited out every bite on hyperfarm.

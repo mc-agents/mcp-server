@@ -2,6 +2,7 @@ package kr.junhyung.mcagents.fixture;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -16,6 +17,8 @@ import org.bukkit.scoreboard.Scoreboard;
  * server. Everything is kept in scoreboard objectives, which rcon reads without anything of its own.
  */
 public final class FixturePlugin extends JavaPlugin {
+
+    private static final long PLING_AFTER_TICKS = 40;
 
     @Override
     public void onEnable() {
@@ -47,6 +50,12 @@ public final class FixturePlugin extends JavaPlugin {
                     case "gather" -> gathering.start(sender, player);
                     case "locked" -> locked.open(sender, player);
                     case "shop" -> shop.open(sender, player);
+                    /*
+                    hyperfarm's gathering fever: a sound played at the player rather than at a place, which
+                    goes out as a packet of its own. Later than the command, so a press can be waiting.
+                    */
+                    case "pling" -> Bukkit.getScheduler().runTaskLater(this,
+                        () -> player.playSound(player, Sound.BLOCK_NOTE_BLOCK_PLING, 0.8F, 1.8F), PLING_AFTER_TICKS);
                     default -> {
                         return false;
                     }
