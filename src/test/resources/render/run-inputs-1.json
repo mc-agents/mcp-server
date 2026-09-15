@@ -1,0 +1,73 @@
+{
+  "tool": "run-inputs",
+  "note": "a click, twenty ticks, a click: the second lands inside the plugin's cooldown and it says so",
+  "data": {
+    "asked": 3,
+    "ran": 3,
+    "ticks": 25,
+    "stopped": "done",
+    "steps": [
+      {
+        "kind": "click",
+        "asked": "click slot 13",
+        "startedTick": 0,
+        "endedTick": 2,
+        "press": null,
+        "click": {
+          "slot": 13,
+          "outside": false,
+          "button": "left",
+          "shift": false,
+          "mode": "click",
+          "hotbar": null,
+          "before": {"name": "name_tag", "count": 1, "label": "Untrack", "lore": [], "labelComponent": {"text": "Untrack"}, "loreComponents": []},
+          "after": {"name": "lime_dye", "count": 1, "label": "Untracked", "lore": [], "labelComponent": {"text": "Untracked"}, "loreComponents": []},
+          "cursor": null,
+          "swapped": null,
+          "window": null
+        },
+        "command": null,
+        "wait": null,
+        "waitFor": null,
+        "error": null
+      },
+      {
+        "kind": "wait",
+        "asked": "wait 20 ticks",
+        "startedTick": 2,
+        "endedTick": 22,
+        "press": null,
+        "click": null,
+        "command": null,
+        "wait": 20,
+        "waitFor": null,
+        "error": null
+      },
+      {
+        "kind": "click",
+        "asked": "click slot 13",
+        "startedTick": 22,
+        "endedTick": 25,
+        "press": null,
+        "click": {
+          "slot": 13,
+          "outside": false,
+          "button": "left",
+          "shift": false,
+          "mode": "click",
+          "hotbar": null,
+          "before": {"name": "lime_dye", "count": 1, "label": "Untracked", "lore": [], "labelComponent": {"text": "Untracked"}, "loreComponents": []},
+          "after": {"name": "barrier", "count": 1, "label": "Too soon", "lore": [], "labelComponent": {"text": "Too soon"}, "loreComponents": []},
+          "cursor": null,
+          "swapped": null,
+          "window": null
+        },
+        "command": null,
+        "wait": null,
+        "waitFor": null,
+        "error": null
+      }
+    ]
+  },
+  "text": "Ran 3 of 3 steps in 25 ticks.\n  1. ticks 0-2: Left-clicked slot 13.\n       slot 13: Untrack [name_tag] x1 -> Untracked [lime_dye] x1\n       cursor: empty\n  2. ticks 2-22: waited 20 ticks\n  3. ticks 22-25: Left-clicked slot 13.\n       slot 13: Untracked [lime_dye] x1 -> Too soon [barrier] x1\n       cursor: empty"
+}

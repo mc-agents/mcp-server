@@ -1,0 +1,13 @@
+{
+  "tool": "hover-slot",
+  "note": "the cursor holds a stack, and the client hides the tooltip while it does",
+  "data": {
+    "slot": 13,
+    "item": {"name": "cod", "count": 1, "label": null, "lore": [], "labelComponent": null, "loreComponents": []},
+    "cursor": {"name": "emerald", "count": 1, "label": null, "lore": [], "labelComponent": null, "loreComponents": []},
+    "tooltip": {"lines": ["Cod"], "lineComponents": [{"translate": "item.minecraft.cod"}]},
+    "hidden": "cursor",
+    "frame": {"width": 854, "height": 480}
+  },
+  "text": "Hovered slot 13 (cod x1), but the cursor holds emerald x1 and the tooltip stays hidden while it does. Its lines would read:\n  Cod\nThe 854x480 frame is attached."
+}

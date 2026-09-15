@@ -2237,6 +2237,57 @@ class BotEndToEndTest {
 
         assertEquals(1, blobs, "screenshot returned no image");
     }
+
+    /**
+     * A tooltip is what the client builds for a stack and draws where the cursor rests: the name,
+     * the lore in the pack's own font, whatever the item adds. The lines come back as text with the
+     * frame beside them, so a name drawn in a custom font is checked both ways; an empty slot has
+     * none to draw, and without the image the lines are the whole answer.
+     *
+     * <p>In survival, whose inventory screen lays the slots out the way every container does: the
+     * slot after the hoe is the next hotbar slot, and nothing else on that screen has a tooltip of
+     * its own.
+     */
+    @Test
+    void aTooltipIsReadAndShownForTheSlotItIsHoveredOn() {
+        agent.requires("hover-slot", "close-window");
+        world.run("clear " + BotWorld.BOT);
+        world.run("give " + BotWorld.BOT
+            + " golden_hoe[custom_name={text:\"Probe Hoe\"},lore=[{text:\"12 coins\",font:\"hyperfarm:gui/price\"}]] 1");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "Probe Hoe", "timeoutMs", 10000));
+        world.run("gamemode survival " + BotWorld.BOT);
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+        agent.mustCall("open-inventory", Map.of("bot", BotWorld.BOT));
+        String window = agent.mustCall("read-window", Map.of("bot", BotWorld.BOT));
+        Matcher hoe = Pattern.compile("\n  (\\d+): Probe Hoe \\[golden_hoe\\] x1").matcher(window);
+        assertTrue(hoe.find(), window);
+        int slot = Integer.parseInt(hoe.group(1));
+
+        Agent.Answer drawn = agent.answer("hover-slot", Map.of("bot", BotWorld.BOT, "slot", slot));
+        Agent.Answer empty = agent.answer("hover-slot", Map.of("bot", BotWorld.BOT, "slot", slot + 1));
+        Agent.Answer words = agent.answer("hover-slot", Map.of("bot", BotWorld.BOT, "slot", slot, "image", false));
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        world.run("gamemode creative " + BotWorld.BOT);
+        world.run("function mcagents:setup");
+
+        assertTrue(drawn.text().contains("Hovered slot " + slot + " (Probe Hoe [golden_hoe] x1)"), drawn.text());
+        assertTrue(drawn.text().contains("\n  Probe Hoe\n  [gui/price] 12 coins"), drawn.text());
+        assertEquals(1, drawn.images(), drawn.text());
+        assertTrue(empty.text().contains("Hovered slot " + (slot + 1) + ", which is empty: no tooltip is drawn"), empty.text());
+        assertEquals(1, empty.images(), empty.text());
+        assertTrue(words.text().contains("\n  Probe Hoe\n  [gui/price] 12 coins"), words.text());
+        assertEquals(0, words.images(), words.text());
+    }
+
+    /** A hover needs a window the way a click does, and says so rather than hovering the world. */
+    @Test
+    void aHoverWithNoWindowOpenIsRefused() {
+        agent.requires("hover-slot");
+
+        String refused = agent.refusal("hover-slot", Map.of("bot", BotWorld.BOT, "slot", 5));
+
+        assertTrue(refused.contains("No window is open"), refused);
+    }
     /**
      * A quest shows its progress on the action bar, and a HUD is written in pieces: an icon glyph in
      * the pack's own font with the labels after it. Sent after the waits start, so what they match
@@ -2623,6 +2674,88 @@ class BotEndToEndTest {
         String tags = world.run("tag " + BotWorld.BOT + " list");
 
         assertTrue(answered.contains("Carrot it is"), answered);
+        assertTrue(tags.contains("fixture_choice_1"), tags);
+        assertTrue(!tags.contains("fixture_choice_0"), tags);
+        assertTrue(tags.contains("fixture_talk_left"), tags);
+    }
+
+    /**
+     * A plugin gates a button behind a cooldown, and whether a second click lands inside it is a
+     * matter of ticks: two click-slot calls arrive a second or more apart and are both taken. A
+     * sequence runs inside the bot, so the gap the server measures is the wait asked for plus the
+     * resend the first click waited on. A bot that ignored the wait shows up in that gap, not only
+     * in the refusal.
+     */
+    @Test
+    void aSequenceLandsTwoClicksInsideACooldown() {
+        agent.requires("run-inputs", "close-window");
+        forget("fx_untrack", "fx_too_soon", "fx_gap");
+        world.run("clear " + BotWorld.BOT);
+        world.run("fixture cooldown " + BotWorld.BOT);
+        agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "titlePattern", "Tracker", "timeoutMs", 10000));
+
+        String ran = agent.mustCall("run-inputs", Map.of("bot", BotWorld.BOT, "steps",
+            List.of(Map.of("click", 13), Map.of("wait", 20), Map.of("click", 13))));
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        int gap = counted("fx_gap");
+
+        assertTrue(ran.startsWith("Ran 3 of 3 steps in "), ran);
+        assertTrue(ran.contains("slot 13: Untrack [name_tag] x1 -> Untracked [lime_dye] x1"), ran);
+        assertTrue(ran.contains("-> Too soon [barrier] x1"), ran);
+        assertEquals(1, counted("fx_untrack"), ran);
+        assertEquals(1, counted("fx_too_soon"), ran);
+        assertTrue(gap >= 20 && gap <= 28, "the server saw the clicks " + gap + " ticks apart: " + ran);
+
+        /* The wait is measured on the bot's own clock too: from the first click's end to the second's start. */
+        Matcher first = Pattern.compile("\n  1\\. ticks (\\d+)-(\\d+): ").matcher(ran);
+        Matcher third = Pattern.compile("\n  3\\. ticks (\\d+)-(\\d+): ").matcher(ran);
+        assertTrue(first.find() && third.find(), ran);
+        int between = Integer.parseInt(third.group(1)) - Integer.parseInt(first.group(2));
+        assertTrue(between >= 20 && between <= 23, "the bot put " + between + " ticks between the clicks: " + ran);
+    }
+
+    /**
+     * A key goes to an open window rather than to the game, so a press under one is refused. In a
+     * sequence the refusal stops it there: the click before it is still reported, and the step after
+     * it is named as never made.
+     */
+    @Test
+    void aSequenceStopsAtTheStepTheGameRefuses() {
+        agent.requires("run-inputs", "close-window");
+        world.run("clear " + BotWorld.BOT);
+        world.run("fixture cooldown " + BotWorld.BOT);
+        agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "titlePattern", "Tracker", "timeoutMs", 10000));
+
+        String ran = agent.mustCall("run-inputs", Map.of("bot", BotWorld.BOT, "steps",
+            List.of(Map.of("click", 13), Map.of("press", "jump"), Map.of("wait", 5))));
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+
+        assertTrue(ran.startsWith("Ran 1 of 3 steps"), ran);
+        assertTrue(ran.contains("step 2 (press jump) was refused -- WINDOW_OPEN"), ran);
+        assertTrue(ran.contains("Step 3 was not made"), ran);
+        assertTrue(ran.contains("slot 13: Untrack [name_tag] x1 -> Untracked [lime_dye] x1"), ran);
+    }
+
+    /**
+     * The same conversation as one call: each key waits inside the bot for the line that asks for
+     * it, and nothing goes through this server between a cue and its answer.
+     */
+    @Test
+    void aConversationIsDrivenInOneCall() {
+        agent.requires("run-inputs");
+        /* An answer is a change of slot, and slot 1 must not already be the one selected. */
+        agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "hotbar", "slot", 3));
+        world.run("fixture talk " + BotWorld.BOT);
+
+        String ran = agent.mustCall("run-inputs", Map.of("bot", BotWorld.BOT, "timeoutMs", 20000, "steps", List.of(
+            Map.of("waitFor", "Fine day"), Map.of("press", "jump"),
+            Map.of("waitFor", "What will you plant"), Map.of("press", "hotbar", "slot", 1),
+            Map.of("waitFor", "it is"), Map.of("press", "sneak"))));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String tags = world.run("tag " + BotWorld.BOT + " list");
+
+        assertTrue(ran.startsWith("Ran 6 of 6 steps"), ran);
+        assertTrue(ran.contains("Carrot it is"), ran);
         assertTrue(tags.contains("fixture_choice_1"), tags);
         assertTrue(!tags.contains("fixture_choice_0"), tags);
         assertTrue(tags.contains("fixture_talk_left"), tags);

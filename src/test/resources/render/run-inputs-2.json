@@ -1,0 +1,49 @@
+{
+  "tool": "run-inputs",
+  "note": "a key under an open window is refused, the click before it is still reported and the step after was never made",
+  "data": {
+    "asked": 3,
+    "ran": 1,
+    "ticks": 3,
+    "stopped": "refused",
+    "steps": [
+      {
+        "kind": "click",
+        "asked": "click slot 13",
+        "startedTick": 0,
+        "endedTick": 3,
+        "press": null,
+        "click": {
+          "slot": 13,
+          "outside": false,
+          "button": "left",
+          "shift": false,
+          "mode": "click",
+          "hotbar": null,
+          "before": {"name": "name_tag", "count": 1, "label": "Untrack", "lore": [], "labelComponent": {"text": "Untrack"}, "loreComponents": []},
+          "after": {"name": "lime_dye", "count": 1, "label": "Untracked", "lore": [], "labelComponent": {"text": "Untracked"}, "loreComponents": []},
+          "cursor": null,
+          "swapped": null,
+          "window": null
+        },
+        "command": null,
+        "wait": null,
+        "waitFor": null,
+        "error": null
+      },
+      {
+        "kind": "press",
+        "asked": "press jump",
+        "startedTick": 3,
+        "endedTick": 3,
+        "press": null,
+        "click": null,
+        "command": null,
+        "wait": null,
+        "waitFor": null,
+        "error": {"code": "WINDOW_OPEN", "message": "a window is open, and keys go to it rather than to the game; close-window first."}
+      }
+    ]
+  },
+  "text": "Ran 1 of 3 steps in 3 ticks; step 2 (press jump) was refused -- WINDOW_OPEN: a window is open, and keys go to it rather than to the game; close-window first. Step 3 was not made.\n  1. ticks 0-3: Left-clicked slot 13.\n       slot 13: Untrack [name_tag] x1 -> Untracked [lime_dye] x1\n       cursor: empty"
+}

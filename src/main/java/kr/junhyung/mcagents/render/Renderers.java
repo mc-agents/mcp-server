@@ -50,6 +50,7 @@ public final class Renderers {
         Map.entry("get-recipe", entry(RecipeListRenderer.View.class, new RecipeListRenderer())),
         Map.entry("get-target-block", entry(TargetRenderer.View.class, new TargetRenderer())),
         Map.entry("get-world-state", entry(WorldStateRenderer.View.class, new WorldStateRenderer())),
+        Map.entry("hover-slot", entry(HoveredSlotRenderer.View.class, new HoveredSlotRenderer())),
         Map.entry("list-inventory", entry(InventoryRenderer.View.class, new InventoryRenderer())),
         Map.entry("list-recipes", entry(RecipeListRenderer.View.class, new RecipeListRenderer())),
         Map.entry("open-container", entry(WindowRenderer.View.class, new WindowRenderer())),
@@ -65,6 +66,7 @@ public final class Renderers {
         Map.entry("read-stats", entry(StatsRenderer.View.class, new StatsRenderer())),
         Map.entry("read-trades", entry(TradesRenderer.View.class, new TradesRenderer())),
         Map.entry("read-window", entry(OpenWindowRenderer.View.class, new OpenWindowRenderer())),
+        Map.entry("run-inputs", entry(RanInputsRenderer.View.class, new RanInputsRenderer())),
         Map.entry("select-trade", entry(SelectedTradeRenderer.View.class, new SelectedTradeRenderer())),
         Map.entry("set-dialog-input", entry(DialogInputRenderer.View.class, new DialogInputRenderer())),
         Map.entry("wait-for-window", entry(AwaitedWindowRenderer.View.class, new AwaitedWindowRenderer())));

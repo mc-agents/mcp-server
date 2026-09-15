@@ -28,6 +28,7 @@ public final class FixturePlugin extends JavaPlugin {
         LockedMenu locked = new LockedMenu();
         ShopMenu shop = new ShopMenu();
         PagedMenu paged = new PagedMenu();
+        CooldownMenu cooldown = new CooldownMenu(scores);
 
         getServer().getPluginManager().registerEvents(new InputRecorder(scores, conversation), this);
         getServer().getPluginManager().registerEvents(new FishingBite(this, scores), this);
@@ -35,6 +36,7 @@ public final class FixturePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(locked, this);
         getServer().getPluginManager().registerEvents(shop, this);
         getServer().getPluginManager().registerEvents(paged, this);
+        getServer().getPluginManager().registerEvents(cooldown, this);
 
         PluginCommand command = getCommand("fixture");
         if (command != null) {
@@ -53,6 +55,7 @@ public final class FixturePlugin extends JavaPlugin {
                     case "locked" -> locked.open(sender, player);
                     case "shop" -> shop.open(sender, player);
                     case "paged" -> paged.open(sender, player);
+                    case "cooldown" -> cooldown.open(sender, player);
                     /*
                     hyperfarm's gathering fever: a sound played at the player rather than at a place, which
                     goes out as a packet of its own. Later than the command, so a press can be waiting.

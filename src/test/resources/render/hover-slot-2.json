@@ -1,0 +1,13 @@
+{
+  "tool": "hover-slot",
+  "note": "an empty slot, which has no tooltip to draw",
+  "data": {
+    "slot": 13,
+    "item": null,
+    "cursor": null,
+    "tooltip": null,
+    "hidden": "empty",
+    "frame": {"width": 854, "height": 480}
+  },
+  "text": "Hovered slot 13, which is empty: no tooltip is drawn. The 854x480 frame is attached."
+}

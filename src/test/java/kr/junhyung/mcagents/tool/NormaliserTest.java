@@ -9,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import kr.junhyung.mcagents.catalog.Catalog;
 import kr.junhyung.mcagents.catalog.ToolSpec;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -94,6 +96,55 @@ class NormaliserTest {
 
         assertTrue(thrown.getMessage().contains("blockType"), thrown.getMessage());
         assertTrue(thrown.getMessage().contains("not given"), thrown.getMessage());
+    }
+
+    /*
+    A step inside run-inputs is an object of its own, and the invariant holds for it the same way:
+    the bot reads a step with twelve keys, never one with the one key the caller typed.
+    */
+    @Test
+    void aStepInsideAnArrayArrivesWithEveryDefaultFilled() {
+        Map<String, Object> sent = wire("run-inputs", Map.of("steps", List.of(Map.of("click", 13))));
+
+        Map<String, Object> expected = new LinkedHashMap<>();
+        expected.put("press", null);
+        expected.put("slot", null);
+        expected.put("holdTicks", 1);
+        expected.put("click", 13);
+        expected.put("button", "left");
+        expected.put("shift", false);
+        expected.put("mode", "click");
+        expected.put("hotbar", null);
+        expected.put("command", null);
+        expected.put("wait", null);
+        expected.put("waitFor", null);
+        expected.put("feed", "actionBar");
+
+        assertEquals(List.of(expected), sent.get("steps"));
+        assertEquals(10_000, sent.get("timeoutMs"));
+    }
+
+    @Test
+    void aValueOutOfRangeInsideAStepIsBroughtBackInToo() {
+        Map<String, Object> sent = wire("run-inputs",
+                Map.of("steps", List.of(Map.of("press", "use", "holdTicks", 5_000))));
+
+        assertEquals(1_200, stepOf(sent, 0).get("holdTicks"));
+    }
+
+    @Test
+    void aStepThatIsNotAnObjectIsRefusedByItsIndex() {
+        Map<String, Object> arguments = Map.of("steps", List.of(Map.of("press", "jump"), "wait"));
+
+        IllegalArgumentException thrown =
+                assertThrows(IllegalArgumentException.class, () -> wire("run-inputs", arguments));
+
+        assertEquals("\"run-inputs\" steps[1] is not an object", thrown.getMessage());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> stepOf(Map<String, Object> wire, int index) {
+        return ((List<Map<String, Object>>) wire.get("steps")).get(index);
     }
 
     /**

@@ -1,0 +1,60 @@
+{
+  "tool": "run-inputs",
+  "note": "timeoutMs runs out while a key is held, and the key is let go",
+  "data": {
+    "asked": 5,
+    "ran": 2,
+    "ticks": 30,
+    "stopped": "timeout",
+    "steps": [
+      {
+        "kind": "press",
+        "asked": "press hotbar 1",
+        "startedTick": 0,
+        "endedTick": 2,
+        "press": {
+          "key": "hotbar",
+          "slot": 1,
+          "presses": 1,
+          "repeat": 1,
+          "holdTicks": 1,
+          "intervalTicks": 1,
+          "after": null,
+          "until": null,
+          "stopped": "done",
+          "selectedSlot": 1
+        },
+        "click": null,
+        "command": null,
+        "wait": null,
+        "waitFor": null,
+        "error": null
+      },
+      {
+        "kind": "wait",
+        "asked": "wait 10 ticks",
+        "startedTick": 2,
+        "endedTick": 12,
+        "press": null,
+        "click": null,
+        "command": null,
+        "wait": 10,
+        "waitFor": null,
+        "error": null
+      },
+      {
+        "kind": "press",
+        "asked": "press use for 40 ticks",
+        "startedTick": 12,
+        "endedTick": 30,
+        "press": null,
+        "click": null,
+        "command": null,
+        "wait": null,
+        "waitFor": null,
+        "error": {"code": "TIMEOUT", "message": "timeoutMs (1500) ran out during this step"}
+      }
+    ]
+  },
+  "text": "Ran 2 of 5 steps in 30 ticks; step 3 (press use for 40 ticks) was cut short -- TIMEOUT: timeoutMs (1500) ran out during this step; it was let go. Steps 4-5 were not made.\n  1. ticks 0-2: Pressed hotbar slot 1 once. Hotbar slot 1 is selected.\n  2. ticks 2-12: waited 10 ticks"
+}

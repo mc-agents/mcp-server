@@ -1,0 +1,26 @@
+{
+  "tool": "hover-slot",
+  "note": "a named hoe with a lore line in the pack's price font, drawn in the frame",
+  "data": {
+    "slot": 13,
+    "item": {
+      "name": "golden_hoe",
+      "count": 1,
+      "label": "Probe Hoe",
+      "lore": ["12 coins"],
+      "labelComponent": {"text": "Probe Hoe"},
+      "loreComponents": [{"text": "12 coins", "font": "hyperfarm:gui/price"}]
+    },
+    "cursor": null,
+    "tooltip": {
+      "lines": ["Probe Hoe", "12 coins"],
+      "lineComponents": [
+        {"text": "Probe Hoe", "italic": true},
+        {"text": "12 coins", "font": "hyperfarm:gui/price", "color": "dark_purple", "italic": true}
+      ]
+    },
+    "hidden": null,
+    "frame": {"width": 854, "height": 480}
+  },
+  "text": "Hovered slot 13 (Probe Hoe [golden_hoe] x1). Its tooltip reads:\n  Probe Hoe\n  [gui/price] 12 coins\nThe 854x480 frame attached shows it drawn."
+}

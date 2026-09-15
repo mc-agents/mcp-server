@@ -1,0 +1,26 @@
+{
+  "tool": "hover-slot",
+  "note": "called with image false, so the lines come without a frame",
+  "data": {
+    "slot": 13,
+    "item": {
+      "name": "golden_hoe",
+      "count": 1,
+      "label": "Probe Hoe",
+      "lore": ["12 coins"],
+      "labelComponent": {"text": "Probe Hoe"},
+      "loreComponents": [{"text": "12 coins", "font": "hyperfarm:gui/price"}]
+    },
+    "cursor": null,
+    "tooltip": {
+      "lines": ["Probe Hoe", "12 coins"],
+      "lineComponents": [
+        {"text": "Probe Hoe", "italic": true},
+        {"text": "12 coins", "font": "hyperfarm:gui/price", "color": "dark_purple", "italic": true}
+      ]
+    },
+    "hidden": null,
+    "frame": null
+  },
+  "text": "Hovered slot 13 (Probe Hoe [golden_hoe] x1). Its tooltip reads:\n  Probe Hoe\n  [gui/price] 12 coins"
+}

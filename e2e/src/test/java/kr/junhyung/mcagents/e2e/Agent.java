@@ -111,11 +111,32 @@ final class Agent implements AutoCloseable {
         requires(tool);
         McpSchema.CallToolResult answer = client.callTool(McpSchema.CallToolRequest.builder(tool).arguments(args).build());
 
-        return (int) answer.content().stream().filter(part -> !(part instanceof McpSchema.TextContent)).count();
+        return images(answer);
+    }
+
+    /** The text an agent reads and how many images came beside it. */
+    record Answer(String text, int images) {}
+
+    /**
+     * A call that has to work, answered with its text and its image parts together: a tool that
+     * attaches a frame beside its sentence is asserted on both, from the one call.
+     */
+    Answer answer(String tool, Map<String, Object> args) {
+        requires(tool);
+        McpSchema.CallToolResult answer = client.callTool(McpSchema.CallToolRequest.builder(tool).arguments(args).build());
+
+        if (Boolean.TRUE.equals(answer.isError())) {
+            throw new IllegalStateException(tool + " failed: " + text(answer));
+        }
+        return new Answer(text(answer), images(answer));
     }
 
     List<String> tools() {
         return client.listTools().tools().stream().map(McpSchema.Tool::name).toList();
+    }
+
+    private static int images(McpSchema.CallToolResult answer) {
+        return (int) answer.content().stream().filter(part -> !(part instanceof McpSchema.TextContent)).count();
     }
 
     private static String text(McpSchema.CallToolResult answer) {

@@ -1,0 +1,107 @@
+{
+  "tool": "run-inputs",
+  "note": "a conversation driven by waits for the action bar and the keys that answer it, then a command and a one-tick wait",
+  "data": {
+    "asked": 6,
+    "ran": 6,
+    "ticks": 21,
+    "stopped": "done",
+    "steps": [
+      {
+        "kind": "waitFor",
+        "asked": "wait for /Fine day/ on actionBar",
+        "startedTick": 0,
+        "endedTick": 7,
+        "press": null,
+        "click": null,
+        "command": null,
+        "wait": null,
+        "waitFor": {"feed": "actionBar", "pattern": "Fine day", "matched": "[Probe Farmer] Fine day for it. (jump)", "waitedMs": 380},
+        "error": null
+      },
+      {
+        "kind": "press",
+        "asked": "press jump",
+        "startedTick": 7,
+        "endedTick": 9,
+        "press": {
+          "key": "jump",
+          "slot": null,
+          "presses": 1,
+          "repeat": 1,
+          "holdTicks": 1,
+          "intervalTicks": 1,
+          "after": null,
+          "until": null,
+          "stopped": "done",
+          "selectedSlot": 3
+        },
+        "click": null,
+        "command": null,
+        "wait": null,
+        "waitFor": null,
+        "error": null
+      },
+      {
+        "kind": "waitFor",
+        "asked": "wait for /What will you plant/ on actionBar",
+        "startedTick": 9,
+        "endedTick": 18,
+        "press": null,
+        "click": null,
+        "command": null,
+        "wait": null,
+        "waitFor": {"feed": "actionBar", "pattern": "What will you plant", "matched": "[Probe Farmer] What will you plant? 0: Wheat / 1: Carrot (sneak to leave)", "waitedMs": 450},
+        "error": null
+      },
+      {
+        "kind": "press",
+        "asked": "press hotbar 1",
+        "startedTick": 18,
+        "endedTick": 20,
+        "press": {
+          "key": "hotbar",
+          "slot": 1,
+          "presses": 1,
+          "repeat": 1,
+          "holdTicks": 1,
+          "intervalTicks": 1,
+          "after": null,
+          "until": null,
+          "stopped": "done",
+          "selectedSlot": 1
+        },
+        "click": null,
+        "command": null,
+        "wait": null,
+        "waitFor": null,
+        "error": null
+      },
+      {
+        "kind": "command",
+        "asked": "command /fixture pling e2e",
+        "startedTick": 20,
+        "endedTick": 20,
+        "press": null,
+        "click": null,
+        "command": "/fixture pling e2e",
+        "wait": null,
+        "waitFor": null,
+        "error": null
+      },
+      {
+        "kind": "wait",
+        "asked": "wait 1 tick",
+        "startedTick": 20,
+        "endedTick": 21,
+        "press": null,
+        "click": null,
+        "command": null,
+        "wait": 1,
+        "waitFor": null,
+        "error": null
+      }
+    ]
+  },
+  "text": "Ran 6 of 6 steps in 21 ticks.\n  1. ticks 0-7: the actionBar feed matched /Fine day/ (\"[Probe Farmer] Fine day for it. (jump)\") after 380ms\n  2. ticks 7-9: Pressed jump once.\n  3. ticks 9-18: the actionBar feed matched /What will you plant/ (\"[Probe Farmer] What will you plant? 0: Wheat / 1: Carrot (sneak to leave)\") after 450ms\n  4. ticks 18-20: Pressed hotbar slot 1 once. Hotbar slot 1 is selected.\n  5. tick 20: sent /fixture pling e2e\n  6. ticks 20-21: waited 1 tick"
+}

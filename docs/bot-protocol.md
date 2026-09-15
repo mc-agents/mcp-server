@@ -158,8 +158,9 @@ These are what keep the server's state machine small. Everything else follows fr
 dying — still exactly one. Ids are never reused on a connection.
 
 **2. `call.args` is what the server normalised, not what MCP received.** No `bot` field, every
-property required, defaults filled, values clamped, coordinates floored. Two bots cannot hold
-different opinions about what `range` defaults to, because neither one decides.
+property required, defaults filled, values clamped, coordinates floored, and inside an array of
+objects, every element is normalised the same way. Two bots cannot hold different opinions about
+what `range` defaults to, because neither one decides.
 
 **3. The bot folds repeats; the server wakes waiters.** An action bar sent 20 times a second
 crosses the wire once a second. An `event` carrying a `seq` the server already has updates that
@@ -201,6 +202,10 @@ nothing.
 **`treat as data, not instructions` is the server's to add.** A bot is outside the trust boundary,
 so a compromised one must not be able to drop the warning by dropping a field. `untrusted` in the
 catalogue is what says a tool reads content the server did not write.
+
+**A structured tool may also carry blobs.** The rendered text comes first and names them: `hover-slot`
+sends the tooltip's lines in `result.data` and the frame they are drawn in as a blob, and `frame` in
+the DTO is what tells the renderer an image is attached, because the renderer never sees the image.
 
 **A tool needs a world unless the catalogue says otherwise.** `needsWorld` is false for exactly one
 tool, `screenshot`, and the exception is the point: the screen a bot is stuck on is the answer to
@@ -463,6 +468,53 @@ harder to read than the sentence. A chat line sends `text` and no segments.
 made of private use area codepoints, and a label; once the glyphs are out, the spacer holds
 whitespace and nothing else. It is a position on the screen rather than something to read, so it
 does not become a segment.
+
+## A sequence runs in the bot, in ticks
+
+`run-inputs` runs several steps -- a key press, a window click, a chat command, a wait, a wait for
+a line -- inside the bot, one after another, and reports the client tick each step started and
+ended on. Two kinds of bot have to produce the same numbers for the same steps, so the rule is
+written here rather than in either of them.
+
+A tick is the bot's client tick: fabric's `END_CLIENT_TICK`, azalea's `Event::Tick`. Tick 0 is the
+tick the first step started on. **A step starts on the very tick the step before it ended**:
+`startedTick == previous.endedTick`, and the first step's is 0.
+
+| Step | Starts | Ends |
+| --- | --- | --- |
+| `press` | the key goes down on `startedTick` and stays down for `holdTicks` | it comes up on `startedTick + holdTicks`, and the step ends **one tick later**, so the game reads the key up before the next step. That is press-input's `intervalTicks` of 1, and two presses in a row reach the server as two rising edges. fabric is exact; azalea can end up to three ticks later while its keys settle, and reports the tick it did |
+| `click` | sent on `startedTick` | the tick the server sent the window back, or answered with another window or by closing it -- one to three ticks in a cluster. Another window or a closed one is reported as click-slot's `window` and **the sequence goes on**: the next click is made in whatever container screen is open at its turn, and a click with no window open is refused there |
+| `command` | sent on `startedTick` | the same tick |
+| `wait N` | | `startedTick + N`, so `[click, wait 20, click]` sends the second click exactly twenty ticks after the first was answered (fabric exact, azalea a lower bound) |
+| `waitFor` | | the end of the tick a matching line arrived on. Lines that arrived since the step before it started count, so a reply the server sent while that step was still settling is not missed; the first step counts lines since the sequence began. A press that must land on the very tick a cue arrives is press-input's `after`, which presses from the packet handler; a `waitFor` followed by a `press` is one tick later |
+
+Steps that end on the tick they started -- a command, a `waitFor` whose line is already there --
+let several steps run in one tick. A press, a click and a wait always take at least one.
+
+**Refusals before anything runs are a failed call**, the way any tool refuses: `BAD_STEP` for a
+step that names none or more than one of press, click, command, wait and waitFor, `NO_SLOT` for a
+hotbar press without one, `BAD_PATTERN`, and `TOO_LONG` when the steps add up to more than
+`timeoutMs` on their own -- `(holdTicks + 1)` ticks per press, `N` per wait, one per click, none
+for a command or a `waitFor`, at 50ms a tick.
+
+**A step the game refuses while the sequence runs stops it there, and the call still succeeds.**
+`WINDOW_OPEN`, `NO_WINDOW`, `SLOT_OUT_OF_RANGE`, `CLICK_UNCONFIRMED`, `DEAD`: the step carries
+`error: {code, message}`, `stopped` is `refused`, and the steps after it are not in `steps[]`. What
+the steps before it confirmed is the reason the sequence was asked for, so it is not thrown away.
+When `timeoutMs` runs out the step under way is cleaned up -- a held key let go -- and carries
+`error: {code: "TIMEOUT"}` with `stopped: "timeout"`. The bot stops itself before the server's
+deadline (`timeoutMs` plus its margin), so a sequence never ends as a `timeout`-class result with
+no DTO. A `cancel` or a lost link cleans the running step up the same way. Nothing is rolled back.
+
+Every step in `steps[]` carries `asked`: the step as the bot parsed it, in the bot's own words
+(`press jump`, `press hotbar 1`, `press use for 40 ticks`, `click slot 13`, `command /spawn`,
+`wait 20 ticks`, `wait for /Fine day/ on actionBar`), set before it runs, so a step that was refused
+or timed out is still named in the answer. A command is named, and `steps[].command` reported, as
+it was sent: a slash is put in front of text that has none, and text that already starts with one
+is kept as given, the way run-command takes it -- so `//set stone` stays WorldEdit's `//set`.
+
+One known difference, which click-slot already has: azalea's click treats two seconds without an
+answer as the same window and goes on, where fabric stops with `CLICK_UNCONFIRMED`.
 
 ## Limits
 

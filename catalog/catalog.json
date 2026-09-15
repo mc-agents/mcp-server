@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "4.6.0",
+  "catalogVersion": "4.7.0",
   "protocol": 1,
   "tools": [
     {
@@ -3135,6 +3135,266 @@
         "additionalProperties": false
       },
       "wireSchemaHash": "sha256:53f2f7218c621e697a8255ddfc89d4ee5bf1bfcc803e70b31e40cb93a5b5840d"
+    },
+    {
+      "name": "hover-slot",
+      "group": "slot",
+      "description": "Hover the cursor over one slot of the open window and capture the frame with its tooltip drawn, the way a player sees it. The tooltip's lines come back as text beside the image, fonts and glyphs included, so a name or lore drawn in the resource pack's own font can be checked both ways. read-window shows a slot's label and lore; this shows the whole tooltip the client builds -- display name, enchantments, attributes, hidden lines -- and how it is drawn.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": true,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 30000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "slot": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Slot number as listed by the window contents"
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 256,
+            "maximum": 1920,
+            "description": "Image width (default: 854)"
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 144,
+            "maximum": 1080,
+            "description": "Image height (default: 480)"
+          },
+          "image": {
+            "type": "boolean",
+            "description": "Also capture the frame (default: true). false answers with the tooltip's lines only, which is cheaper when only the words are in question"
+          }
+        },
+        "required": [
+          "slot"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Slot number as listed by the window contents"
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 256,
+            "maximum": 1920,
+            "description": "Image width (default: 854)",
+            "default": 854
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 144,
+            "maximum": 1080,
+            "description": "Image height (default: 480)",
+            "default": 480
+          },
+          "image": {
+            "type": "boolean",
+            "description": "Also capture the frame (default: true). false answers with the tooltip's lines only, which is cheaper when only the words are in question",
+            "default": true
+          }
+        },
+        "required": [
+          "height",
+          "image",
+          "slot",
+          "width"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:19b52597ff05ba40acf75dd02017dcaa60d5c86a39e294223d8c577a2cd8639b",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "description": "The slot hovered",
+            "type": "integer"
+          },
+          "item": {
+            "description": "What the slot holds, null when it is empty",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              },
+              "label": {
+                "description": "The custom name the server gave it, if any",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lore": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "labelComponent": {
+                "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              },
+              "loreComponents": {
+                "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                "type": "array"
+              }
+            },
+            "required": [
+              "count",
+              "label",
+              "labelComponent",
+              "lore",
+              "loreComponents",
+              "name"
+            ]
+          },
+          "cursor": {
+            "description": "What the cursor holds, null when it holds nothing. A held stack is what hides the tooltip (hidden 'cursor'), so the renderer names it",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              },
+              "label": {
+                "description": "The custom name the server gave it, if any",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lore": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "labelComponent": {
+                "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              },
+              "loreComponents": {
+                "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                "type": "array"
+              }
+            },
+            "required": [
+              "count",
+              "label",
+              "labelComponent",
+              "lore",
+              "loreComponents",
+              "name"
+            ]
+          },
+          "tooltip": {
+            "description": "The lines of the tooltip the client builds for what the slot holds, as the screen draws them: the display name first, then whatever the item shows. Filled whenever the slot holds something, even when hidden says the tooltip was not drawn, so the words can still be read; null for an empty slot",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "lines": {
+                "description": "Plain text of each line, in the order drawn",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "lineComponents": {
+                "description": "The components the lines were written as, as Minecraft's own JSON, in the same order as lines. Read by position, so a shorter list simply leaves the rest read the way lines already were.",
+                "type": "array"
+              }
+            },
+            "required": [
+              "lineComponents",
+              "lines"
+            ],
+            "additionalProperties": false
+          },
+          "hidden": {
+            "description": "Null when the tooltip is drawn in the frame. 'empty': the slot holds nothing, so there is no tooltip. 'inactive': the screen did not take the hover, because the slot is inactive or covered by another creative tab or the recipe book, so no tooltip is drawn. 'cursor': the cursor holds a stack and the client hides the tooltip while it does.",
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              null,
+              "empty",
+              "inactive",
+              "cursor"
+            ]
+          },
+          "frame": {
+            "description": "The size of the frame attached beside the text, null when image was false and none was captured. The renderer never sees the image itself, so this is what says one is attached",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "width": {
+                "type": "integer"
+              },
+              "height": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "height",
+              "width"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "cursor",
+          "frame",
+          "hidden",
+          "item",
+          "slot",
+          "tooltip"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "interact-entity",
@@ -6849,6 +7109,923 @@
       "wireSchemaHash": "sha256:878128a98ab0f67dffb8ea8fedd3b7cf732ef549f4a814fed57c7348906b55d7"
     },
     {
+      "name": "run-inputs",
+      "group": "movement",
+      "description": "Run several inputs in one call, tick by tick inside the bot: key presses, window clicks, chat commands, waits and waits for a line, in the order given. Use it when what matters is how far apart two inputs reach the server -- a cooldown, a double-click window, a combo -- because separate tool calls land a second or more apart. A step starts on the client tick the step before it ended; wait puts exactly that many ticks between them. The answer lists every step with the ticks it ran on and what it did, and stops at the first step the game refuses; the steps that ran are still reported. A key still goes to the game only while no window is open, and a click still needs one.",
+      "route": "rpc",
+      "kinds": [
+        "fabric",
+        "azalea"
+      ],
+      "exclusive": true,
+      "untrusted": true,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 10000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "steps": {
+            "description": "The inputs, in order. Each step is exactly one of press, click, command, wait or waitFor; the other fields shape it",
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "items": {
+              "type": "object",
+              "properties": {
+                "press": {
+                  "description": "A key to press, as press-input names it. Down for holdTicks, then up for one tick before the next step",
+                  "type": "string",
+                  "enum": [
+                    "jump",
+                    "sneak",
+                    "sprint",
+                    "use",
+                    "attack",
+                    "hotbar",
+                    "scroll-up",
+                    "scroll-down",
+                    "swap-offhand",
+                    "drop"
+                  ]
+                },
+                "slot": {
+                  "description": "The hotbar slot for press: hotbar, 0 being the leftmost",
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "holdTicks": {
+                  "description": "How many ticks the key stays down (default: 1)",
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1200
+                },
+                "click": {
+                  "description": "A window slot to click, as listed by read-window; the step ends when the server has sent the window back, as click-slot does",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "button": {
+                  "description": "For click (default: 'left')",
+                  "type": "string",
+                  "enum": [
+                    "left",
+                    "right"
+                  ]
+                },
+                "shift": {
+                  "description": "For click (default: false)",
+                  "type": "boolean"
+                },
+                "mode": {
+                  "description": "For click (default: 'click'), as click-slot describes them",
+                  "type": "string",
+                  "enum": [
+                    "click",
+                    "swap-hotbar",
+                    "swap-offhand",
+                    "throw-one",
+                    "throw-stack",
+                    "pickup-all",
+                    "clone"
+                  ]
+                },
+                "hotbar": {
+                  "description": "The number key for mode swap-hotbar",
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9
+                },
+                "command": {
+                  "description": "A slash command sent on its tick, with or without the slash; what the server replies is on read-chat",
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "wait": {
+                  "description": "Client ticks between the end of the step before and the start of the step after",
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1200
+                },
+                "waitFor": {
+                  "description": "Regular expression. Run nothing until a line matching it shows on feed, then move on at the end of the tick it arrives. Lines that arrived since the step before started count, so a reply the server sends while that step is still settling is not missed. Bounded by timeoutMs. A press that must land on the very tick a cue arrives is press-input's after",
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "feed": {
+                  "description": "The feed waitFor watches (default: 'actionBar'), matched the way press-input's after is",
+                  "type": "string",
+                  "enum": [
+                    "actionBar",
+                    "title",
+                    "effect"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "timeoutMs": {
+            "description": "How long the whole sequence may take, waits included (default: 10000). Steps still to come when it runs out are not made",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 120000
+          }
+        },
+        "required": [
+          "steps"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "steps": {
+            "description": "The inputs, in order. Each step is exactly one of press, click, command, wait or waitFor; the other fields shape it",
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "items": {
+              "type": "object",
+              "properties": {
+                "press": {
+                  "description": "A key to press, as press-input names it. Down for holdTicks, then up for one tick before the next step",
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "jump",
+                    "sneak",
+                    "sprint",
+                    "use",
+                    "attack",
+                    "hotbar",
+                    "scroll-up",
+                    "scroll-down",
+                    "swap-offhand",
+                    "drop"
+                  ],
+                  "default": null
+                },
+                "slot": {
+                  "description": "The hotbar slot for press: hotbar, 0 being the leftmost",
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "maximum": 8,
+                  "default": null
+                },
+                "holdTicks": {
+                  "description": "How many ticks the key stays down (default: 1)",
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1200,
+                  "default": 1
+                },
+                "click": {
+                  "description": "A window slot to click, as listed by read-window; the step ends when the server has sent the window back, as click-slot does",
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "default": null
+                },
+                "button": {
+                  "description": "For click (default: 'left')",
+                  "type": "string",
+                  "enum": [
+                    "left",
+                    "right"
+                  ],
+                  "default": "left"
+                },
+                "shift": {
+                  "description": "For click (default: false)",
+                  "type": "boolean",
+                  "default": false
+                },
+                "mode": {
+                  "description": "For click (default: 'click'), as click-slot describes them",
+                  "type": "string",
+                  "enum": [
+                    "click",
+                    "swap-hotbar",
+                    "swap-offhand",
+                    "throw-one",
+                    "throw-stack",
+                    "pickup-all",
+                    "clone"
+                  ],
+                  "default": "click"
+                },
+                "hotbar": {
+                  "description": "The number key for mode swap-hotbar",
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 1,
+                  "maximum": 9,
+                  "default": null
+                },
+                "command": {
+                  "description": "A slash command sent on its tick, with or without the slash; what the server replies is on read-chat",
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "default": null
+                },
+                "wait": {
+                  "description": "Client ticks between the end of the step before and the start of the step after",
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 1,
+                  "maximum": 1200,
+                  "default": null
+                },
+                "waitFor": {
+                  "description": "Regular expression. Run nothing until a line matching it shows on feed, then move on at the end of the tick it arrives. Lines that arrived since the step before started count, so a reply the server sends while that step is still settling is not missed. Bounded by timeoutMs. A press that must land on the very tick a cue arrives is press-input's after",
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "default": null
+                },
+                "feed": {
+                  "description": "The feed waitFor watches (default: 'actionBar'), matched the way press-input's after is",
+                  "type": "string",
+                  "enum": [
+                    "actionBar",
+                    "title",
+                    "effect"
+                  ],
+                  "default": "actionBar"
+                }
+              },
+              "required": [
+                "button",
+                "click",
+                "command",
+                "feed",
+                "holdTicks",
+                "hotbar",
+                "mode",
+                "press",
+                "shift",
+                "slot",
+                "wait",
+                "waitFor"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "timeoutMs": {
+            "description": "How long the whole sequence may take, waits included (default: 10000). Steps still to come when it runs out are not made",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 120000,
+            "default": 10000
+          }
+        },
+        "required": [
+          "steps",
+          "timeoutMs"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:b2956ce7836b4dc9fb158275969043874839d9f2519cd54ee5b123a475950dc2",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "asked": {
+            "description": "How many steps were given",
+            "type": "integer"
+          },
+          "ran": {
+            "description": "How many steps ended without an error",
+            "type": "integer"
+          },
+          "ticks": {
+            "description": "The tick the last step listed ended on, or the tick timeoutMs ran out on, counted from the tick the first step started",
+            "type": "integer"
+          },
+          "stopped": {
+            "description": "Why the sequence ended: every step ran, the game refused one, or timeoutMs ran out",
+            "type": "string",
+            "enum": [
+              "done",
+              "refused",
+              "timeout"
+            ]
+          },
+          "steps": {
+            "description": "Only the steps that started, in order; each either ended or carries an error. Steps still to come when the sequence stopped are not listed",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "press",
+                    "click",
+                    "command",
+                    "wait",
+                    "waitFor"
+                  ]
+                },
+                "asked": {
+                  "description": "The step as it was asked for, in the bot's words: press jump, click slot 13, command /fixture pling e2e, wait 20 ticks, wait for /Fine day/ on actionBar. Set before the step runs, so a step that was refused or timed out is still named",
+                  "type": "string"
+                },
+                "startedTick": {
+                  "description": "The client tick the step started on, 0 being the tick the first step started. A step starts on the tick the step before it ended",
+                  "type": "integer"
+                },
+                "endedTick": {
+                  "description": "The client tick the step ended on, or the tick it was stopped on when error says why",
+                  "type": "integer"
+                },
+                "press": {
+                  "description": "What press-input answers for the key: one press, intervalTicks 1, nothing waited for. Null for every other kind",
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    },
+                    "slot": {
+                      "description": "The slot hotbar was given, null for every other key",
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "presses": {
+                      "description": "How many presses were made",
+                      "type": "integer"
+                    },
+                    "repeat": {
+                      "description": "How many were asked for",
+                      "type": "integer"
+                    },
+                    "holdTicks": {
+                      "type": "integer"
+                    },
+                    "intervalTicks": {
+                      "type": "integer"
+                    },
+                    "after": {
+                      "description": "What the presses waited for, or null when nothing was",
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "feed": {
+                          "type": "string"
+                        },
+                        "pattern": {
+                          "type": "string"
+                        },
+                        "matched": {
+                          "description": "The text that matched",
+                          "type": "string"
+                        },
+                        "waitedMs": {
+                          "description": "How long it took to show",
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "feed",
+                        "matched",
+                        "pattern",
+                        "waitedMs"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "until": {
+                      "description": "What the presses stopped on, or null when nothing was watched for",
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "feed": {
+                          "type": "string"
+                        },
+                        "pattern": {
+                          "type": "string"
+                        },
+                        "matched": {
+                          "description": "The text that matched, or null when it never showed",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "feed",
+                        "matched",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "stopped": {
+                      "description": "Why the presses ended: every one was made, until showed, or timeoutMs ran out",
+                      "type": "string",
+                      "enum": [
+                        "done",
+                        "until",
+                        "timeout"
+                      ]
+                    },
+                    "selectedSlot": {
+                      "description": "The hotbar slot selected once the keys were let go",
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "after",
+                    "holdTicks",
+                    "intervalTicks",
+                    "key",
+                    "presses",
+                    "repeat",
+                    "selectedSlot",
+                    "slot",
+                    "stopped",
+                    "until"
+                  ],
+                  "additionalProperties": false
+                },
+                "click": {
+                  "description": "What click-slot answers for the click. Null for every other kind",
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "slot": {
+                      "description": "The slot clicked, null for a click outside the window",
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "outside": {
+                      "type": "boolean"
+                    },
+                    "button": {
+                      "type": "string",
+                      "enum": [
+                        "left",
+                        "right"
+                      ]
+                    },
+                    "shift": {
+                      "type": "boolean"
+                    },
+                    "before": {
+                      "description": "What the slot held before the click, null when it was empty. For a click outside the window, what the cursor held",
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "label": {
+                          "description": "The custom name the server gave it, if any",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "lore": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "labelComponent": {
+                          "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                          "type": [
+                            "object",
+                            "array",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "loreComponents": {
+                          "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "label",
+                        "labelComponent",
+                        "lore",
+                        "loreComponents",
+                        "name"
+                      ]
+                    },
+                    "after": {
+                      "description": "What the slot holds now, null when the click emptied it. For a click outside the window, what the cursor holds",
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "label": {
+                          "description": "The custom name the server gave it, if any",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "lore": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "labelComponent": {
+                          "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                          "type": [
+                            "object",
+                            "array",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "loreComponents": {
+                          "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "label",
+                        "labelComponent",
+                        "lore",
+                        "loreComponents",
+                        "name"
+                      ]
+                    },
+                    "cursor": {
+                      "description": "What the cursor holds after the click, null when it holds nothing",
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "label": {
+                          "description": "The custom name the server gave it, if any",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "lore": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "labelComponent": {
+                          "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                          "type": [
+                            "object",
+                            "array",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "loreComponents": {
+                          "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "label",
+                        "labelComponent",
+                        "lore",
+                        "loreComponents",
+                        "name"
+                      ]
+                    },
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "click",
+                        "swap-hotbar",
+                        "swap-offhand",
+                        "throw-one",
+                        "throw-stack",
+                        "pickup-all",
+                        "clone"
+                      ]
+                    },
+                    "hotbar": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "swapped": {
+                      "description": "The other side of a swap: the hotbar slot or the offhand, which need not be in the window at all. Null for every mode that is not a swap.",
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "before": {
+                          "description": "What it held before the swap, null when it was empty",
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "count": {
+                              "type": "integer"
+                            },
+                            "label": {
+                              "description": "The custom name the server gave it, if any",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "lore": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "labelComponent": {
+                              "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                              "type": [
+                                "object",
+                                "array",
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "loreComponents": {
+                              "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                              "type": "array"
+                            }
+                          },
+                          "required": [
+                            "count",
+                            "label",
+                            "labelComponent",
+                            "lore",
+                            "loreComponents",
+                            "name"
+                          ]
+                        },
+                        "after": {
+                          "description": "What it holds now, null when the swap emptied it",
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "count": {
+                              "type": "integer"
+                            },
+                            "label": {
+                              "description": "The custom name the server gave it, if any",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "lore": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "labelComponent": {
+                              "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                              "type": [
+                                "object",
+                                "array",
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "loreComponents": {
+                              "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                              "type": "array"
+                            }
+                          },
+                          "required": [
+                            "count",
+                            "label",
+                            "labelComponent",
+                            "lore",
+                            "loreComponents",
+                            "name"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "after",
+                        "before"
+                      ]
+                    },
+                    "window": {
+                      "description": "Null when the server answered in the window that was clicked. Otherwise the server answered with another window, as a plugin's menu does when a click opens the next screen or opens its own screen again, or it closed the window: then the slots of the window clicked are not described, because it is gone, and after is null.",
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "closed": {
+                          "description": "True when the server closed the window rather than opening another",
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "description": "The title of the window now open, null when the server closed it",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "titleComponent": {
+                          "description": "The component the title was written as, as Minecraft's own JSON. Null when the server closed the window.",
+                          "type": [
+                            "object",
+                            "array",
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "closed",
+                        "title",
+                        "titleComponent"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "after",
+                    "before",
+                    "button",
+                    "cursor",
+                    "hotbar",
+                    "mode",
+                    "outside",
+                    "shift",
+                    "slot",
+                    "swapped",
+                    "window"
+                  ]
+                },
+                "command": {
+                  "description": "The command sent, null for every other kind",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "wait": {
+                  "description": "The ticks waited, null for every other kind",
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "waitFor": {
+                  "description": "What the step waited for and the line that matched, null for every other kind",
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "feed": {
+                      "type": "string"
+                    },
+                    "pattern": {
+                      "type": "string"
+                    },
+                    "matched": {
+                      "description": "The text that matched",
+                      "type": "string"
+                    },
+                    "waitedMs": {
+                      "description": "How long it took to show, from the tick the step started",
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "feed",
+                    "matched",
+                    "pattern",
+                    "waitedMs"
+                  ],
+                  "additionalProperties": false
+                },
+                "error": {
+                  "description": "Why the game refused the step, or TIMEOUT when timeoutMs ran out during it. Null when the step ended as asked",
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "asked",
+                "click",
+                "command",
+                "endedTick",
+                "error",
+                "kind",
+                "press",
+                "startedTick",
+                "wait",
+                "waitFor"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "asked",
+          "ran",
+          "steps",
+          "stopped",
+          "ticks"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "screenshot",
       "group": "screen",
       "description": "Capture what the bot actually sees, as the client renders it. This is the only way to check a HUD drawn in custom fonts, a model, or a layout that overlaps; everything else reports text and leaves the look to guesswork.",
@@ -8798,5 +9975,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:be1bbb344df45f0be675402c760a564ec8220915228f2210a9f52b1dbe07c6b6"
+  "catalogHash": "sha256:597713e04f2bc51d8feb71680ed9a739aee64844409a1a0b2e39c012b6467adc"
 }
