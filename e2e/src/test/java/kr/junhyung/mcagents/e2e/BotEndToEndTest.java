@@ -3320,6 +3320,42 @@ class BotEndToEndTest {
     }
 
     /**
+     * A proxy moves a player between backends by sending the client back into configuration, and a
+     * leave asked for in that second has no world to leave. One kind of bot found nothing to close
+     * there and left the socket open, the ghost of the plain leave over again. The fixture holds the
+     * bot in a reconfiguration, and the server's log is what says the connection ended.
+     */
+    @Test
+    void aLeaveDuringAReconfigurationClosesTheConnectionToo() {
+        agent.requires("leave-server", "join-server");
+        world.run("fixture hold " + BotWorld.BOT);
+
+        try {
+            world.run("fixture reconfigure " + BotWorld.BOT);
+            sleep(1500);
+            agent.mustCall("leave-server", Map.of("bot", BotWorld.BOT));
+
+            Instant deadline = Instant.now().plus(Duration.ofSeconds(5));
+            String log = world.serverLog();
+            while (!log.contains(BotWorld.BOT + " lost connection") && Instant.now().isBefore(deadline)) {
+                sleep(250);
+                log = world.serverLog();
+            }
+
+            assertTrue(log.contains(BotWorld.BOT + " lost connection"),
+                "the server never saw the connection end: " + tail(log, 15));
+        } finally {
+            world.run("fixture release " + BotWorld.BOT);
+            rejoin();
+        }
+    }
+
+    private static String tail(String log, int lines) {
+        String[] all = log.split("\n");
+        return String.join("\n", java.util.Arrays.asList(all).subList(Math.max(all.length - lines, 0), all.length));
+    }
+
+    /**
      * An item used from the hand is the item's own right-click, whatever the crosshair is on; a
      * press of use is the player's, which an interaction entity in the way takes. hyperfarm's NPCs
      * stand inside one, so a rod cast at a fishing spot beside an NPC went to the NPC instead. The

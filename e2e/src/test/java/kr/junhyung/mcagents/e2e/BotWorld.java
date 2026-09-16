@@ -195,6 +195,11 @@ final class BotWorld implements AutoCloseable {
         }
     }
 
+    /** The server's own log so far, for what it says about a connection a case cannot see otherwise. */
+    String serverLog() {
+        return server.getLogs();
+    }
+
     private static String tail(String log, int lines) {
         String[] all = log.split("\n");
         return String.join("\n", java.util.Arrays.asList(all)

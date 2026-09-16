@@ -91,6 +91,12 @@ public final class FixturePlugin extends JavaPlugin {
                         .getRegistry(RegistryKey.DIALOG).getOrThrow(Key.key("mcagents", "check")));
                     case "crowd" -> Crowd.send(player);
                     case "uncrowd" -> Crowd.remove(player);
+                    /*
+                    Back into configuration from the world, which is what a proxy does to move a
+                    player between backends; held there with hold, the client sits on its
+                    reconfiguration screen.
+                    */
+                    case "reconfigure" -> player.getConnection().reenterConfiguration();
                     default -> {
                         return false;
                     }
