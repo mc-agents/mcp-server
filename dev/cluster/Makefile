@@ -19,7 +19,7 @@ KUBECTL := kubectl --context $(CONTEXT) -n $(NAMESPACE)
 HELM    := helm --kube-context $(CONTEXT) -n $(SYSTEM)
 
 CHARTS                 := oci://junhyung.cloud/library/charts
-OPERATOR_CHART_VERSION := 0.12.0-20260916095130.gdccf990b
+OPERATOR_CHART_VERSION := 0.13.2
 
 # Loopback only. k3d binds 0.0.0.0 unless told otherwise, and the token is the only thing between
 # that port and a bot that runs commands as op.
@@ -36,13 +36,12 @@ port:
 	@docker port k3d-$(K3D_CLUSTER)-serverlb | grep -q '127.0.0.1:$(MCP_HOST_PORT)$$' || \
 		k3d node edit k3d-$(K3D_CLUSTER)-serverlb --port-add 127.0.0.1:$(MCP_HOST_PORT):$(MCP_HOST_PORT)
 
-# Helm installs crds/ once and never upgrades them, so a new field would be dropped by the schema
-# the cluster was first given. `helm show` prints what it pulled ahead of the documents.
-# --reset-values: an upgrade otherwise keeps the --set of whatever installed it last, which after
-# `make k3d-deploy` in the operator repository is a local image that is not the pinned release.
+# Since operator 0.13 the chart renders its CRDs as release resources, so an upgrade carries the
+# schema and nothing is applied by hand first. --reset-values: an upgrade otherwise keeps the --set
+# of whatever installed it last, which after `make k3d-deploy` in the operator repository is a
+# local image that is not the pinned release. --force-conflicts: Helm 4 applies server-side, and
+# the CRDs this cluster had from before 0.13 name kubectl as the field manager of their schema.
 operator:
-	helm show crds $(CHARTS)/mc-agents-operator --version $(OPERATOR_CHART_VERSION) \
-		| sed -n '/^---$$/,$$p' | kubectl --context $(CONTEXT) apply --server-side --force-conflicts -f -
 	$(HELM) upgrade --install mc-agents-operator $(CHARTS)/mc-agents-operator \
 		--version $(OPERATOR_CHART_VERSION) --create-namespace --reset-values \
 		--force-conflicts --wait --timeout 5m
