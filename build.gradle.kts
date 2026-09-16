@@ -24,7 +24,7 @@ dependencies {
     implementation("io.fabric8:kubernetes-client:7.3.1")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("com.networknt:json-schema-validator:3.0.6")
+    testImplementation("com.networknt:json-schema-validator:3.0.7")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
