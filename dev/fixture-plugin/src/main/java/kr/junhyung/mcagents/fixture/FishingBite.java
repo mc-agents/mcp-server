@@ -27,10 +27,11 @@ import org.bukkit.scheduler.BukkitTask;
 final class FishingBite implements Listener {
 
     /*
-    Half this was shorter than a cast's answer and the next call reaching a bot on a loaded machine,
-    and the splash went by before the press waiting for it was listening.
+    The cast's answer and the next call reaching the bot have to fit in here: at sixty ticks the
+    splash still went by, once in some thirty runs on a loaded runner, before the press waiting for
+    it was listening, and at thirty it went by often.
     */
-    private static final long BITE_AFTER_TICKS = 60;
+    private static final long BITE_AFTER_TICKS = 100;
     private static final int WINDOW_TICKS = 40;
 
     /** Vanilla's bite, in ticks after the cast: twenty minutes, which no case waits. */

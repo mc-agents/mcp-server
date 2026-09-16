@@ -107,7 +107,12 @@ public class Orchestration {
                             .formatted(name, current.address()));
         }
 
-        connect(bot, host, port, username == null ? name : username, version, spec.defaultDeadlineMs(), where);
+        /*
+        The spawn's budget is the caller's: a server that holds a player in configuration for a
+        resource pack needs more than the default, and a case that wants the timeout needs less.
+        */
+        int timeoutMs = intArg(arguments, "timeoutMs", spec.defaultDeadlineMs());
+        connect(bot, host, port, username == null ? name : username, version, timeoutMs, where);
 
         return ToolDispatcher.text(describe(bot));
     }

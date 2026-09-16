@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "4.7.0",
+  "catalogVersion": "5.0.0",
   "protocol": 1,
   "tools": [
     {
@@ -3561,6 +3561,12 @@
             "description": "Minecraft version for a bot that has to be started. Both kinds are built for one version. (default: 26.1.2)",
             "type": "string",
             "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"
+          },
+          "timeoutMs": {
+            "description": "How long to wait for the spawn once the bot is linked (default: 180000). A join the server holds in configuration past it -- a plugin waiting on a resource pack, a transfer that never comes -- fails as a spawn that never came, and the bot leaves that connection",
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 600000
           }
         },
         "required": [
@@ -7111,7 +7117,7 @@
     {
       "name": "run-inputs",
       "group": "movement",
-      "description": "Run several inputs in one call, tick by tick inside the bot: key presses, window clicks, chat commands, waits and waits for a line, in the order given. Use it when what matters is how far apart two inputs reach the server -- a cooldown, a double-click window, a combo -- because separate tool calls land a second or more apart. A step starts on the client tick the step before it ended; wait puts exactly that many ticks between them. The answer lists every step with the ticks it ran on and what it did, and stops at the first step the game refuses; the steps that ran are still reported. A key still goes to the game only while no window is open, and a click still needs one.",
+      "description": "Run several inputs in one call, tick by tick inside the bot: key presses, window clicks, an item used from the hand, chat commands, waits and waits for a line, in the order given. Use it when what matters is how far apart two inputs reach the server -- a cooldown, a double-click window, a combo -- because separate tool calls land a second or more apart. A step starts on the client tick the step before it ended; wait puts exactly that many ticks between them. The answer lists every step with the ticks it ran on and what it did, and stops at the first step the game refuses; the steps that ran are still reported. A key still goes to the game only while no window is open, and a click still needs one.",
       "route": "rpc",
       "kinds": [
         "fabric",
@@ -7131,7 +7137,7 @@
             "type": "string"
           },
           "steps": {
-            "description": "The inputs, in order. Each step is exactly one of press, click, command, wait or waitFor; the other fields shape it",
+            "description": "The inputs, in order. Each step is exactly one of press, click, useItem, command, wait or waitFor; the other fields shape it",
             "type": "array",
             "minItems": 1,
             "maxItems": 32,
@@ -7161,10 +7167,22 @@
                   "maximum": 8
                 },
                 "holdTicks": {
-                  "description": "How many ticks the key stays down (default: 1)",
+                  "description": "How many ticks the key stays down, or the item stays in use (default: 1)",
                   "type": "integer",
                   "minimum": 1,
                   "maximum": 1200
+                },
+                "useItem": {
+                  "description": "A hand whose item to use, as use-held-item does: the item's own right-click, whatever the crosshair is on. press: use is the player's click, which goes to the entity or block there first and uses the item only when nothing is. In use for holdTicks, then released, and the step ends one tick later as a press does",
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "main-hand",
+                    "off-hand"
+                  ],
+                  "default": null
                 },
                 "click": {
                   "description": "A window slot to click, as listed by read-window; the step ends when the server has sent the window back, as click-slot does",
@@ -7249,7 +7267,7 @@
         "type": "object",
         "properties": {
           "steps": {
-            "description": "The inputs, in order. Each step is exactly one of press, click, command, wait or waitFor; the other fields shape it",
+            "description": "The inputs, in order. Each step is exactly one of press, click, useItem, command, wait or waitFor; the other fields shape it",
             "type": "array",
             "minItems": 1,
             "maxItems": 32,
@@ -7287,11 +7305,23 @@
                   "default": null
                 },
                 "holdTicks": {
-                  "description": "How many ticks the key stays down (default: 1)",
+                  "description": "How many ticks the key stays down, or the item stays in use (default: 1)",
                   "type": "integer",
                   "minimum": 1,
                   "maximum": 1200,
                   "default": 1
+                },
+                "useItem": {
+                  "description": "A hand whose item to use, as use-held-item does: the item's own right-click, whatever the crosshair is on. press: use is the player's click, which goes to the entity or block there first and uses the item only when nothing is. In use for holdTicks, then released, and the step ends one tick later as a press does",
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "main-hand",
+                    "off-hand"
+                  ],
+                  "default": null
                 },
                 "click": {
                   "description": "A window slot to click, as listed by read-window; the step ends when the server has sent the window back, as click-slot does",
@@ -7392,6 +7422,7 @@
                 "press",
                 "shift",
                 "slot",
+                "useItem",
                 "wait",
                 "waitFor"
               ],
@@ -7412,7 +7443,7 @@
         ],
         "additionalProperties": false
       },
-      "wireSchemaHash": "sha256:b2956ce7836b4dc9fb158275969043874839d9f2519cd54ee5b123a475950dc2",
+      "wireSchemaHash": "sha256:37d9ef02b179d615d2b8cd255dc2f7bdf167d214c64db9ae732dc0fdc7f4826b",
       "resultSchema": {
         "type": "object",
         "properties": {
@@ -7448,13 +7479,14 @@
                   "enum": [
                     "press",
                     "click",
+                    "useItem",
                     "command",
                     "wait",
                     "waitFor"
                   ]
                 },
                 "asked": {
-                  "description": "The step as it was asked for, in the bot's words: press jump, click slot 13, command /fixture pling e2e, wait 20 ticks, wait for /Fine day/ on actionBar. Set before the step runs, so a step that was refused or timed out is still named",
+                  "description": "The step as it was asked for, in the bot's words: press jump, click slot 13, use item in main hand, command /fixture pling e2e, wait 20 ticks, wait for /Fine day/ on actionBar. Set before the step runs, so a step that was refused or timed out is still named",
                   "type": "string"
                 },
                 "startedTick": {
@@ -7934,6 +7966,35 @@
                     "window"
                   ]
                 },
+                "useItem": {
+                  "description": "What the use did: the hand, what it held when the use began, and how long it stayed in use. Null for every other kind",
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "hand": {
+                      "type": "string",
+                      "enum": [
+                        "main-hand",
+                        "off-hand"
+                      ]
+                    },
+                    "item": {
+                      "description": "The stack the hand held, as use-held-item words it: the name the server gave it, else what it is, with its count; or an empty hand",
+                      "type": "string"
+                    },
+                    "holdTicks": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "hand",
+                    "holdTicks",
+                    "item"
+                  ],
+                  "additionalProperties": false
+                },
                 "command": {
                   "description": "The command sent, null for every other kind",
                   "type": [
@@ -8008,6 +8069,7 @@
                 "kind",
                 "press",
                 "startedTick",
+                "useItem",
                 "wait",
                 "waitFor"
               ],
@@ -9975,5 +10037,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:2e9dd089150f16517d76f8765a0b50071c196a467cd5ae5ba7a2b2ca69a4dd2c"
+  "catalogHash": "sha256:9f8d7c993045cf1d0b6dd71662704bc3e834ab1a2617995ebb5e08b184c76b5d"
 }

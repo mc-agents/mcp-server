@@ -1,0 +1,52 @@
+{
+  "tool": "run-inputs",
+  "note": "an item used from each hand, the second held, with the wait a rod's cast needs between them",
+  "data": {
+    "asked": 3,
+    "ran": 3,
+    "ticks": 43,
+    "stopped": "done",
+    "steps": [
+      {
+        "kind": "useItem",
+        "asked": "use item in main hand",
+        "startedTick": 0,
+        "endedTick": 2,
+        "press": null,
+        "click": null,
+        "useItem": {"hand": "main-hand", "item": "fishing_rod x1", "holdTicks": 1},
+        "command": null,
+        "wait": null,
+        "waitFor": null,
+        "error": null
+      },
+      {
+        "kind": "wait",
+        "asked": "wait 20 ticks",
+        "startedTick": 2,
+        "endedTick": 22,
+        "press": null,
+        "click": null,
+        "useItem": null,
+        "command": null,
+        "wait": 20,
+        "waitFor": null,
+        "error": null
+      },
+      {
+        "kind": "useItem",
+        "asked": "use item in off-hand for 20 ticks",
+        "startedTick": 22,
+        "endedTick": 43,
+        "press": null,
+        "click": null,
+        "useItem": {"hand": "off-hand", "item": "Longbow x1", "holdTicks": 20},
+        "command": null,
+        "wait": null,
+        "waitFor": null,
+        "error": null
+      }
+    ]
+  },
+  "text": "Ran 3 of 3 steps in 43 ticks.\n  1. ticks 0-2: used fishing_rod x1 in the main hand\n  2. ticks 2-22: waited 20 ticks\n  3. ticks 22-43: used Longbow x1 in the off-hand, held for 20 ticks"
+}

@@ -470,8 +470,13 @@ class BotEndToEndTest {
     void aSpaceThatIsAComponentOfItsOwnIsKept() {
         world.run("""
             tellraw @a ["",{"text":"Cleared 0"},{"text":" "},{"text":"[Track]","color":"gold"}]""");
-        String chat = agent.mustCall("wait-for-chat",
-            Map.of("bot", BotWorld.BOT, "pattern", "Track", "timeoutMs", 10000));
+        /*
+        Read off the history and not waited for: the line is already sent when the command returns,
+        and a wait that starts after it looks at the latest line only, which a reply the server
+        sends on the same tick can have pushed past.
+        */
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        String chat = agent.mustCall("read-chat", Map.of("bot", BotWorld.BOT, "count", 5));
 
         assertTrue(chat.contains("Cleared 0 [Track]"), chat);
     }
@@ -962,7 +967,7 @@ class BotEndToEndTest {
         world.run("give " + BotWorld.BOT + " lapis_lazuli 3");
         agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "lapis", "timeoutMs", 10000));
         /* open-container is for blocks that hold items; a menu with no inventory opens like any other block. */
-        agent.mustCall("activate-block", Map.of("bot", BotWorld.BOT, "x", -1, "y", -60, "z", 3));
+        agent.mustCall("activate-block", Map.of("bot", BotWorld.BOT, "x", -6, "y", -60, "z", 8));
         agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "timeoutMs", 10000));
         agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 29, "shift", true));
         agent.mustCall("click-slot", Map.of("bot", BotWorld.BOT, "slot", 30, "shift", true));
@@ -2151,6 +2156,12 @@ class BotEndToEndTest {
             Map.of("bot", BotWorld.BOT, "x", 10, "y", -60, "z", -4, "faceDirection", "north"));
         String log = untilTheServer("execute if block 10 -60 -4 minecraft:oak_log[axis=z]",
             answer -> answer.startsWith("Test passed"));
+        /*
+        The server has the log before the bot's world does: the block update is still on its way
+        when rcon answers, and a second place asked before it lands is made against air.
+        */
+        untilTheBot("get-block-info", Map.of("bot", BotWorld.BOT, "x", 10, "y", -60, "z", -4),
+            answer -> answer.startsWith("oak_log"));
         String again = agent.mustCall("place-block",
             Map.of("bot", BotWorld.BOT, "x", 10, "y", -60, "z", -4, "faceDirection", "north"));
         world.run("fill 10 -60 -5 10 -60 -4 minecraft:air");
@@ -2225,6 +2236,18 @@ class BotEndToEndTest {
 
         assertEquals("Used cooked_beef x4 in the main hand.", used);
         assertTrue(eaten.contains("has 1 "), "the server counted nothing eaten: " + eaten);
+    }
+
+    /** A read the bot answers as a case expects, or whatever it last answered. */
+    private String untilTheBot(String tool, Map<String, Object> args, java.util.function.Predicate<String> expected) {
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(5));
+        String answer = agent.call(tool, args);
+
+        while (!expected.test(answer) && Instant.now().isBefore(deadline)) {
+            sleep(100);
+            answer = agent.call(tool, args);
+        }
+        return answer;
     }
 
     /** What a console command answers, asked again until it says what was expected or five seconds pass. */
@@ -3125,36 +3148,44 @@ class BotEndToEndTest {
     }
 
     /**
-     * The tab list is sorted by name, as the catalogue says and as one kind of bot did not. With
-     * one player in the world the order is only what it is; the parse is what the case holds.
+     * The tab list is sorted by name, as the catalogue says and as one kind of bot did not, and it
+     * holds only the players the server lists. The fixture sends six players who are not there, in
+     * an order a hash map does not keep, and one entry unlisted -- the way a plugin carries the skin
+     * of a cross-server ghost -- which a real tab list never shows and that bot showed as a player.
      */
     @Test
-    void theTabListIsListedInNameOrder() {
-        String players = agent.mustCall("read-player-list", Map.of("bot", BotWorld.BOT));
+    void theTabListIsListedInNameOrderAndHoldsOnlyWhatTheServerLists() {
+        world.run("fixture crowd " + BotWorld.BOT);
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
 
-        List<String> names = new ArrayList<>();
-        for (String line : players.split("\n")) {
-            if (!line.startsWith("  ")) {
-                continue;
+        try {
+            String players = agent.mustCall("read-player-list", Map.of("bot", BotWorld.BOT));
+
+            List<String> names = new ArrayList<>();
+            for (String line : players.split("\n")) {
+                if (!line.startsWith("  ")) {
+                    continue;
+                }
+                String named = line.substring(2, line.lastIndexOf(": ")).replace(" (this bot)", "");
+                names.add(named.endsWith(")") ? named.substring(named.lastIndexOf('(') + 1, named.length() - 1) : named);
             }
-            String named = line.substring(2, line.lastIndexOf(": ")).replace(" (this bot)", "");
-            names.add(named.endsWith(")") ? named.substring(named.lastIndexOf('(') + 1, named.length() - 1) : named);
-        }
 
-        assertTrue(names.contains(BotWorld.BOT), players);
-        assertEquals(names.stream().sorted().toList(), names, players);
+            assertTrue(names.contains(BotWorld.BOT), players);
+            assertTrue(names.containsAll(List.of("zed", "amy", "mike", "bea", "yuki", "cal")), players);
+            assertTrue(!names.contains("ghostskin"), players);
+            assertEquals(names.stream().sorted().toList(), names, players);
+        } finally {
+            world.run("fixture uncrowd " + BotWorld.BOT);
+        }
     }
 
     /**
      * A wait for ticks is the tool an agent sits in longest, and a bot kicked during one has no
      * ticks left to count. One kind of bot waited out the call's whole deadline and then blamed the
-     * link; the other counts ticks on its title screen too and says it waited, which is a
-     * difference the kinds still have.
+     * link; the other counted ticks on its title screen too and said it waited.
      */
     @Test
     void aWaitForTicksEndsWhenTheBotIsKickedRatherThanAtItsDeadline() {
-        Assumptions.assumeTrue("azalea".equals(System.getProperty("e2e.bot.kind")),
-            "a fabric bot counts ticks on the title screen too");
         agent.requires("wait-ticks", "join-server");
 
         try {
@@ -3202,6 +3233,127 @@ class BotEndToEndTest {
         assertTrue(ran.startsWith("Ran /fixture quiet " + BotWorld.BOT
             + ". The server sent no chat in the 2000ms after it, but a dialog opened"), ran);
         assertTrue(ran.contains("Bot check | Which button did the bot press? | buttons: Confirm, Cancel, Custom, Close"), ran);
+    }
+
+    /**
+     * The other half of a join: the server takes the login and never lets the player into the
+     * world. A plugin waiting on a resource pack, a transfer that never comes. The fixture holds
+     * the bot in configuration, the join is given five seconds, and what comes back names the
+     * spawn and not the login. The bot then leaves that connection: one kind of bot stayed on it,
+     * and when the server finally let it through it spawned and said it was ready after the join
+     * had been answered as failed.
+     */
+    @Test
+    void aJoinHeldInConfigurationIsReportedAsASpawnThatNeverCame() {
+        agent.requires("leave-server", "join-server", "get-bot-status");
+        world.run("fixture hold " + BotWorld.BOT);
+
+        try {
+            agent.mustCall("leave-server", Map.of("bot", BotWorld.BOT));
+            String refused = agent.refusal("join-server", Map.of(
+                "name", BotWorld.BOT, "host", world.minecraftHost(), "port", world.minecraftPort(), "timeoutMs", 5000));
+            world.run("fixture release " + BotWorld.BOT);
+            /*
+            Watched for a while, not read once: a bot still on the connection spawns a second or
+            three after the server lets it through, and one read straight after the release saw
+            nothing yet either way.
+            */
+            String status = agent.call("get-bot-status", Map.of("bot", BotWorld.BOT));
+            for (Instant deadline = Instant.now().plus(Duration.ofSeconds(5));
+                    !status.contains(" is ready.") && Instant.now().isBefore(deadline);) {
+                sleep(250);
+                status = agent.call("get-bot-status", Map.of("bot", BotWorld.BOT));
+            }
+            String players = world.run("list");
+
+            assertTrue(refused.contains("the bot logged in but never spawned"), refused);
+            assertTrue(refused.contains("5000ms"), refused);
+            assertTrue(!status.contains(" is ready."), status);
+            assertTrue(players.startsWith("There are 0 of"), players);
+        } finally {
+            world.run("fixture release " + BotWorld.BOT);
+            rejoin();
+        }
+    }
+
+    /**
+     * A kick from configuration is the same half of the join with the server's own words: the
+     * login was taken, so the whitelist is not where to look, and the reason is what the plugin
+     * said. One kind of bot reported it as the server refusing the connection.
+     */
+    @Test
+    void aKickFromConfigurationIsReportedAsTheConnectionEndingBeforeTheSpawn() {
+        agent.requires("leave-server", "join-server");
+        world.run("fixture bounce " + BotWorld.BOT);
+
+        try {
+            agent.mustCall("leave-server", Map.of("bot", BotWorld.BOT));
+            String refused = agent.refusal("join-server", Map.of(
+                "name", BotWorld.BOT, "host", world.minecraftHost(), "port", world.minecraftPort()));
+
+            assertTrue(refused.contains("the bot logged in but never spawned"), refused);
+            assertTrue(refused.contains("QA bounce from configuration"), refused);
+            assertTrue(!refused.contains("did not accept the connection"), refused);
+        } finally {
+            rejoin();
+        }
+    }
+
+    /**
+     * A leave is over when the server has seen it. One kind of bot put its title screen up and
+     * left the socket open, so the server kept a ghost of the player until its keep-alive ran
+     * out half a minute later -- or kicked the ghost when the same name came back, and the client
+     * cleaned up after the old connection while the new one was already in the world.
+     */
+    @Test
+    void aLeaveIsSeenByTheServerAtOnce() {
+        agent.requires("leave-server", "join-server");
+
+        try {
+            agent.mustCall("leave-server", Map.of("bot", BotWorld.BOT));
+            String gone = untilTheServer("list", answer -> answer.startsWith("There are 0 of"));
+
+            assertTrue(gone.startsWith("There are 0 of"), gone);
+        } finally {
+            rejoin();
+        }
+    }
+
+    /**
+     * An item used from the hand is the item's own right-click, whatever the crosshair is on; a
+     * press of use is the player's, which an interaction entity in the way takes. hyperfarm's NPCs
+     * stand inside one, so a rod cast at a fishing spot beside an NPC went to the NPC instead. The
+     * fixture puts one across the bot's view: the press casts nothing, the step casts.
+     */
+    @Test
+    void aUseItemStepUsesTheItemWhereAPressWouldClickTheEntityInTheWay() {
+        agent.requires("run-inputs");
+        world.run("kill @e[type=fishing_bobber]");
+        /* Facing south, with the entity a block and a half ahead, wide enough that any pitch hits it. */
+        world.run("tp " + BotWorld.BOT + " 2 -59 0 0 0");
+        world.run("summon minecraft:interaction 2.5 -60 2.5 {width:3f,height:3f}");
+        world.run("item replace entity " + BotWorld.BOT + " weapon.mainhand with minecraft:fishing_rod");
+        agent.mustCall("wait-for-item", Map.of("bot", BotWorld.BOT, "pattern", "fishing_rod", "timeoutMs", 10000));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+
+        try {
+            String pressed = agent.mustCall("run-inputs", Map.of("bot", BotWorld.BOT, "steps", List.of(Map.of("press", "use"))));
+            agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+            String noCast = world.run("execute if entity @e[type=fishing_bobber]");
+
+            String used = agent.mustCall("run-inputs", Map.of("bot", BotWorld.BOT, "steps", List.of(Map.of("useItem", "main-hand"))));
+            String cast = untilTheServer("execute if entity @e[type=fishing_bobber]", answer -> answer.startsWith("Test passed"));
+
+            assertTrue(pressed.startsWith("Ran 1 of 1 steps"), pressed);
+            assertTrue(noCast.startsWith("Test failed"), "the press cast the rod through the entity: " + noCast);
+            assertTrue(used.startsWith("Ran 1 of 1 steps in 2 ticks."), used);
+            assertTrue(used.contains("1. ticks 0-2: used fishing_rod x1 in the main hand"), used);
+            assertTrue(cast.startsWith("Test passed"), "the step cast nothing: " + cast);
+        } finally {
+            world.run("kill @e[type=fishing_bobber]");
+            world.run("kill @e[type=interaction]");
+            world.run("function mcagents:setup");
+        }
     }
 
     /** The bot's status once it says what a case is waiting to read, or whatever it last said. */

@@ -471,9 +471,9 @@ does not become a segment.
 
 ## A sequence runs in the bot, in ticks
 
-`run-inputs` runs several steps -- a key press, a window click, a chat command, a wait, a wait for
-a line -- inside the bot, one after another, and reports the client tick each step started and
-ended on. Two kinds of bot have to produce the same numbers for the same steps, so the rule is
+`run-inputs` runs several steps -- a key press, a window click, an item used from the hand, a chat
+command, a wait, a wait for a line -- inside the bot, one after another, and reports the client
+tick each step started and ended on. Two kinds of bot have to produce the same numbers for the same steps, so the rule is
 written here rather than in either of them.
 
 A tick is the bot's client tick: fabric's `END_CLIENT_TICK`, azalea's `Event::Tick`. Tick 0 is the
@@ -484,6 +484,7 @@ tick the first step started on. **A step starts on the very tick the step before
 | --- | --- | --- |
 | `press` | the key goes down on `startedTick` and stays down for `holdTicks` | it comes up on `startedTick + holdTicks`, and the step ends **one tick later**, so the game reads the key up before the next step. That is press-input's `intervalTicks` of 1, and two presses in a row reach the server as two rising edges. fabric is exact; azalea can end up to three ticks later while its keys settle, and reports the tick it did |
 | `click` | sent on `startedTick` | the tick the server sent the window back, or answered with another window or by closing it -- one to three ticks in a cluster. Another window or a closed one is reported as click-slot's `window` and **the sequence goes on**: the next click is made in whatever container screen is open at its turn, and a click with no window open is refused there |
+| `useItem` | the item in the hand named is used on `startedTick` -- the item's own right-click, whatever the crosshair is on, which is what tells it from `press: use`, the player's click that goes to the entity or block there first -- and stays in use for `holdTicks` | released on `startedTick + holdTicks`, and the step ends **one tick later**, as a press does. `useItem` is what use-held-item answers: the hand, what it held when the use began, and `holdTicks` |
 | `command` | sent on `startedTick` | the same tick |
 | `wait N` | | `startedTick + N`, so `[click, wait 20, click]` sends the second click exactly twenty ticks after the first was answered (fabric exact, azalea a lower bound) |
 | `waitFor` | | the end of the tick a matching line arrived on. Lines that arrived since the step before it started count, so a reply the server sent while that step was still settling is not missed; the first step counts lines since the sequence began. A press that must land on the very tick a cue arrives is press-input's `after`, which presses from the packet handler; a `waitFor` followed by a `press` is one tick later |
@@ -492,10 +493,10 @@ Steps that end on the tick they started -- a command, a `waitFor` whose line is 
 let several steps run in one tick. A press, a click and a wait always take at least one.
 
 **Refusals before anything runs are a failed call**, the way any tool refuses: `BAD_STEP` for a
-step that names none or more than one of press, click, command, wait and waitFor, `NO_SLOT` for a
-hotbar press without one, `BAD_PATTERN`, and `TOO_LONG` when the steps add up to more than
-`timeoutMs` on their own -- `(holdTicks + 1)` ticks per press, `N` per wait, one per click, none
-for a command or a `waitFor`, at 50ms a tick.
+step that names none or more than one of press, click, useItem, command, wait and waitFor,
+`NO_SLOT` for a hotbar press without one, `BAD_PATTERN`, and `TOO_LONG` when the steps add up to
+more than `timeoutMs` on their own -- `(holdTicks + 1)` ticks per press or useItem, `N` per wait,
+one per click, none for a command or a `waitFor`, at 50ms a tick.
 
 **A step the game refuses while the sequence runs stops it there, and the call still succeeds.**
 `WINDOW_OPEN`, `NO_WINDOW`, `SLOT_OUT_OF_RANGE`, `CLICK_UNCONFIRMED`, `DEAD`: the step carries
@@ -507,8 +508,9 @@ deadline (`timeoutMs` plus its margin), so a sequence never ends as a `timeout`-
 no DTO. A `cancel` or a lost link cleans the running step up the same way. Nothing is rolled back.
 
 Every step in `steps[]` carries `asked`: the step as the bot parsed it, in the bot's own words
-(`press jump`, `press hotbar 1`, `press use for 40 ticks`, `click slot 13`, `command /spawn`,
-`wait 20 ticks`, `wait for /Fine day/ on actionBar`), set before it runs, so a step that was refused
+(`press jump`, `press hotbar 1`, `press use for 40 ticks`, `click slot 13`, `use item in main hand`,
+`use item in off-hand for 20 ticks`, `command /spawn`, `wait 20 ticks`, `wait for /Fine day/ on
+actionBar`), set before it runs, so a step that was refused
 or timed out is still named in the answer. A command is named, and `steps[].command` reported, as
 it was sent: a slash is put in front of text that has none, and text that already starts with one
 is kept as given, the way run-command takes it -- so `//set stone` stays WorldEdit's `//set`.

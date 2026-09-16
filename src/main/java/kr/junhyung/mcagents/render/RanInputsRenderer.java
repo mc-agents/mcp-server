@@ -29,15 +29,17 @@ public final class RanInputsRenderer implements Renderer<RanInputsRenderer.View>
 
     public record StepError(String code, String message) {}
 
+    public record UsedItem(String hand, String item, int holdTicks) {}
+
     /**
      * {@code asked} is the step as the bot parsed it, set before it ran, so a step that never got to
-     * answer is still named. Of press, click, command, wait and waitFor exactly the one the kind names
-     * is set, and none when the step carries an error. The wire's {@code wait} is {@code waited}
-     * here only because a record component cannot be called wait.
+     * answer is still named. Of press, click, useItem, command, wait and waitFor exactly the one the
+     * kind names is set, and none when the step carries an error. The wire's {@code wait} is
+     * {@code waited} here only because a record component cannot be called wait.
      */
     public record Step(String kind, String asked, int startedTick, int endedTick, PressedInputRenderer.View press,
-        ClickedSlotRenderer.View click, String command, @JsonProperty("wait") Integer waited, WaitedFor waitFor,
-        StepError error) {}
+        ClickedSlotRenderer.View click, UsedItem useItem, String command, @JsonProperty("wait") Integer waited,
+        WaitedFor waitFor, StepError error) {}
 
     public record View(int asked, int ran, int ticks, String stopped, List<Step> steps) {}
 
@@ -98,6 +100,10 @@ public final class RanInputsRenderer implements Renderer<RanInputsRenderer.View>
         return switch (step.kind()) {
             case "press" -> PRESSED.render(step.press());
             case "click" -> CLICKED.render(step.click());
+            /* The hands as use-held-item names them, since a step is that tool's answer in a sequence. */
+            case "useItem" -> "used " + step.useItem().item() + " in the "
+                + ("off-hand".equals(step.useItem().hand()) ? "off-hand" : "main hand")
+                + (step.useItem().holdTicks() > 1 ? ", held for " + ticks(step.useItem().holdTicks()) : "");
             case "command" -> "sent " + step.command();
             case "wait" -> "waited " + ticks(step.waited());
             case "waitFor" -> "the " + step.waitFor().feed() + " feed matched /" + step.waitFor().pattern() + "/ (\""

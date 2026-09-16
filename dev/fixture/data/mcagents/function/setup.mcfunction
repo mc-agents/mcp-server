@@ -107,9 +107,14 @@ setblock 1 -60 5 air
 setblock 1 -60 5 furnace[facing=north]
 
 # --- menus that are pressed rather than clicked: read-container-options, press-container-button ---
-# No bookshelves round the table, so its offers stay cheap enough for a bot given a few levels.
-setblock -1 -60 3 air
-setblock -1 -60 3 enchanting_table
+# Fifteen bookshelves round the table, with one gap to walk in through. Without them each offer is
+# drawn from a die of its own and a slot whose draw comes up short is empty, so a third of the
+# player seeds gave two offers; with them the dearest is thirty levels and every slot is filled.
+fill -8 -60 6 -4 -60 10 bookshelf
+fill -7 -60 7 -5 -60 9 air
+fill -7 -59 7 -5 -59 9 air
+setblock -6 -60 6 air
+setblock -6 -60 8 enchanting_table
 setblock -1 -60 5 air
 setblock -1 -60 5 stonecutter
 # A lectern shows the book screen and not a container screen, so it is the case a lookup that only

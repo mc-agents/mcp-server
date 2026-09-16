@@ -32,6 +32,7 @@ public final class FixturePlugin extends JavaPlugin {
         ShopMenu shop = new ShopMenu();
         PagedMenu paged = new PagedMenu();
         CooldownMenu cooldown = new CooldownMenu(scores);
+        Gate gate = new Gate();
 
         getServer().getPluginManager().registerEvents(new InputRecorder(scores, conversation), this);
         getServer().getPluginManager().registerEvents(new FishingBite(this, scores), this);
@@ -40,12 +41,29 @@ public final class FixturePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(shop, this);
         getServer().getPluginManager().registerEvents(paged, this);
         getServer().getPluginManager().registerEvents(cooldown, this);
+        getServer().getPluginManager().registerEvents(gate, this);
 
         PluginCommand command = getCommand("fixture");
         if (command != null) {
             command.setExecutor((sender, ignored, label, args) -> {
                 if (args.length != 2) {
                     return false;
+                }
+                /* These name a player who is about to log in, so there is nobody online to look up. */
+                switch (args[0]) {
+                    case "hold" -> {
+                        gate.hold(args[1]);
+                        return true;
+                    }
+                    case "release" -> {
+                        gate.release(args[1]);
+                        return true;
+                    }
+                    case "bounce" -> {
+                        gate.bounce(args[1]);
+                        return true;
+                    }
+                    default -> { }
                 }
                 Player player = Bukkit.getPlayerExact(args[1]);
                 if (player == null) {
@@ -71,6 +89,8 @@ public final class FixturePlugin extends JavaPlugin {
                     */
                     case "quiet" -> player.showDialog(RegistryAccess.registryAccess()
                         .getRegistry(RegistryKey.DIALOG).getOrThrow(Key.key("mcagents", "check")));
+                    case "crowd" -> Crowd.send(player);
+                    case "uncrowd" -> Crowd.remove(player);
                     default -> {
                         return false;
                     }

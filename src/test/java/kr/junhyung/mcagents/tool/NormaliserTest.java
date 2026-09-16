@@ -100,7 +100,7 @@ class NormaliserTest {
 
     /*
     A step inside run-inputs is an object of its own, and the invariant holds for it the same way:
-    the bot reads a step with twelve keys, never one with the one key the caller typed.
+    the bot reads a step with thirteen keys, never one with the one key the caller typed.
     */
     @Test
     void aStepInsideAnArrayArrivesWithEveryDefaultFilled() {
@@ -110,6 +110,7 @@ class NormaliserTest {
         expected.put("press", null);
         expected.put("slot", null);
         expected.put("holdTicks", 1);
+        expected.put("useItem", null);
         expected.put("click", 13);
         expected.put("button", "left");
         expected.put("shift", false);
