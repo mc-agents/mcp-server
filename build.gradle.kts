@@ -40,7 +40,10 @@ tasks.processResources {
     from("catalog") { include("*.json") }
 
     // initialize reports the version from VERSION. ReplaceTokens rather than expand(), because
-    // expand() is Groovy templating and reads every ${ENV:default} placeholder as its own.
+    // expand() is Groovy templating and reads every ${ENV:default} placeholder as its own. The
+    // version is an input of its own: the filter's tokens are not, and a bump alone left the old
+    // number in the jar.
+    inputs.property("version", project.version.toString())
     filesMatching("application.yaml") {
         filter<org.apache.tools.ant.filters.ReplaceTokens>("tokens" to mapOf("version" to project.version.toString()))
     }

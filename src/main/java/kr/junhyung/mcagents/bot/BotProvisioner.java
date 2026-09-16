@@ -71,9 +71,25 @@ public class BotProvisioner {
      * @return true when this call created it, false when it was already there
      */
     public boolean request(String name, String kind, String minecraftVersion, String owner) {
-        if (find(name) != null) {
+        GenericKubernetesResource existing = find(name);
+        if (existing != null && !dialsElsewhere(existing)) {
             log.info("bot \"{}\" is already declared; waiting for it rather than making another", name);
             return false;
+        }
+        if (existing != null) {
+            /*
+            Declared against a link address this server no longer answers on: the operator moved the
+            bot port to a Service of its own, or the server was renamed. The pod it makes from that
+            object dials the old address for ever, and waiting for it never ends. Only a bot this
+            server asked for is replaced; one declared by hand says where it dials on purpose.
+            */
+            if (!release(name)) {
+                throw new JoinFailure(JoinStage.LINK,
+                        "bot \"%s\" is declared to dial %s, which is not this server (%s), and it was not declared here"
+                                .formatted(name, dialled(existing), address()));
+            }
+            log.info("bot \"{}\" was declared to dial {}, not this server ({}); asking for it again", name,
+                    dialled(existing), address());
         }
 
         String objectName;
@@ -172,6 +188,23 @@ public class BotProvisioner {
             }
         }
         return null;
+    }
+
+    /** Whether the object names a link address other than this server's. */
+    private boolean dialsElsewhere(GenericKubernetesResource bot) {
+        return !address().equals(dialled(bot));
+    }
+
+    private static String dialled(GenericKubernetesResource bot) {
+        if (bot.getAdditionalProperties().get("spec") instanceof Map<?, ?> spec
+                && spec.get("server") instanceof Map<?, ?> server) {
+            return server.get("host") + ":" + server.get("port");
+        }
+        return "nowhere";
+    }
+
+    private String address() {
+        return mcpHost + ":" + mcpPort;
     }
 
     private static String specBotName(GenericKubernetesResource bot) {
