@@ -7174,15 +7174,11 @@
                 },
                 "useItem": {
                   "description": "A hand whose item to use, as use-held-item does: the item's own right-click, whatever the crosshair is on. press: use is the player's click, which goes to the entity or block there first and uses the item only when nothing is. In use for holdTicks, then released, and the step ends one tick later as a press does",
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": "string",
                   "enum": [
                     "main-hand",
                     "off-hand"
-                  ],
-                  "default": null
+                  ]
                 },
                 "click": {
                   "description": "A window slot to click, as listed by read-window; the step ends when the server has sent the window back, as click-slot does",
@@ -10037,5 +10033,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:9f8d7c993045cf1d0b6dd71662704bc3e834ab1a2617995ebb5e08b184c76b5d"
+  "catalogHash": "sha256:ab350a31d07eea43f308fd7d12e91342cc167757a9df476b4680479a168dd98c"
 }

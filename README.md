@@ -3,18 +3,14 @@
 The MCP endpoint for driving Minecraft bots. Speaks Streamable HTTP to agents on one side and the
 [bot protocol](docs/bot-protocol.md) to bots on the other.
 
-It does not know how to play Minecraft. A bot does that, and there is one:
-[`bot-fabric`](https://github.com/mc-agents/bot-fabric), a real Minecraft client. It renders, so
-it can take a screenshot and press a dialog button, and it follows the game rather than
-reimplementing it.
-
-There was a second kind for a while -- a mineflayer bot, cheap and headless -- and the machinery
-for telling kinds apart is still here: a bot announces its kind when it links, `list-bots` shows
-it, and a tool no bot of that kind can run is refused by name before anything is sent. What the
-second kind cost was every tool implemented twice, and what it could not do was press a dialog
-button, take a screenshot, walk round a wall, or join a server newer than its protocol library.
-The repository is archived and the arrangement is documented in
-[architecture](docs/architecture.md).
+It does not know how to play Minecraft. A bot does that, and there are two kinds:
+[`bot-fabric`](https://github.com/mc-agents/bot-fabric), a real Minecraft client that renders, so
+it can take a screenshot and press a dialog button, and follows the game rather than
+reimplementing it; and [`bot-azalea`](https://github.com/mc-agents/bot-azalea), a headless client
+in a few megabytes that joins in under a second, for many bots at once or a fast loop. A bot
+announces its kind when it links, `list-bots` shows it, and a tool no bot of that kind can run is
+refused by name before anything is sent. The [tool reference](docs/tools.md) says which tools the
+headless kind does not run; the arrangement is documented in [architecture](docs/architecture.md).
 
 > **Local development only.** Bots authenticate offline, so the target server has to run
 > offline-mode.
@@ -36,9 +32,11 @@ loop short. Not by how many tools it adds.
 | [`docs/architecture.md`](docs/architecture.md) | Why this is four repositories and what each one owes the others |
 | [`docs/bot-protocol.md`](docs/bot-protocol.md) | The wire. Both bots implement it |
 | [`catalog/catalog.json`](catalog/catalog.json) | Every tool: its MCP schema, the normalised schema bots receive, and which kinds of bot can run it |
+| [`docs/tools.md`](docs/tools.md) | The catalogue as a page: every tool by group, its arguments, what it answers with. Rendered by `./gradlew renderToolReference`, and the build fails when it is stale |
 
 The catalogue is the single source. `tools/list` is built from it, argument validation runs
-against it, and a bot's `argsHash` is checked against it at handshake.
+against it, a bot's `argsHash` is checked against it at handshake, and the tool reference is
+rendered from it.
 
 ## Running it
 

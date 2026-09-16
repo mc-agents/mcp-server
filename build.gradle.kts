@@ -70,3 +70,12 @@ tasks.bootBuildImage {
 tasks.withType<JavaCompile> {
     options.compilerArgs.addAll(listOf("-Xlint:all,-processing,-serial", "-Werror"))
 }
+
+// docs/tools.md is the catalogue rendered as a page, and the test suite fails when the two differ.
+tasks.register<JavaExec>("renderToolReference") {
+    description = "Rewrite docs/tools.md from catalog/catalog.json."
+    group = "documentation"
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass = "kr.junhyung.mcagents.docs.ToolReference"
+    workingDir = projectDir
+}
