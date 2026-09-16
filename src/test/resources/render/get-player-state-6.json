@@ -1,0 +1,27 @@
+{
+  "tool": "get-player-state",
+  "note": "dead with no death message, which is what /kill leaves on a client that was never sent one",
+  "data": {
+    "health": 0,
+    "food": 20,
+    "saturation": 5,
+    "experience": {
+      "level": 0,
+      "progress": 0,
+      "points": 0
+    },
+    "gameMode": "survival",
+    "dimension": "overworld",
+    "position": {
+      "x": 2,
+      "y": -60,
+      "z": 0
+    },
+    "oxygen": null,
+    "dead": true,
+    "causeOfDeath": null,
+    "causeOfDeathComponent": null,
+    "vehicle": null
+  },
+  "text": "dead: call respawn to bring the bot back\nhealth: 0 / 20\nfood: 20 / 20 (saturation 5)\nhealth bar: 0%\nexperience: level 0, 0% to the next level, 0 points\ngameMode: survival / dimension: overworld\nposition: (2, -60, 0)\noxygen: full / 20"
+}

@@ -4476,7 +4476,7 @@
             "maximum": 65535
           },
           "timeoutMs": {
-            "description": "How long to wait for the answer (default: 3000)",
+            "description": "How long to wait for the answer (default: 5000)",
             "type": "integer",
             "minimum": 200,
             "maximum": 30000
@@ -6073,7 +6073,7 @@
     {
       "name": "read-effects",
       "group": "effect",
-      "description": "Read the sounds and particles the server has played near the bot. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
+      "description": "Read the sounds and particles the server has played near the bot, one line per play as it happened, nothing collapsed; the same sound twice is two lines. Each line is the namespaced id (sound:/particle: prefix). Particles come in bursts, so raise count or use wait-for-effect for one id.",
       "route": "local",
       "kinds": [
         "fabric"
@@ -7054,7 +7054,7 @@
     {
       "name": "run-command",
       "group": "server",
-      "description": "Run a slash command as the bot and return the messages the server sent back.",
+      "description": "Run a slash command as the bot and return what the server sent back: chat, or a dialog or title it opened when there was no chat.",
       "route": "compose",
       "kinds": [
         "fabric",
@@ -9310,7 +9310,7 @@
     {
       "name": "wait-for-chat",
       "group": "server",
-      "description": "Wait until a message matching a regular expression arrives. Only messages received after the call count.",
+      "description": "Wait until a chat line matching a regular expression arrives. Returns straight away if the latest chat line already says so; use run-command, which only counts replies after the command, when only new lines count.",
       "route": "local",
       "kinds": [
         "fabric",
@@ -9639,7 +9639,7 @@
             "type": "integer",
             "minimum": 1000,
             "maximum": 600000,
-            "description": "How long to keep trying (default: 120000)"
+            "description": "How long to keep trying (default: 300000)"
           }
         },
         "required": [
@@ -9975,5 +9975,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:597713e04f2bc51d8feb71680ed9a739aee64844409a1a0b2e39c012b6467adc"
+  "catalogHash": "sha256:2e9dd089150f16517d76f8765a0b50071c196a467cd5ae5ba7a2b2ca69a4dd2c"
 }

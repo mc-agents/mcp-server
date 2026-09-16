@@ -5,7 +5,7 @@ api-version: "26.1"
 commands:
   fixture:
     description: Start the fixture's conversation or gathering round, or open one of its menus, for a player
-    usage: /fixture talk|gather|locked|shop|paged|cooldown|pling <player>
+    usage: /fixture talk|gather|locked|shop|paged|cooldown|pling|quiet <player>
     permission: mcagents.fixture
 permissions:
   mcagents.fixture:

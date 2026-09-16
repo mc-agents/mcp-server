@@ -1,0 +1,17 @@
+{
+  "tool": "press-input",
+  "note": "one press held down for three seconds, which is how a bow is drawn",
+  "data": {
+    "key": "use",
+    "slot": null,
+    "presses": 1,
+    "repeat": 1,
+    "holdTicks": 60,
+    "intervalTicks": 1,
+    "after": null,
+    "until": null,
+    "stopped": "done",
+    "selectedSlot": 0
+  },
+  "text": "Pressed use once, held for 60 ticks."
+}

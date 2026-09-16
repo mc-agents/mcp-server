@@ -1,0 +1,14 @@
+{
+  "tool": "read-book",
+  "note": "a book and quill in hand that nothing has been written in yet",
+  "data": {
+    "source": "hand",
+    "title": null,
+    "author": null,
+    "generation": null,
+    "page": 1,
+    "pages": [],
+    "pageComponents": []
+  },
+  "text": "an unsigned book in hand has nothing written in it."
+}

@@ -3,15 +3,23 @@ package kr.junhyung.mcagents.e2e;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -2251,12 +2259,41 @@ class BotEndToEndTest {
         return Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2) + Math.pow(a[2] - b[2], 2));
     }
 
-    /** The reason this kind of bot exists: a frame of what is actually on the screen. */
+    /**
+     * The reason this kind of bot exists: a frame of what is actually on the screen. Decoded and
+     * looked at, because the bot refuses only when it has nothing to read back from, and a GL
+     * readback that hands over an allocated black frame was one image and passed as a picture.
+     */
     @Test
     void aScreenshotComesBackAsAnImage() {
-        int blobs = agent.blobs("screenshot", Map.of("bot", BotWorld.BOT, "width", 854, "height", 480));
+        Agent.Answer shot = agent.answer("screenshot", Map.of("bot", BotWorld.BOT, "width", 854, "height", 480));
 
-        assertEquals(1, blobs, "screenshot returned no image");
+        assertTrue(shot.text().startsWith("captured a 854x480 frame"), shot.text());
+        assertEquals(1, shot.images(), "screenshot returned no image");
+        assertDrawn(shot.frame(), 854, 480);
+    }
+
+    /**
+     * A frame with something in it: the size it was asked for, and colours enough across a sample
+     * of its pixels that it is not one flat fill. A world under a sky has far more than a handful.
+     */
+    private static void assertDrawn(byte[] png, int width, int height) {
+        BufferedImage frame;
+        try {
+            frame = ImageIO.read(new ByteArrayInputStream(png));
+        } catch (IOException unreadable) {
+            throw new AssertionError("the image could not be decoded", unreadable);
+        }
+        assertTrue(frame != null, "the image is not a format ImageIO reads");
+        assertEquals(width + "x" + height, frame.getWidth() + "x" + frame.getHeight());
+
+        Set<Integer> colours = new HashSet<>();
+        for (int y = 0; y < frame.getHeight(); y += 16) {
+            for (int x = 0; x < frame.getWidth(); x += 16) {
+                colours.add(frame.getRGB(x, y) & 0xFFFFFF);
+            }
+        }
+        assertTrue(colours.size() > 8, "the frame is nearly one colour: " + colours.size() + " distinct in the sample");
     }
 
     /**
@@ -2294,6 +2331,7 @@ class BotEndToEndTest {
         assertTrue(drawn.text().contains("Hovered slot " + slot + " (Probe Hoe [golden_hoe] x1)"), drawn.text());
         assertTrue(drawn.text().contains("\n  Probe Hoe\n  [gui/price] 12 coins"), drawn.text());
         assertEquals(1, drawn.images(), drawn.text());
+        assertDrawn(drawn.frame(), 854, 480);
         assertTrue(empty.text().contains("Hovered slot " + (slot + 1) + ", which is empty: no tooltip is drawn"), empty.text());
         assertEquals(1, empty.images(), empty.text());
         assertTrue(words.text().contains("\n  Probe Hoe\n  [gui/price] 12 coins"), words.text());
@@ -3017,5 +3055,188 @@ class BotEndToEndTest {
         assertTrue(window.startsWith("window \"[gui/header] Probe Chest\""), window);
         assertTrue(kept.contains("Found 16 "), "the chest click threw a snowball as well: " + kept);
         assertTrue(thrown.contains("Found 15 "), "the click on grass threw nothing: " + thrown);
+    }
+
+    /**
+     * A block far outside the loaded chunks is not air. One kind of bot read the client's empty
+     * chunk there and answered void_air, which an agent checking a far-off build read as the build
+     * having gone; the catalogue's answer for an unloaded position is that it is unloaded.
+     */
+    @Test
+    void aBlockOutsideTheLoadedChunksIsSaidToBeOutsideThemRatherThanReadAsAir() {
+        String far = agent.mustCall("get-block-info",
+            Map.of("bot", BotWorld.BOT, "x", 9000000, "y", 300, "z", 9000000));
+
+        assertEquals("(9000000, 300, 9000000) is outside the loaded chunks.", far);
+    }
+
+    /**
+     * Being kicked mid-session is the one event whose reason an agent has to read, because it is
+     * what tells a plugin under test that threw the bot out from a backend that went away under it.
+     * One kind of bot reported the disconnect with no reason at all.
+     */
+    @Test
+    void aKickIsReportedWithTheReasonTheServerGave() {
+        agent.requires("get-bot-status", "join-server");
+        world.run("kick " + BotWorld.BOT + " QA kick reason");
+
+        try {
+            String status = untilTheStatus(said -> said.contains("QA kick reason"));
+
+            assertTrue(status.contains("QA kick reason"), status);
+            assertTrue(!status.contains(" is ready."), status);
+        } finally {
+            rejoin();
+        }
+    }
+
+    /**
+     * A login the server refuses and a spawn that never comes are different failures with
+     * different fixes, and the join says which. Ops pass the whitelist, so the bot is taken off
+     * the list first.
+     *
+     * <p>This pins the login half only: the wording, and that the server's own reason comes with
+     * it. A bot that still reported a spawn timeout as a login refusal would pass it, because that
+     * timeout is not reproducible inside a case's budget; that half is left to the bot's own tests.
+     *
+     * <p>The op comes back first, whatever the rejoin does: /op resolves a name through the
+     * server's cache, and a bot left deopped fails every later case that gives itself something.
+     */
+    @Test
+    void aLoginTheServerRefusesIsReportedAsThatAndNotAsASpawnThatNeverCame() {
+        agent.requires("leave-server", "join-server");
+        world.run("deop " + BotWorld.BOT);
+        world.run("whitelist on");
+
+        try {
+            agent.mustCall("leave-server", Map.of("bot", BotWorld.BOT));
+            String refused = agent.refusal("join-server", Map.of(
+                "name", BotWorld.BOT, "host", world.minecraftHost(), "port", world.minecraftPort()));
+
+            assertTrue(refused.contains("the Minecraft server did not accept the connection"), refused);
+            /* Spigot words it without the hyphen the vanilla client uses. */
+            assertTrue(Pattern.compile("(?i)white-?listed").matcher(refused).find(), refused);
+            assertTrue(!refused.contains("never spawned"), refused);
+        } finally {
+            world.run("op " + BotWorld.BOT);
+            world.run("whitelist off");
+            rejoin();
+        }
+    }
+
+    /**
+     * The tab list is sorted by name, as the catalogue says and as one kind of bot did not. With
+     * one player in the world the order is only what it is; the parse is what the case holds.
+     */
+    @Test
+    void theTabListIsListedInNameOrder() {
+        String players = agent.mustCall("read-player-list", Map.of("bot", BotWorld.BOT));
+
+        List<String> names = new ArrayList<>();
+        for (String line : players.split("\n")) {
+            if (!line.startsWith("  ")) {
+                continue;
+            }
+            String named = line.substring(2, line.lastIndexOf(": ")).replace(" (this bot)", "");
+            names.add(named.endsWith(")") ? named.substring(named.lastIndexOf('(') + 1, named.length() - 1) : named);
+        }
+
+        assertTrue(names.contains(BotWorld.BOT), players);
+        assertEquals(names.stream().sorted().toList(), names, players);
+    }
+
+    /**
+     * A wait for ticks is the tool an agent sits in longest, and a bot kicked during one has no
+     * ticks left to count. One kind of bot waited out the call's whole deadline and then blamed the
+     * link; the other counts ticks on its title screen too and says it waited, which is a
+     * difference the kinds still have.
+     */
+    @Test
+    void aWaitForTicksEndsWhenTheBotIsKickedRatherThanAtItsDeadline() {
+        Assumptions.assumeTrue("azalea".equals(System.getProperty("e2e.bot.kind")),
+            "a fabric bot counts ticks on the title screen too");
+        agent.requires("wait-ticks", "join-server");
+
+        try {
+            CompletableFuture<String> waiting = CompletableFuture.supplyAsync(
+                () -> agent.call("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 400)));
+            sleep(1000);
+            world.run("kick " + BotWorld.BOT + " QA kick reason");
+
+            String answer = within(waiting, Duration.ofSeconds(5));
+
+            assertTrue(answer.contains("the bot is not in a world"), answer);
+        } finally {
+            rejoin();
+        }
+    }
+
+    /**
+     * A chest is not a dialog, and an agent that mistakes a plugin menu for one is told which screen
+     * is open and that it has no buttons, which is what sends it to click-slot. One kind of bot
+     * answered that no screen was open at all, contradicting its own read-window.
+     */
+    @Test
+    void aDialogButtonPressedUnderAChestNamesTheScreenThatIsOpen() {
+        agent.requires("press-dialog-button", "close-window");
+        world.run("fixture locked " + BotWorld.BOT);
+        agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "titlePattern", "Locked Menu", "timeoutMs", 10000));
+
+        String refused = agent.refusal("press-dialog-button", Map.of("bot", BotWorld.BOT, "label", "Confirm"));
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+
+        assertTrue(refused.contains("no button matching \"Confirm\" on ContainerScreen"), refused);
+    }
+
+    /**
+     * A server whose commands answer with a menu rather than with chat: the fixture's command opens
+     * a dialog and says nothing. The answer used to be "no chat", which read as the command having
+     * done nothing while the dialog sat on the screen.
+     */
+    @Test
+    void aCommandThatOpensADialogInSilenceComesBackWithTheDialog() {
+        String ran = agent.mustCall("run-command",
+            Map.of("bot", BotWorld.BOT, "command", "fixture quiet " + BotWorld.BOT, "collectMs", 2000));
+        world.run("dialog clear " + BotWorld.BOT);
+
+        assertTrue(ran.startsWith("Ran /fixture quiet " + BotWorld.BOT
+            + ". The server sent no chat in the 2000ms after it, but a dialog opened"), ran);
+        assertTrue(ran.contains("Bot check | Which button did the bot press? | buttons: Confirm, Cancel, Custom, Close"), ran);
+    }
+
+    /** The bot's status once it says what a case is waiting to read, or whatever it last said. */
+    private String untilTheStatus(Predicate<String> expected) {
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(10));
+        String status = agent.call("get-bot-status", Map.of("bot", BotWorld.BOT));
+
+        while (!expected.test(status) && Instant.now().isBefore(deadline)) {
+            sleep(250);
+            status = agent.call("get-bot-status", Map.of("bot", BotWorld.BOT));
+        }
+        return status;
+    }
+
+    /** Back into the world, for the cases after one that took the bot out of it. */
+    private void rejoin() {
+        agent.mustCall("join-server", Map.of(
+            "name", BotWorld.BOT, "host", world.minecraftHost(), "port", world.minecraftPort()));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+    }
+
+    /**
+     * A call's answer, if it comes in time. One that does not is still waited for before the
+     * assertion fails, so the next case does not find the client with a call still in flight.
+     */
+    private static String within(CompletableFuture<String> answer, Duration patience) {
+        try {
+            return answer.get(patience.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (java.util.concurrent.TimeoutException late) {
+            throw new AssertionError("no answer within " + patience + "; it then said: " + answer.join());
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(interrupted);
+        } catch (java.util.concurrent.ExecutionException failed) {
+            throw new IllegalStateException(failed.getCause());
+        }
     }
 }

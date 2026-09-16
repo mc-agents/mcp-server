@@ -1,0 +1,13 @@
+{
+  "tool": "get-world-state",
+  "note": "a bot that is never told the game rule, so whether the clock runs is not something it can say",
+  "data": {
+    "timeOfDay": 6000,
+    "day": 3,
+    "moonPhase": 3,
+    "isDay": true,
+    "weather": "rain",
+    "doDaylightCycle": null
+  },
+  "text": "time: 12:00 (tick 6000 of the day, day)\nday: 3, moon phase 3\nweather: rain\ndaylight cycle: not something this bot can tell"
+}

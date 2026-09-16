@@ -1,0 +1,16 @@
+{
+  "tool": "read-container-options",
+  "note": "a plugin menu in a chest, which is most menus: slots to click and nothing to press",
+  "data": {
+    "window": {
+      "title": "Locked Menu",
+      "titleComponent": null,
+      "type": "minecraft:generic_9x3",
+      "options": [],
+      "page": null,
+      "pageCount": null,
+      "beacon": null
+    }
+  },
+  "text": "window \"Locked Menu\" (type minecraft:generic_9x3) has nothing to press right now, only slots."
+}

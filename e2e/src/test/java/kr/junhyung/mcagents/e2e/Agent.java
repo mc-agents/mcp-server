@@ -5,6 +5,7 @@ import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientStreamableHttpTransport;
 import io.modelcontextprotocol.spec.McpSchema;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -106,16 +107,14 @@ final class Agent implements AutoCloseable {
         return text(answer);
     }
 
-    /** How many parts of the answer were not text, which is how a screenshot arrives. */
-    int blobs(String tool, Map<String, Object> args) {
-        requires(tool);
-        McpSchema.CallToolResult answer = client.callTool(McpSchema.CallToolRequest.builder(tool).arguments(args).build());
-
-        return images(answer);
-    }
-
-    /** The text an agent reads and how many images came beside it. */
-    record Answer(String text, int images) {}
+    /**
+     * The text an agent reads, how many images came beside it, and the first of them decoded.
+     *
+     * <p>The bytes and not only the count: a bot refuses only when it has no framebuffer to read,
+     * so a readback that comes back allocated and black is still one image, and counting it passed
+     * a screenshot nobody could have seen anything in.
+     */
+    record Answer(String text, int images, byte[] frame) {}
 
     /**
      * A call that has to work, answered with its text and its image parts together: a tool that
@@ -128,7 +127,7 @@ final class Agent implements AutoCloseable {
         if (Boolean.TRUE.equals(answer.isError())) {
             throw new IllegalStateException(tool + " failed: " + text(answer));
         }
-        return new Answer(text(answer), images(answer));
+        return new Answer(text(answer), images(answer), frame(answer));
     }
 
     List<String> tools() {
@@ -137,6 +136,15 @@ final class Agent implements AutoCloseable {
 
     private static int images(McpSchema.CallToolResult answer) {
         return (int) answer.content().stream().filter(part -> !(part instanceof McpSchema.TextContent)).count();
+    }
+
+    /** The first image's bytes, or null when the answer carried none. */
+    private static byte[] frame(McpSchema.CallToolResult answer) {
+        return answer.content().stream()
+            .filter(McpSchema.ImageContent.class::isInstance)
+            .map(part -> Base64.getDecoder().decode(((McpSchema.ImageContent) part).data()))
+            .findFirst()
+            .orElse(null);
     }
 
     private static String text(McpSchema.CallToolResult answer) {

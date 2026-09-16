@@ -1,0 +1,18 @@
+{
+  "tool": "click-slot",
+  "note": "the drop key over a stack throws one of it, and the slot keeps the rest",
+  "data": {
+    "slot": 4,
+    "outside": false,
+    "button": "left",
+    "shift": false,
+    "mode": "throw-one",
+    "hotbar": null,
+    "before": {"name": "cooked_beef", "count": 12, "label": null, "labelComponent": null, "lore": [], "loreComponents": []},
+    "after": {"name": "cooked_beef", "count": 11, "label": null, "labelComponent": null, "lore": [], "loreComponents": []},
+    "cursor": null,
+    "swapped": null,
+    "window": null
+  },
+  "text": "Pressed drop over slot 4.\n  slot 4: cooked_beef x12 -> cooked_beef x11\n  cursor: empty"
+}

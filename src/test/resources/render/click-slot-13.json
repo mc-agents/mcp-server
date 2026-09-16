@@ -1,0 +1,18 @@
+{
+  "tool": "click-slot",
+  "note": "a middle click in creative copies the stack onto the cursor and leaves the slot as it was; button is the echoed default, since a clone takes none",
+  "data": {
+    "slot": 0,
+    "outside": false,
+    "button": "left",
+    "shift": false,
+    "mode": "clone",
+    "hotbar": null,
+    "before": {"name": "diamond_sword", "count": 1, "label": "Excalibur", "labelComponent": null, "lore": ["A sword a server named"], "loreComponents": []},
+    "after": {"name": "diamond_sword", "count": 1, "label": "Excalibur", "labelComponent": null, "lore": ["A sword a server named"], "loreComponents": []},
+    "cursor": {"name": "diamond_sword", "count": 1, "label": "Excalibur", "labelComponent": null, "lore": ["A sword a server named"], "loreComponents": []},
+    "swapped": null,
+    "window": null
+  },
+  "text": "Middle-clicked slot 0.\n  slot 0: Excalibur [diamond_sword] x1 -> Excalibur [diamond_sword] x1\n  cursor: Excalibur [diamond_sword] x1"
+}

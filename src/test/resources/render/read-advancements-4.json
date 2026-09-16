@@ -1,0 +1,11 @@
+{
+  "tool": "read-advancements",
+  "note": "asked for the ones in progress under a prefix, and none are",
+  "data": {
+    "prefix": "mcagents:quest/",
+    "status": "inProgress",
+    "matched": 0,
+    "advancements": []
+  },
+  "text": "No advancements starting with \"mcagents:quest/\" are in progress."
+}

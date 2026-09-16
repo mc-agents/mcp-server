@@ -52,12 +52,7 @@ public class ToolDispatcher {
     private BotSession resolve(ToolSpec spec, Map<String, Object> arguments) {
         BotSession session = bots.resolve(stringArg(arguments, "bot"));
 
-        if (!spec.supportedBy(session.kind())) {
-            throw new IllegalStateException(
-                    "\"%s\" is not supported by bot \"%s\" (kind: %s). Bots of kind %s support it: either use one (list-bots shows each bot's kind) or join-server with that kind."
-                            .formatted(spec.name(), session.name(), session.kind(),
-                                    String.join(" or ", spec.kinds())));
-        }
+        kindCheck(spec, session);
 
         /*
         A tool the bot did not report at handshake is absent, which is how one kind of bot ships a
@@ -74,6 +69,20 @@ public class ToolDispatcher {
                             .formatted(session.name(), session.kind(), spec.name()));
         }
         return session;
+    }
+
+    /**
+     * The half of the refusal a feed tool needs too. A feed only one kind of bot fills reads as
+     * empty on the other kind, and "the server has not sent a sound yet" on a bot that never
+     * reports one is a false negative dressed as a fact.
+     */
+    static void kindCheck(ToolSpec spec, BotSession session) {
+        if (!spec.supportedBy(session.kind())) {
+            throw new IllegalStateException(
+                    "\"%s\" is not supported by bot \"%s\" (kind: %s). Bots of kind %s support it: either use one (list-bots shows each bot's kind) or join-server with that kind."
+                            .formatted(spec.name(), session.name(), session.kind(),
+                                    String.join(" or ", spec.kinds())));
+        }
     }
 
     static String stringArg(Map<String, Object> arguments, String name) {

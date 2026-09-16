@@ -1,5 +1,8 @@
 package kr.junhyung.mcagents.fixture;
 
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
@@ -62,6 +65,12 @@ public final class FixturePlugin extends JavaPlugin {
                     */
                     case "pling" -> Bukkit.getScheduler().runTaskLater(this,
                         () -> player.playSound(player, Sound.BLOCK_NOTE_BLOCK_PLING, 0.8F, 1.8F), PLING_AFTER_TICKS);
+                    /*
+                    A command that answers with a dialog and no chat at all, which is how a plugin's
+                    /quest answers. /dialog show tells the sender it displayed one, so it cannot be this.
+                    */
+                    case "quiet" -> player.showDialog(RegistryAccess.registryAccess()
+                        .getRegistry(RegistryKey.DIALOG).getOrThrow(Key.key("mcagents", "check")));
                     default -> {
                         return false;
                     }

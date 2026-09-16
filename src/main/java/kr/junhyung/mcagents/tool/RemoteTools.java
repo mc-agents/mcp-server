@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.springframework.stereotype.Component;
@@ -86,10 +87,18 @@ public class RemoteTools {
     /**
      * A call plus whatever the server's own buffers caught while it ran.
      *
-     * <p>{@code run-command} is the case this exists for. A command's answer is chat, not a return
-     * value, so the tool is only useful if the lines the server sent back come with it, and only
-     * the lines that arrived after the command was sent count. The link applies frames on one
-     * thread in arrival order, which is what makes "after" mean anything.
+     * <p>{@code run-command} is the case this exists for. A command's answer is not a return value
+     * but what the server sends next -- chat, or on a server whose commands open menus, a dialog or
+     * a title -- so the tool is only useful if that comes with it, and only what arrived after the
+     * command was sent counts. The link applies frames on one thread in arrival order, which is
+     * what makes "after" mean anything.
+     *
+     * <p>Chat is the answer when there is any. The dialog and title feeds are read only when there
+     * is none, because a command that replies in chat and also draws a title is answered by the
+     * chat, and an agent that got "no chat" for a command that opened a dialog went looking for a
+     * server error. Between those two nothing wins: a quest command that opens its dialog and
+     * throws a title has done both, and both are shown. The action bar is left out: a plugin HUD
+     * redraws it every few ticks whether or not a command ran.
      */
     public McpSchema.CallToolResult compose(ToolSpec spec, BotSession bot, Map<String, Object> arguments) {
         if (spec.watches() != null) {
@@ -97,6 +106,8 @@ public class RemoteTools {
         }
 
         long from = bot.feed("chat").nextSeq();
+        long dialogsFrom = bot.feed("dialog").nextSeq();
+        long titlesFrom = bot.feed("title").nextSeq();
 
         /*
         run-command is marked untrusted because of the chat it collects, not because of the
@@ -127,18 +138,44 @@ public class RemoteTools {
 
         List<FeedEntry> replies = bot.feed("chat").since(from);
 
-        if (replies.isEmpty()) {
-            return ToolDispatcher.text(
-                    "%s The server sent no chat in the %dms after it."
-                            .formatted(textOf(answer), collectMs));
+        if (!replies.isEmpty()) {
+            return ToolDispatcher.text("%s The server replied %s:\n%s"
+                    .formatted(textOf(answer), Trust.NOTICE, lines(replies)));
         }
 
-        String lines = replies.stream()
-                .map(line -> "  " + line.rendered())
-                .reduce((a, b) -> a + "\n" + b).orElse("");
+        String silence = "%s The server sent no chat in the %dms after it".formatted(textOf(answer), collectMs);
+        /* A run that ends is a line on the dialog feed too, and one of those is not a dialog opening. */
+        List<FeedEntry> dialogs = bot.feed("dialog").since(dialogsFrom).stream()
+                .filter(line -> !"closed".equals(line.source()))
+                .toList();
+        List<FeedEntry> titles = bot.feed("title").since(titlesFrom);
 
-        return ToolDispatcher.text("%s The server replied %s:\n%s"
-                .formatted(textOf(answer), Trust.NOTICE, lines));
+        if (dialogs.isEmpty() && titles.isEmpty()) {
+            return ToolDispatcher.text(silence + ". If the command opens a menu, read-window shows it.");
+        }
+
+        String shown = silence;
+        if (!dialogs.isEmpty()) {
+            shown += ", but a dialog opened %s:\n%s".formatted(Trust.NOTICE, lines(dialogs));
+        }
+        if (!titles.isEmpty()) {
+            /* Which of the two a line is, since a subtitle on its own reads like a title. */
+            String titled = lines(titles, line -> line.source() + ": " + line.rendered());
+            shown += dialogs.isEmpty()
+                    ? ", but a title showed %s:\n%s".formatted(Trust.NOTICE, titled)
+                    : "\nand a title showed:\n%s".formatted(titled);
+        }
+        return ToolDispatcher.text(shown);
+    }
+
+    private static String lines(List<FeedEntry> entries) {
+        return lines(entries, FeedEntry::rendered);
+    }
+
+    private static String lines(List<FeedEntry> entries, Function<FeedEntry, String> shown) {
+        return entries.stream()
+                .map(line -> "  " + shown.apply(line))
+                .reduce((a, b) -> a + "\n" + b).orElse("");
     }
 
     /**

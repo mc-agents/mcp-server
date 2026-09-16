@@ -1,0 +1,18 @@
+{
+  "tool": "click-slot",
+  "note": "a click outside a plugin menu that answers by closing it, so there is no cursor line to compare",
+  "data": {
+    "slot": null,
+    "outside": true,
+    "button": "left",
+    "shift": false,
+    "mode": "click",
+    "hotbar": null,
+    "before": null,
+    "after": null,
+    "cursor": null,
+    "swapped": null,
+    "window": {"closed": true, "title": null, "titleComponent": null}
+  },
+  "text": "Left-clicked outside the window.\n  The server closed the window.\n  cursor: empty"
+}

@@ -205,7 +205,8 @@ public class LocalTools {
 
     private McpSchema.CallToolResult read(ToolSpec spec, String feed, Map<String, Object> arguments) {
         BotSession bot = bots.resolve(ToolDispatcher.stringArg(arguments, "bot"));
-        int count = intArg(arguments, "count", 5);
+        ToolDispatcher.kindCheck(spec, bot);
+        int count = intArg(arguments, "count", defaultCountOf(feed));
 
         List<FeedEntry> lines = bot.feed(feed).recent(count);
 
@@ -222,6 +223,7 @@ public class LocalTools {
 
     private McpSchema.CallToolResult await(ToolSpec spec, String feed, Map<String, Object> arguments) {
         BotSession bot = bots.resolve(ToolDispatcher.stringArg(arguments, "bot"));
+        ToolDispatcher.kindCheck(spec, bot);
         String source = ToolDispatcher.stringArg(arguments, "pattern");
         int timeoutMs = intArg(arguments, "timeoutMs", 10_000);
 
@@ -323,6 +325,15 @@ public class LocalTools {
 
     private static String withArticle(String noun) {
         return ("aeiou".indexOf(noun.charAt(0)) >= 0 ? "an " : "a ") + noun;
+    }
+
+    /**
+     * How many lines a read shows when not told. Chat is the one feed a server writes a lot to --
+     * a join's MOTD, a quest prompt, a plugin's error -- and the line that says why something
+     * failed is often the sixth one back. The catalogue advertises the same numbers.
+     */
+    private static int defaultCountOf(String feed) {
+        return "chat".equals(feed) ? 20 : 5;
     }
 
     private static int intArg(Map<String, Object> arguments, String name, int fallback) {
