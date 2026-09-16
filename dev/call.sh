@@ -1,5 +1,6 @@
 #!/bin/bash
-# Drive the MCP endpoint over Streamable HTTP: ./mcp.sh <tool> <json args>
+# Drive the MCP endpoint over Streamable HTTP: ./call.sh <tool> <json args>
+# Exits 1 on a tool error, so a script that joins and then sweeps stops at the join.
 set -euo pipefail
 BASE=${MCP_BASE:-http://127.0.0.1:13000/mcp}
 DIR=$(dirname "$0")
@@ -23,8 +24,10 @@ import sys, json
 d = json.loads(sys.stdin.read())
 r = d.get('result', d)
 if 'content' not in r:
-    print('RPC', json.dumps(r)[:300]); raise SystemExit
+    print('RPC', json.dumps(r)[:300]); raise SystemExit(1)
 print(('ERR  ' if r.get('isError') else 'OK   ') + r['content'][0].get('text', '')[:400])
 for c in r['content'][1:]:
     print('     +', c['type'], len(c.get('data', '')), 'base64 chars')
+if r.get('isError'):
+    raise SystemExit(1)
 "

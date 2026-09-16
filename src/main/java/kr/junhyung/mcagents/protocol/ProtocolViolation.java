@@ -16,8 +16,6 @@ public final class ProtocolViolation extends IOException {
         MISSING_FIELD,
         HELLO_EXPECTED,
         HELLO_TWICE,
-        DUPLICATE_CALL_ID,
-        EVENT_SEQ_REGRESSION,
         BLOB_BEFORE_HELLO,
     }
 

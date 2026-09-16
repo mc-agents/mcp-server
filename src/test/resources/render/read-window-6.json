@@ -1,0 +1,28 @@
+{
+  "tool": "read-window",
+  "note": "a plugin's menu page: the filler panes around one item fold into runs, and the panes each side of it stay apart",
+  "data": {
+    "window": {
+      "title": "Quests",
+      "type": "minecraft:generic_9x3",
+      "slotCount": 63,
+      "containerSlots": [0, 26],
+      "inventorySlots": [27, 62],
+      "filled": [
+        {"slot": 0, "name": "black_stained_glass_pane", "count": 1, "label": " ", "lore": []},
+        {"slot": 1, "name": "black_stained_glass_pane", "count": 1, "label": " ", "lore": []},
+        {"slot": 2, "name": "black_stained_glass_pane", "count": 1, "label": " ", "lore": []},
+        {"slot": 3, "name": "black_stained_glass_pane", "count": 1, "label": " ", "lore": []},
+        {"slot": 4, "name": "book", "count": 1, "label": "Wheat run", "lore": ["Bring 10 wheat"]},
+        {"slot": 5, "name": "black_stained_glass_pane", "count": 1, "label": " ", "lore": []},
+        {"slot": 6, "name": "black_stained_glass_pane", "count": 1, "label": " ", "lore": []},
+        {"slot": 8, "name": "black_stained_glass_pane", "count": 1, "label": " ", "lore": []},
+        {"slot": 9, "name": "gray_stained_glass_pane", "count": 1, "label": " ", "lore": []},
+        {"slot": 10, "name": "gray_stained_glass_pane", "count": 2, "label": " ", "lore": []},
+        {"slot": 27, "name": "bread", "count": 3, "lore": []},
+        {"slot": 28, "name": "bread", "count": 3, "lore": []}
+      ]
+    }
+  },
+  "text": "window \"Quests\" (type minecraft:generic_9x3, 63 slots, container 0-26, player inventory 27-62)\n  slots 0-3:   [black_stained_glass_pane] x1\n  4: Wheat run [book] x1\n    Bring 10 wheat\n  slots 5-6:   [black_stained_glass_pane] x1\n  8:   [black_stained_glass_pane] x1\n  9:   [gray_stained_glass_pane] x1\n  10:   [gray_stained_glass_pane] x2\n  slots 27-28: bread x3"
+}

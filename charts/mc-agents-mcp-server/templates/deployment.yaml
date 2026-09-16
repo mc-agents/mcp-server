@@ -24,8 +24,19 @@ spec:
       annotations:
         {{- if .Values.auth.enabled }}
         # Restarts the pod when the token changes. Without it the old token keeps working until
-        # something else happens to roll the deployment, and the new one is refused.
+        # something else happens to roll the deployment, and the new one is refused. The token
+        # itself goes in only when this chart wrote the Secret: with existingSecret the chart
+        # never sees the value, and hashing the empty string would say it had.
+        {{- if .Values.auth.existingSecret }}
+        checksum/auth: {{ include "mc-agents-mcp-server.secretName" . | sha256sum }}
+        {{- else }}
         checksum/auth: {{ include "mc-agents-mcp-server.secretName" . | sha256sum }}-{{ .Values.auth.token | sha256sum }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: /actuator/prometheus
         {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
@@ -56,6 +67,10 @@ spec:
           env:
             - name: MCP_PORT
               value: "3000"
+            # Unset, the server binds 127.0.0.1 when it has no token, which with auth.enabled
+            # false is a pod nothing can reach.
+            - name: MCP_BIND_HOST
+              value: "0.0.0.0"
             - name: BOT_LINK_PORT
               value: "8765"
             - name: MCP_MAX_BOTS
@@ -74,6 +89,10 @@ spec:
             {{- end }}
             - name: MCP_LOG_LEVEL
               value: {{ .Values.logLevel | quote }}
+            {{- with .Values.logFormat }}
+            - name: LOGGING_STRUCTURED_FORMAT_CONSOLE
+              value: {{ . | quote }}
+            {{- end }}
             - name: BOT_LINK_REPEAT_FLUSH_MS
               value: {{ .Values.feeds.repeatFlushMs | quote }}
             - name: BOT_LINK_MUTED_FEEDS

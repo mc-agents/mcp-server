@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -227,6 +228,54 @@ class BotLinkServerTest {
         send(bot, new Messages.Log("info", "hello? is this thing on", null));
 
         assertEquals("HELLO_EXPECTED", assertInstanceOf(Messages.Fault.class, read(bot)).code());
+        assertEquals(0, bots.size());
+    }
+
+    @Test
+    void aBlobBeforeHelloIsAViolationOfItsOwn() throws Exception {
+        Socket bot = dial();
+        FrameCodec.write(bot.getOutputStream(), new Frame.Blob(UUID.randomUUID(), new byte[] {1, 2, 3}));
+
+        assertEquals("BLOB_BEFORE_HELLO", assertInstanceOf(Messages.Fault.class, read(bot)).code());
+        assertEquals(0, bots.size());
+    }
+
+    @Test
+    void aHelloWithoutABotNameIsTurnedAway() throws Exception {
+        Socket bot = dial();
+        send(bot, hello(null, "fabric", List.of()));
+
+        assertEquals("MISSING_FIELD", assertInstanceOf(Messages.Fault.class, read(bot)).code());
+        assertEquals(0, bots.size());
+    }
+
+    /* The name becomes a pod name and a username, so one neither can carry is refused before a session exists. */
+    @Test
+    void aHelloWithANameNothingCouldRunUnderIsTurnedAway() throws Exception {
+        Socket bot = dial();
+        send(bot, hello("bad name!", "fabric", List.of()));
+
+        Messages.Fault fault = assertInstanceOf(Messages.Fault.class, read(bot));
+
+        assertEquals("BAD_NAME", fault.code());
+        assertTrue(fault.message().contains("bad name!"), fault.message());
+        assertEquals(0, bots.size());
+    }
+
+    /* A bot that connects and says nothing is told what was expected, and then dropped. */
+    @Test
+    void aBotThatNeverSaysHelloIsDroppedAfterTheTimeout() throws Exception {
+        server.stop();
+        server = new BotLinkServer(catalog, bots, mapper, timers, 0, 1_000, Set.of(), 200);
+        server.start();
+
+        Socket bot = dial();
+
+        Messages.Fault fault = assertInstanceOf(Messages.Fault.class, read(bot));
+
+        assertEquals("HELLO_EXPECTED", fault.code());
+        assertTrue(fault.message().contains("200ms"), fault.message());
+        assertThrows(EOFException.class, () -> read(bot));
         assertEquals(0, bots.size());
     }
 

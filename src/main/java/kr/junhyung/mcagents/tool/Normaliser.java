@@ -26,6 +26,46 @@ final class Normaliser {
     }
 
     /**
+     * The bounds the catalogue advertises, held on a call that never crosses the wire.
+     *
+     * <p>A local tool read its arguments raw, so a {@code timeoutMs} of two billion pinned a
+     * thread for as long and a port of 99999 was handed to a bot. The wire clamps, because a bot
+     * must never see a value outside its schema and the descriptions say "clamped"; here the value
+     * is refused instead, naming the property and its range. A clamped port is a different server
+     * and a clamped pattern is a different pattern, and the endpoint's own validation already
+     * refuses the same value in the same terms, so a caller inside the process hears what an agent
+     * outside it would.
+     */
+    static Map<String, Object> bound(ToolSpec spec, Map<String, Object> arguments) {
+        if (arguments == null) {
+            return null;
+        }
+
+        Map<String, Object> properties = propertiesOf(spec.inputSchema());
+        Map<String, Object> bounded = new LinkedHashMap<>(arguments);
+
+        for (Map.Entry<String, Object> argument : arguments.entrySet()) {
+            String name = argument.getKey();
+            Map<String, Object> rules = asMap(properties.get(name));
+
+            if (argument.getValue() instanceof String text && rules.get("maxLength") instanceof Number max
+                    && text.length() > max.intValue()) {
+                throw new IllegalArgumentException("\"%s\" %s is %d characters, and the most it takes is %d"
+                        .formatted(spec.name(), name, text.length(), max.intValue()));
+            }
+            if (argument.getValue() instanceof Number number && !rules.isEmpty()) {
+                Object coerced = coerce(number, rules);
+                if (!coerced.equals(clamp(coerced, rules))) {
+                    throw new IllegalArgumentException("\"%s\" %s is %s, and it has to be between %s and %s"
+                            .formatted(spec.name(), name, number, rules.get("minimum"), rules.get("maximum")));
+                }
+                bounded.put(name, coerced);
+            }
+        }
+        return bounded;
+    }
+
+    /**
      * One object against the properties that describe it: the call's arguments, or one element of
      * an array of objects inside them. {@code where} names the element for the message.
      */

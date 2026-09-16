@@ -101,24 +101,27 @@ and a result is what is being checked.
 python3 dev/sweep.py
 ```
 
-Prints one line per tool and a count. A tool that answers "is not wired up yet" is the thing this
-is looking for. Five `wait-for-*` tools fail on purpose, because the sweep asks them for a pattern
-that never arrives.
+Prints one line per tool and a count, and exits non-zero when a tool answers "is not wired up
+yet", when one was skipped for want of a sample argument, or when one errors that is not in the
+script's named set. That set is the `wait-for-*` tools, asked for a pattern that never arrives, and
+the two that ping a Minecraft server directly, which CI has none of. A join that failed used to
+pass: every tool errored with "not in a world", and the sweep counted errors without reading them.
 
 ## `call.sh` — one tool, by hand
 
 ```
-./dev/call.sh join-server '{"name":"alice","host":"127.0.0.1","port":25577}'
+./dev/call.sh join-server '{"bot":"alice","host":"127.0.0.1","port":25577}'
 ./dev/call.sh read-chat
 ```
 
-Holds the MCP session id in `dev/sid`; delete that file to start a new session.
+Holds the MCP session id in `dev/sid`; delete that file to start a new session. Exits 1 when the
+tool answered with an error, so a script can stop at a join that did not happen.
 
 ## `compose.yml` — a proxy with two backends
 
 ```
 docker compose -f dev/compose.yml up -d
-./dev/call.sh join-server '{"name":"alice","host":"127.0.0.1","port":25579}'
+./dev/call.sh join-server '{"bot":"alice","host":"127.0.0.1","port":25579}'
 ./dev/call.sh switch-server '{"bot":"alice","target":"arena"}'
 ```
 

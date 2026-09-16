@@ -6,7 +6,18 @@
 #
 # With no argument this only checks the shape. With a base ref it also insists that the version
 # moved if anything that ships did.
+#
+# Under GitHub Actions it also writes shipped=true|false, so the workflow can leave the image and
+# the chart alone on a push that changed nothing they are built from. A README edit used to move
+# :<version> and the chart to a fresh build of the same code. With no base there is nothing to
+# compare, and publishing is the safe side.
 set -euo pipefail
+
+mark_shipped() {
+  if [ -n "${GITHUB_OUTPUT:-}" ]; then
+    echo "shipped=$1" >> "$GITHUB_OUTPUT"
+  fi
+}
 
 VERSION_FILE=VERSION
 CHART=charts/mc-agents-mcp-server/Chart.yaml
@@ -34,6 +45,7 @@ base=${1:-}
 
 if [ -z "$base" ]; then
   echo "version $declared is a semantic version"
+  mark_shipped true
   exit 0
 fi
 
@@ -46,6 +58,7 @@ shipped=$(printf '%s\n' "$changed" | grep -E "^($(IFS='|'; echo "${RELEASE_PATHS
 
 if [ -z "$shipped" ]; then
   echo "version $declared is consistent; nothing that ships changed"
+  mark_shipped false
   exit 0
 fi
 
@@ -67,3 +80,4 @@ if [ "$declared" = "$earlier" ] || [ "$(printf '%s\n%s\n' "$declared" "$earlier"
 fi
 
 echo "version $declared was raised from $earlier"
+mark_shipped true

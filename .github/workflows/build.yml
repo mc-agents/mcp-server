@@ -16,6 +16,10 @@ env:
 jobs:
   check:
     runs-on: ubuntu-latest
+    outputs:
+      # Whether anything the image or the chart is built from changed. A docs-only push leaves
+      # both alone, so :<version> keeps pointing at the build that was tested with it.
+      shipped: ${{ steps.version.outputs.shipped }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -26,12 +30,13 @@ jobs:
         with:
           distribution: temurin
           java-version: 25
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       # A force push leaves nothing to compare against: the commit it names is gone from the
       # repository, and the first push to a branch names the all-zero sha. Only the shape check
-      # runs in either case.
+      # runs in either case, and the push publishes.
       - name: version is consistent and was raised
+        id: version
         env:
           FORCED: ${{ github.event.forced }}
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
@@ -45,6 +50,14 @@ jobs:
 
       - run: ./gradlew build
 
+      # Gradle's summary names the test and nothing else; the report has the assertion and the
+      # stack. The e2e job below already keeps its own.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: unit-tests
+          path: build/reports/tests/test
+
       - name: chart renders
         run: |
           # The chart refuses to render without a token rather than invent one, so hand it one.
@@ -53,7 +66,10 @@ jobs:
 
       # What this proves is that every tool in the catalogue reaches something that answers. The
       # fake bot never touches Minecraft, so no server is needed and the world is never the
-      # reason a tool fails; a tool that says "not wired up yet" fails the job.
+      # reason a tool fails; a tool that says "not wired up yet", one the sweep has no sample
+      # for, or one that errors outside the sweep's named set fails the job. So does the join:
+      # call.sh exits on a tool error, and without that every tool erred with "not in a world"
+      # and the job was green.
       - name: every tool answers
         run: |
           BOT_LINK_PORT=18765 MCP_PORT=13000 ./gradlew bootRun &
@@ -65,7 +81,7 @@ jobs:
           # offers only part of the catalogue and the sweep would call the rest into a refusal.
           python3 dev/bot.py 18765 ci fabric &
           sleep 3
-          ./dev/call.sh join-server '{"name":"ci","host":"127.0.0.1","port":25565}'
+          ./dev/call.sh join-server '{"bot":"ci","host":"127.0.0.1","port":25565}'
           python3 dev/sweep.py
 
   # What an agent gets, against a real server and a real bot, asserted on the sentence. The check
@@ -133,9 +149,11 @@ jobs:
           path: e2e/build/reports/tests/test
 
   # The tag both publish jobs use. Computed once so two runners cannot disagree about the stamp.
+  # A push that changed nothing the image or the chart is built from publishes nothing: the
+  # version stays on the build it was tested with, and the stamp is the only tag that would differ.
   tag:
     needs: check
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && needs.check.outputs.shipped != 'false'
     runs-on: ubuntu-latest
     outputs:
       value: ${{ steps.tag.outputs.value }}
@@ -172,7 +190,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 25
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -190,7 +208,8 @@ jobs:
     needs: [tag, image]
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # write for the git tag and the release, and in this job alone.
+      contents: write
       # Lets cosign fetch a short-lived certificate from Fulcio, so no key lives in the repo.
       id-token: write
     steps:
@@ -234,6 +253,22 @@ jobs:
           digest=$(grep -o 'sha256:[0-9a-f]\{64\}' push.log | head -1)
           test -n "$digest"
           cosign sign --yes "$CHART_REPO_HOST/mc-agents-mcp-server@$digest"
+
+      # The image tags map the version to a build; this maps it to a commit, which is what a
+      # bisect or a diff between two releases needs. A tag that is already there is left where it
+      # is: a re-run of this job must not say a different commit shipped the version.
+      - name: tag and release
+        env:
+          VERSION: ${{ needs.tag.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null; then
+            git tag "v$VERSION" "$GITHUB_SHA"
+            git push origin "v$VERSION"
+          fi
+          if ! gh release view "v$VERSION" > /dev/null 2>&1; then
+            gh release create "v$VERSION" --generate-notes
+          fi
 
       - env:
           TAG: ${{ needs.tag.outputs.value }}

@@ -12,13 +12,20 @@ final class Trust {
 
     private Trust() {}
 
+    /**
+     * The notice goes at the end of the first line, and only that spot says whether it is already
+     * there. Looking anywhere in the body let a server write the notice's own words into a kick
+     * reason or an item's lore and so keep the real one off the answer.
+     */
     static String mark(String body) {
-        if (body.contains(NOTICE)) {
+        int firstLine = body.indexOf('\n');
+        String head = firstLine < 0 ? body : body.substring(0, firstLine);
+
+        if (head.endsWith(NOTICE)) {
             return body;
         }
-        int firstLine = body.indexOf('\n');
         return firstLine < 0
                 ? "%s %s".formatted(body, NOTICE)
-                : "%s %s%s".formatted(body.substring(0, firstLine), NOTICE, body.substring(firstLine));
+                : "%s %s%s".formatted(head, NOTICE, body.substring(firstLine));
     }
 }

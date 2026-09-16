@@ -2,18 +2,32 @@ package kr.junhyung.mcagents;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.modelcontextprotocol.json.jackson3.JacksonMcpJsonMapper;
+import io.modelcontextprotocol.server.transport.DefaultServerTransportSecurityValidator;
 import kr.junhyung.mcagents.bot.BotLinkServer;
 import kr.junhyung.mcagents.bot.BotProvisioner;
 import jakarta.servlet.Filter;
 import kr.junhyung.mcagents.http.BearerTokenFilter;
 import kr.junhyung.mcagents.bot.BotRegistry;
 import kr.junhyung.mcagents.catalog.Catalog;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.mcp.server.common.autoconfigure.properties.McpServerStreamableHttpProperties;
+import org.springframework.ai.mcp.server.webmvc.transport.WebMvcStreamableServerTransportProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
+import org.springframework.boot.web.server.servlet.ConfigurableServletWebServerFactory;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,8 +54,72 @@ public class Wiring {
     }
 
     @Bean
-    public BotRegistry botRegistry(@Value("${mcagents.bots.max:16}") int max) {
-        return new BotRegistry(max);
+    public BotRegistry botRegistry(@Value("${mcagents.bots.max:16}") int max, MeterRegistry meters) {
+        BotRegistry bots = new BotRegistry(max);
+        Gauge.builder("mcagents.bots.linked", bots, BotRegistry::size)
+                .description("Bots linked to this server right now")
+                .register(meters);
+        return bots;
+    }
+
+    /**
+     * Where the MCP port listens follows from the token. A server with no token is a laptop's,
+     * and a laptop's must not answer the coffee shop; one with a token is a pod's, and a pod is
+     * reached through its Service. {@code MCP_BIND_HOST} overrides either way. A customizer
+     * rather than a yaml default so a chart or operator from before this rule, which sets no
+     * bind host, keeps working.
+     */
+    @Bean
+    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> mcpBindAddress(
+            @Value("${mcagents.mcp.bind-host:}") String bindHost,
+            @Value("${mcagents.auth.token:}") String token) {
+        String host = !bindHost.isBlank() ? bindHost : token.isBlank() ? "127.0.0.1" : "0.0.0.0";
+
+        return factory -> {
+            try {
+                factory.setAddress(InetAddress.getByName(host));
+            } catch (UnknownHostException e) {
+                throw new IllegalArgumentException("MCP_BIND_HOST \"%s\" is not an address this host can bind".formatted(host), e);
+            }
+            log.info("/mcp listens on {}", host);
+        };
+    }
+
+    /**
+     * The transport the autoconfiguration would build, plus what it leaves out.
+     *
+     * <p>The MCP specification has servers validate {@code Origin} so a page in a browser cannot
+     * drive a server on localhost through the visitor's own machine. The SDK's validator checks
+     * exactly that: a request with no {@code Origin} passes, which is what Claude Code and every
+     * client outside a browser sends; one that carries it must match an allowed origin, with a
+     * {@code :*} suffix standing for any port. The {@code Host} header is left unchecked, as the
+     * validator does when given no allowed hosts, since the same server answers as a Service
+     * name in a cluster and as localhost on a laptop.
+     *
+     * <p>Sessions are evicted when idle and capped, because a client that initialised and went
+     * away otherwise holds its slot for the life of the process. The idle timeout has to be longer
+     * than the keep-alive interval, which is what lets a live client be told apart from a gone
+     * one, and {@code build()} refuses the pair when it is not.
+     */
+    @Bean
+    public WebMvcStreamableServerTransportProvider webMvcStreamableServerTransportProvider(
+            @Qualifier("mcpServerJsonMapper") JsonMapper jsonMapper,
+            McpServerStreamableHttpProperties transport,
+            @Value("${mcagents.mcp.allowed-origins:}") List<String> allowedOrigins,
+            @Value("${mcagents.mcp.session-idle-timeout:30m}") Duration sessionIdleTimeout,
+            @Value("${mcagents.mcp.max-sessions:256}") long maxSessions) {
+        List<String> origins = new ArrayList<>(List.of("http://localhost:*", "http://127.0.0.1:*"));
+        allowedOrigins.stream().map(String::trim).filter(origin -> !origin.isEmpty()).forEach(origins::add);
+
+        return WebMvcStreamableServerTransportProvider.builder()
+                .jsonMapper(new JacksonMcpJsonMapper(jsonMapper))
+                .mcpEndpoint(transport.getMcpEndpoint())
+                .keepAliveInterval(transport.getKeepAliveInterval())
+                .disallowDelete(transport.isDisallowDelete())
+                .securityValidator(DefaultServerTransportSecurityValidator.builder().allowedOrigins(origins).build())
+                .sessionIdleTimeout(sessionIdleTimeout)
+                .maxSessions(maxSessions)
+                .build();
     }
 
     /*
@@ -145,7 +223,10 @@ public class Wiring {
         return switch (provision) {
             case "always" -> true;
             case "never" -> false;
-            default -> System.getenv("KUBERNETES_SERVICE_HOST") != null;
+            case "auto" -> System.getenv("KUBERNETES_SERVICE_HOST") != null;
+            /* A typo used to mean auto, silently. */
+            default -> throw new IllegalArgumentException(
+                    "MCP_BOTS_PROVISION is \"%s\"; it has to be auto, always or never".formatted(provision));
         };
     }
 

@@ -1,7 +1,7 @@
 # A proxy with two backends, for the one tool that cannot be written without one.
 #
 #     docker compose -f dev/compose.yml up -d
-#     ./dev/call.sh join-server '{"name":"alice","host":"127.0.0.1","port":25579}'
+#     ./dev/call.sh join-server '{"bot":"alice","host":"127.0.0.1","port":25579}'
 #     ./dev/call.sh switch-server '{"bot":"alice","target":"arena"}'
 #
 # Everything else in dev/ points at a single Paper server and does not need this. `switch-server`

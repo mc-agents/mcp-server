@@ -22,11 +22,15 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /** Tools a bot answers. */
 @Component
 public class RemoteTools {
+
+    private static final Logger log = LoggerFactory.getLogger(RemoteTools.class);
 
     private static final JsonMapper MAPPER = JsonMapper.builder().build();
 
@@ -60,15 +64,15 @@ public class RemoteTools {
 
         if (spec.exclusive() && !claim(bot.name(), spec.name())) {
             return ToolDispatcher.failure(
-                    "bot \"%s\" is already running an exclusive tool. Wait for it or use another bot."
-                            .formatted(bot.name()));
+                    "bot \"%s\" is already running %s. Wait for it or use another bot."
+                            .formatted(bot.name(), running(bot.name())));
         }
 
         try {
             bot.touch();
             Messages.Result result = bot.link().call(spec.name(), wire, deadline)
                     .get(deadline + 5_000L, TimeUnit.MILLISECONDS);
-            return present(spec, bot, result, mark);
+            return present(spec, bot, result, arguments, deadline, mark);
         } catch (TimeoutException e) {
             return ToolDispatcher.failure(
                     "%s did not finish within %dms and the bot did not say why.".formatted(spec.name(), deadline));
@@ -101,8 +105,13 @@ public class RemoteTools {
      * redraws it every few ticks whether or not a command ran.
      */
     public McpSchema.CallToolResult compose(ToolSpec spec, BotSession bot, Map<String, Object> arguments) {
+        return compose(spec, bot, arguments, Progress.NONE);
+    }
+
+    public McpSchema.CallToolResult compose(ToolSpec spec, BotSession bot, Map<String, Object> arguments,
+            Progress progress) {
         if (spec.watches() != null) {
-            return awaitMatch(spec, bot, arguments);
+            return awaitMatch(spec, bot, arguments, progress);
         }
 
         long from = bot.feed("chat").nextSeq();
@@ -140,10 +149,10 @@ public class RemoteTools {
 
         if (!replies.isEmpty()) {
             return ToolDispatcher.text("%s The server replied %s:\n%s"
-                    .formatted(textOf(answer), Trust.NOTICE, lines(replies)));
+                    .formatted(ToolDispatcher.textOf(answer), Trust.NOTICE, lines(replies)));
         }
 
-        String silence = "%s The server sent no chat in the %dms after it".formatted(textOf(answer), collectMs);
+        String silence = "%s The server sent no chat in the %dms after it".formatted(ToolDispatcher.textOf(answer), collectMs);
         /* A run that ends is a line on the dialog feed too, and one of those is not a dialog opening. */
         List<FeedEntry> dialogs = bot.feed("dialog").since(dialogsFrom).stream()
                 .filter(line -> !"closed".equals(line.source()))
@@ -190,9 +199,12 @@ public class RemoteTools {
      * of state it holds on the chance somebody waits for it. The cost is one cheap call a poll,
      * which is what a caller would otherwise write as a loop.
      */
-    private McpSchema.CallToolResult awaitMatch(ToolSpec spec, BotSession bot, Map<String, Object> arguments) {
+    private McpSchema.CallToolResult awaitMatch(ToolSpec spec, BotSession bot, Map<String, Object> arguments,
+            Progress progress) {
         ToolSpec watched = catalog.require(spec.watches());
-        Pattern pattern = compile(arguments == null ? null : arguments.get("pattern"));
+        /* The pattern never crosses the wire, so the length the catalogue advertises is held here. */
+        Map<String, Object> bounded = Normaliser.bound(spec, arguments);
+        Pattern pattern = compile(bounded == null ? null : bounded.get("pattern"));
 
         if (pattern == null) {
             return ToolDispatcher.failure("%s needs a pattern to wait for.".formatted(spec.name()));
@@ -201,7 +213,8 @@ public class RemoteTools {
         int timeoutMs = Math.clamp(intOf(arguments == null ? null : arguments.get("timeoutMs"), 10_000),
                 100, 120_000);
         Map<String, Object> passed = withoutWaitArguments(arguments);
-        long deadline = System.currentTimeMillis() + timeoutMs;
+        long started = System.currentTimeMillis();
+        long deadline = started + timeoutMs;
         McpSchema.CallToolResult last = null;
 
         while (System.currentTimeMillis() < deadline) {
@@ -210,16 +223,18 @@ public class RemoteTools {
             if (last.isError()) {
                 return last;
             }
-            if (pattern.matcher(textOf(last)).find()) {
+            if (pattern.matcher(ToolDispatcher.textOf(last)).find()) {
                 return last;
             }
+            progress.report("%s last said: %s".formatted(watched.name(), ToolDispatcher.firstLineOf(last)),
+                    System.currentTimeMillis() - started, timeoutMs);
             sleep(POLL_MS);
         }
 
         /* What it last said, because "nothing matched" on its own sends a caller back to guess. */
         return ToolDispatcher.failure("nothing %s answered matched /%s/ within %dms. It last said: %s"
                 .formatted(watched.name(), pattern.pattern(), timeoutMs,
-                        last == null ? "nothing" : textOf(last)));
+                        last == null ? "nothing" : ToolDispatcher.textOf(last)));
     }
 
     /** Everything the watched tool might want, which is whatever the wait itself does not. */
@@ -262,18 +277,11 @@ public class RemoteTools {
                             .formatted(bot.name(), now == null ? "in no world" : now.state()));
         }
         return ToolDispatcher.text("%s It is on %s as %s."
-                .formatted(textOf(answer), now.address(), now.username()));
+                .formatted(ToolDispatcher.textOf(answer), now.address(), now.username()));
     }
 
     private static int intOf(Object value, int fallback) {
         return value instanceof Number number ? number.intValue() : fallback;
-    }
-
-    private static String textOf(McpSchema.CallToolResult result) {
-        return result.content().stream()
-                .filter(McpSchema.TextContent.class::isInstance)
-                .map(content -> ((McpSchema.TextContent) content).text())
-                .findFirst().orElse("");
     }
 
     private static void sleep(int millis) {
@@ -285,9 +293,9 @@ public class RemoteTools {
     }
 
     private McpSchema.CallToolResult present(ToolSpec spec, BotSession bot, Messages.Result result,
-            boolean mark) {
+            Map<String, Object> arguments, int deadline, boolean mark) {
         if (!result.ok()) {
-            return unsupported(result) ? withdraw(spec, bot) : ToolDispatcher.failure(result.text());
+            return failed(spec, bot, result, deadline);
         }
 
         /*
@@ -301,7 +309,7 @@ public class RemoteTools {
                             .formatted(bot.name(), bot.kind(), spec.name(), spec.wireSchemaHash()));
         }
 
-        String body = Renderers.render(spec.name(), asNode(result.data())).orElse(result.text());
+        String body = Renderers.render(spec.name(), asNode(result.data()), arguments).orElse(result.text());
 
         if (spec.untrusted() && mark) {
             body = Trust.mark(body);
@@ -338,16 +346,49 @@ public class RemoteTools {
         return data == null ? null : MAPPER.valueToTree(data);
     }
 
-    private static boolean unsupported(Messages.Result result) {
-        return result.error() != null && "unsupported".equals(result.error().errorClass());
+    /**
+     * What a failed result does to the session is decided by its class, and docs/bot-protocol.md
+     * is the table this follows. Only two classes change anything: a tool the bot does not have,
+     * or cannot read the arguments of, is withdrawn so the next call is refused without a round
+     * trip. The rest are reported. A {@code bot} failure is not what reaps the session -- the
+     * heartbeat and the next status do that -- so it points at the tool that shows them.
+     *
+     * <p>The message is the bot's, and a bot that read the server's own words into it (a kick
+     * reason, a refused command) has put untrusted text in a failure, which is marked the way a
+     * success would be. run-command's success keeps its notice for the chat block; a failure has
+     * no such block, so it is marked here whatever the caller asked.
+     */
+    private McpSchema.CallToolResult failed(ToolSpec spec, BotSession bot, Messages.Result result, int deadline) {
+        Messages.Failure error = result.error();
+        String errorClass = error == null || error.errorClass() == null ? "tool" : error.errorClass();
+        String said = result.text() != null ? result.text()
+                : error != null && error.message() != null ? error.message()
+                : "the bot gave no reason";
+        String text = spec.untrusted() ? Trust.mark(said) : said;
+
+        String body = switch (errorClass) {
+            case "unsupported" -> withdraw(spec, bot,
+                    "bot \"%s\" (kind: %s) does not implement \"%s\" after all. It will not be offered to this bot again."
+                            .formatted(bot.name(), bot.kind(), spec.name()));
+            /*
+            Not withdrawn: a bot refuses arguments the schema cannot judge -- a slot outside the
+            window it has open, a hand it does not know -- and a build that disagrees with the
+            catalogue never got the tool offered, since the hashes are compared at the handshake.
+            */
+            case "args" -> text;
+            case "bot" -> "%s Use get-bot-status to inspect it.".formatted(text);
+            case "timeout" -> "%s did not finish within %dms: %s".formatted(spec.name(), deadline, text);
+            default -> text;
+        };
+
+        return ToolDispatcher.failure(error != null && error.retryable() ? body + " (retryable)" : body);
     }
 
     /** A bot that turns out not to have a tool loses it, so the next call is refused without a trip. */
-    private McpSchema.CallToolResult withdraw(ToolSpec spec, BotSession bot) {
+    private String withdraw(ToolSpec spec, BotSession bot, String why) {
+        log.warn("withdrawing {} from bot \"{}\": {}", spec.name(), bot.name(), why);
         bot.withdraw(spec.name());
-        return ToolDispatcher.failure(
-                "bot \"%s\" (kind: %s) does not implement \"%s\" after all. It will not be offered to this bot again."
-                        .formatted(bot.name(), bot.kind(), spec.name()));
+        return why;
     }
 
     private static String state(BotSession bot) {
@@ -357,6 +398,13 @@ public class RemoteTools {
     private boolean claim(String bot, String tool) {
         return busy.computeIfAbsent(bot, key -> ConcurrentHashMap.newKeySet()).isEmpty()
                 && busy.get(bot).add(tool);
+    }
+
+    /** The tool holding the claim, read after a claim failed; it may have finished in between. */
+    private String running(String bot) {
+        Set<String> held = busy.get(bot);
+        return held == null || held.isEmpty() ? "an exclusive tool"
+                : "%s, which is exclusive".formatted(String.join(", ", held));
     }
 
     private void release(String bot, String tool) {

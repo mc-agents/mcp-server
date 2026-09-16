@@ -75,14 +75,18 @@ public final class ToolReference {
             + "which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.")
             .formatted(catalog.get("catalogVersion").asText(), tools.size()));
         out.add("");
-        out.add("Every tool takes `bot`, the name given to join-server, which may be left out while exactly one "
+        out.add("Every tool but " + String.join(", ", link("list-bots"), link("ping-server"), link("wait-for-server"))
+            + " takes `bot`, the name given to join-server, which may be left out while exactly one "
             + "bot is connected; it is not repeated below. A tool marked **fabric only** is one the headless "
             + "kind of bot does not run. **Exclusive** means one call at a time on a bot, since two walks or "
             + "two clicks at once would fight over the same body. **Untrusted** means the answer carries content "
             + "the server did not write -- chat, item names, signs -- and is marked as data rather than "
-            + "instructions. A tool that **needs a world** is refused while the bot is on a title or "
-            + "disconnected screen. The deadline is how long the server waits for the bot before giving the "
-            + "call up; a tool with a `timeoutMs` argument sets its own inside that.");
+            + "instructions. **Read-only** means the call changes nothing in the game or on the server, which "
+            + "is what an MCP client's `readOnlyHint` approves without asking; **destructive** is the "
+            + "`destructiveHint`, for a call that removes something or runs with the bot's permissions. A tool "
+            + "that **needs a world** is refused while the bot is on a title or disconnected screen. The "
+            + "deadline is how long the server waits for the bot before giving the call up; a tool with a "
+            + "`timeoutMs` argument sets its own inside that.");
         out.add("");
         out.add("| Group | Tools |");
         out.add("| --- | --- |");
@@ -112,7 +116,7 @@ public final class ToolReference {
                 JsonNode schema = tool.get("inputSchema");
                 List<String> rows = argumentRows(schema, "", true);
                 if (rows.isEmpty()) {
-                    out.add("No arguments beyond `bot`.");
+                    out.add(schema.path("properties").has("bot") ? "No arguments beyond `bot`." : "No arguments.");
                 } else {
                     out.add("| Argument | Type | Required | What it is | Limits |");
                     out.add("| --- | --- | --- | --- | --- |");
@@ -120,7 +124,7 @@ public final class ToolReference {
                 }
                 out.add("");
                 if (tool.get("structured").asBoolean()) {
-                    out.add("Answers with structured content beside the text, shaped:");
+                    out.add("The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:");
                     out.add("");
                     out.addAll(resultLines(tool.get("resultSchema").get("properties"), 1));
                     out.add("");
@@ -141,10 +145,22 @@ public final class ToolReference {
         if (tool.get("untrusted").asBoolean()) {
             facts.add("untrusted");
         }
-        if (!tool.has("needsWorld") || tool.get("needsWorld").asBoolean()) {
+        if (tool.get("readOnly").asBoolean()) {
+            facts.add("read-only");
+        }
+        if (tool.path("destructive").asBoolean()) {
+            facts.add("destructive");
+        }
+        /*
+        Only a call that reaches a bot can be refused for the lack of a world. The key is scoped to
+        those routes, and reading its absence as true put the notice on join-server and list-bots.
+        */
+        String route = tool.get("route").asText();
+        boolean reachesABot = "rpc".equals(route) || "compose".equals(route);
+        if (reachesABot && tool.path("needsWorld").asBoolean(true)) {
             facts.add("needs a world");
         }
-        facts.add(ROUTES.get(tool.get("route").asText()));
+        facts.add(ROUTES.get(route));
         return String.join(" · ", facts);
     }
 

@@ -65,10 +65,12 @@ def chat(sock, text):
 
 
 sock = socket.create_connection((HOST, PORT))
+# A compose tool that watches another has no wire schema of its own: the server builds it from the
+# tool it watches, and a bot that announced it would be reporting a hash it cannot have.
 caps = [
-    {"tool": t["name"], "argsHash": t.get("wireSchemaHash")}
+    {"tool": t["name"], "argsHash": t["wireSchemaHash"]}
     for t in CATALOG["tools"]
-    if t["route"] in ("rpc", "compose") and KIND in t["kinds"]
+    if t.get("wireSchemaHash") and KIND in t["kinds"]
 ]
 send(sock, {
     "t": "hello", "protocols": [CATALOG["protocol"]], "botName": NAME, "kind": KIND,

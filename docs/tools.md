@@ -2,26 +2,26 @@
 
 <!-- Rendered from catalog/catalog.json by ./gradlew renderToolReference. Edit the catalogue, not this page. -->
 
-Catalogue 5.0.0, 91 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
+Catalogue 5.1.0, 91 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
 
-Every tool takes `bot`, the name given to join-server, which may be left out while exactly one bot is connected; it is not repeated below. A tool marked **fabric only** is one the headless kind of bot does not run. **Exclusive** means one call at a time on a bot, since two walks or two clicks at once would fight over the same body. **Untrusted** means the answer carries content the server did not write -- chat, item names, signs -- and is marked as data rather than instructions. A tool that **needs a world** is refused while the bot is on a title or disconnected screen. The deadline is how long the server waits for the bot before giving the call up; a tool with a `timeoutMs` argument sets its own inside that.
+Every tool but [`list-bots`](#list-bots), [`ping-server`](#ping-server), [`wait-for-server`](#wait-for-server) takes `bot`, the name given to join-server, which may be left out while exactly one bot is connected; it is not repeated below. A tool marked **fabric only** is one the headless kind of bot does not run. **Exclusive** means one call at a time on a bot, since two walks or two clicks at once would fight over the same body. **Untrusted** means the answer carries content the server did not write -- chat, item names, signs -- and is marked as data rather than instructions. **Read-only** means the call changes nothing in the game or on the server, which is what an MCP client's `readOnlyHint` approves without asking; **destructive** is the `destructiveHint`, for a call that removes something or runs with the bot's permissions. A tool that **needs a world** is refused while the bot is on a title or disconnected screen. The deadline is how long the server waits for the bot before giving the call up; a tool with a `timeoutMs` argument sets its own inside that.
 
 | Group | Tools |
 | --- | --- |
 | [world](#world) | [`activate-block`](#activate-block), [`attack-entity`](#attack-entity), [`fish`](#fish), [`interact-entity`](#interact-entity), [`use-held-item`](#use-held-item) |
 | [crafting](#crafting) | [`can-craft`](#can-craft), [`craft-item`](#craft-item), [`get-recipe`](#get-recipe), [`list-recipes`](#list-recipes) |
 | [screen](#screen) | [`click-chat`](#click-chat), [`press-dialog-button`](#press-dialog-button), [`read-book`](#read-book), [`screenshot`](#screenshot), [`set-dialog-input`](#set-dialog-input), [`type-text`](#type-text) |
-| [slot](#slot) | [`click-slot`](#click-slot), [`drag-slots`](#drag-slots), [`drop-held-item`](#drop-held-item), [`hover-slot`](#hover-slot), [`open-container`](#open-container), [`select-bundle-item`](#select-bundle-item) |
-| [window](#window) | [`close-window`](#close-window), [`open-inventory`](#open-inventory), [`press-container-button`](#press-container-button), [`read-container-options`](#read-container-options), [`read-trades`](#read-trades), [`read-window`](#read-window), [`select-trade`](#select-trade), [`set-beacon-effects`](#set-beacon-effects), [`wait-for-window`](#wait-for-window) |
-| [server](#server) | [`complete-command`](#complete-command), [`detect-gamemode`](#detect-gamemode), [`get-world-state`](#get-world-state), [`run-command`](#run-command), [`switch-server`](#switch-server), [`wait-for-chat`](#wait-for-chat), [`wait-ticks`](#wait-ticks) |
+| [slot](#slot) | [`click-slot`](#click-slot), [`drag-slots`](#drag-slots), [`drop-held-item`](#drop-held-item), [`hover-slot`](#hover-slot), [`select-bundle-item`](#select-bundle-item) |
+| [window](#window) | [`close-window`](#close-window), [`open-container`](#open-container), [`open-inventory`](#open-inventory), [`press-container-button`](#press-container-button), [`read-container-options`](#read-container-options), [`read-trades`](#read-trades), [`read-window`](#read-window), [`select-trade`](#select-trade), [`set-beacon-effects`](#set-beacon-effects), [`wait-for-window`](#wait-for-window) |
+| [server](#server) | [`complete-command`](#complete-command), [`get-world-state`](#get-world-state), [`run-command`](#run-command), [`switch-server`](#switch-server), [`wait-ticks`](#wait-ticks) |
+| [sessions](#sessions) | [`detect-gamemode`](#detect-gamemode), [`get-bot-status`](#get-bot-status), [`join-server`](#join-server), [`leave-server`](#leave-server), [`list-bots`](#list-bots), [`restart-bot`](#restart-bot) |
 | [block](#block) | [`dig-block`](#dig-block), [`find-blocks`](#find-blocks), [`get-block-info`](#get-block-info), [`get-target-block`](#get-target-block), [`pick-block`](#pick-block), [`place-block`](#place-block), [`read-block-entity`](#read-block-entity) |
 | [inventory](#inventory) | [`equip-item`](#equip-item), [`find-item`](#find-item), [`give-item`](#give-item), [`list-inventory`](#list-inventory), [`wait-for-item`](#wait-for-item) |
 | [entity](#entity) | [`find-entity`](#find-entity), [`read-displays`](#read-displays), [`wait-for-displays`](#wait-for-displays) |
 | [movement](#movement) | [`fly-to`](#fly-to), [`get-position`](#get-position), [`jump`](#jump), [`look-at`](#look-at), [`move-in-direction`](#move-in-direction), [`move-to-position`](#move-to-position), [`press-input`](#press-input), [`respawn`](#respawn), [`run-inputs`](#run-inputs), [`set-stance`](#set-stance) |
-| [sessions](#sessions) | [`get-bot-status`](#get-bot-status), [`join-server`](#join-server), [`leave-server`](#leave-server), [`list-bots`](#list-bots), [`restart-bot`](#restart-bot) |
 | [hud](#hud) | [`get-player-state`](#get-player-state), [`read-action-bar`](#read-action-bar), [`read-advancements`](#read-advancements), [`read-boss-bars`](#read-boss-bars), [`read-dialog`](#read-dialog), [`read-player-list`](#read-player-list), [`read-scoreboard`](#read-scoreboard), [`read-stats`](#read-stats), [`read-title`](#read-title), [`read-toasts`](#read-toasts), [`wait-for-action-bar`](#wait-for-action-bar), [`wait-for-boss-bars`](#wait-for-boss-bars), [`wait-for-dialog`](#wait-for-dialog), [`wait-for-player-list`](#wait-for-player-list), [`wait-for-scoreboard`](#wait-for-scoreboard), [`wait-for-title`](#wait-for-title), [`wait-for-toast`](#wait-for-toast) |
 | [probe](#probe) | [`ping-server`](#ping-server), [`wait-for-server`](#wait-for-server) |
-| [chat](#chat) | [`read-chat`](#read-chat), [`send-chat`](#send-chat) |
+| [chat](#chat) | [`read-chat`](#read-chat), [`send-chat`](#send-chat), [`wait-for-chat`](#wait-for-chat) |
 | [effect](#effect) | [`read-effects`](#read-effects), [`wait-for-effect`](#wait-for-effect) |
 | [smelting](#smelting) | [`smelt-item`](#smelt-item) |
 
@@ -82,26 +82,26 @@ Right-click an entity, walking to it first when out of reach. This is what opens
 
 *fabric and azalea · deadline 5s · needs a world · the bot answers*
 
-Right-click with the item the bot is holding, optionally holding the button down for a while.
+Right-click with the item the bot is holding, optionally holding the button down for a while. Uses the item itself; press-input use is the player's click, which hits the entity or block first (see run-inputs useItem).
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `offhand` | boolean | no | Use the off-hand item instead of the main hand (default: false) |  |
-| `holdMs` | integer | no | How long to keep the button down before releasing, for bows and the like (default: 0) | 0 to 60000 |
+| `offhand` | boolean | no | Use the off-hand item instead of the main hand (default: false), the same hand run-inputs useItem calls off-hand |  |
+| `holdMs` | integer | no | How long to keep the button down before releasing, in milliseconds, not ticks, for bows and the like (default: 0); press-input and run-inputs use holdTicks, 1 tick = 50ms | 0 to 60000 |
 
 ## crafting
 
 ### can-craft
 
-*fabric and azalea · deadline 5s · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · read-only · needs a world · the bot answers*
 
 Check whether the bot can craft an item right now.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `itemName` | string | yes | Item to check |  |
+| `itemName` | string | yes | Item to check: exact registry id, with or without minecraft: |  |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `item` (string)
 - `craftable` (boolean)
@@ -120,20 +120,20 @@ Craft an item, walking to a nearby crafting table when the recipe needs one.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `outputItem` | string | yes | Item to craft |  |
+| `outputItem` | string | yes | Item to craft: exact registry id, with or without minecraft: |  |
 | `amount` | integer | no | How many times to craft (default: 1) | 1 to 64 |
 
 ### get-recipe
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 Show every recipe for an item together with what the bot still needs.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `itemName` | string | yes | Item to look up |  |
+| `itemName` | string | yes | Item to look up: exact registry id, with or without minecraft: |  |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `item` (string)
 - `tableInReach` (boolean)
@@ -153,15 +153,15 @@ Answers with structured content beside the text, shaped:
 
 ### list-recipes
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 List recipes the bot can craft right now with what it carries. Pass outputItem to inspect one item instead of scanning everything.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `outputItem` | string | no | Restrict the list to this item |  |
+| `outputItem` | string | no | Restrict the list to this item: exact registry id, with or without minecraft: |  |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `item` (string or null) -- The item the caller asked about, or null for everything craftable now
 - `tableInReach` (boolean)
@@ -203,13 +203,13 @@ Press a button on the dialog the server has opened. Identify it by its label. Re
 
 ### read-book
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 Read every page of the book that is open, whether it is held or on a lectern. A server with something long to say says it in a book -- a quest log, a rulebook, the guide handed out on join -- and the client draws one page at a time, so a screenshot shows one page and loses the components the rest were written with.
 
 No arguments beyond `bot`.
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `source` (string) -- Where the book is being read from: "hand" or "lectern"
 - `title` (string or null) -- Null until the book has been signed
@@ -217,11 +217,11 @@ Answers with structured content beside the text, shaped:
 - `generation` (integer or null) -- 0 original, 1 copy, 2 copy of a copy, 3 tattered
 - `page` (integer) -- The page the client is showing, counting from 1
 - `pages[]` (string) -- Every page, in order
-- `pageComponents[]` (array) -- The components the pages were written as, in the same order.
+- `pageComponents` (array or null) -- The components the pages were written as, in the same order. Null from a bot built before they were sent
 
 ### screenshot
 
-*fabric only · deadline 30s · untrusted · the bot answers*
+*fabric only · deadline 30s · untrusted · read-only · the bot answers*
 
 Capture what the bot actually sees, as the client renders it. This is the only way to check a HUD drawn in custom fonts, a model, or a layout that overlaps; everything else reports text and leaves the look to guesswork.
 
@@ -233,7 +233,7 @@ Capture what the bot actually sees, as the client renders it. This is the only w
 
 ### set-dialog-input
 
-*fabric and azalea · deadline 5s · exclusive · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · exclusive · untrusted · needs a world · the bot answers*
 
 Set a checkbox, a cycle or a slider on the dialog the server has opened, before pressing the button that sends it. The value goes into the dialog's own control, so the button sends exactly what a player who had clicked it would. Text fields are type-text's. The reply says what the input holds now and what it held before.
 
@@ -242,7 +242,7 @@ Set a checkbox, a cycle or a slider on the dialog the server has opened, before 
 | `key` | string | yes | The input's key, as the dialog names it: what its action's $(key) template reads |  |
 | `value` | boolean or number or string | yes | A checkbox takes true or false. A cycle takes an option's id, or the text it is shown as. A slider takes a number inside its range, which moves to the nearest step the slider has |  |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `key` (string) -- the input that was set
 - `type` (string: `boolean`, `single_option`, `number_range`) -- the kind of input, as the dialog's definition names it without its namespace
@@ -262,14 +262,14 @@ Type into a text field on the screen that is open: a dialog's input, an anvil's 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
 | `text` | string | yes | Text to type. A newline starts the next line in a multi-line field and on a sign; a one-line field refuses it. |  |
-| `field` | string | no | Which field to type into, by its label. A number picks by position; on a sign editor it picks the line, 1 to 4, and in a book it picks the page, which is created if the book does not reach it yet. Omit it when the screen has exactly one field. |  |
+| `field` | string | no | Which field to type into, by its label. A number, as a string, e.g. "2", picks by position; on a sign editor it picks the line, 1 to 4, and in a book it picks the page, which is created if the book does not reach it yet. Omit it when the screen has exactly one field. |  |
 | `replace` | boolean | no | Clear the field first, rather than typing onto the end of what is already there (default: true) |  |
 
 ## slot
 
 ### click-slot
 
-*fabric and azalea · deadline 5s · exclusive · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · exclusive · untrusted · needs a world · the bot answers*
 
 Click one slot of the window that is currently open, or outside it to drop what the cursor holds, or press a key over it the way a player does: a number key, the offhand key, drop, a double-click or a creative middle-click.
 
@@ -280,9 +280,9 @@ Click one slot of the window that is currently open, or outside it to drop what 
 | `button` | string: `left`, `right` | no | Which mouse button to press for a click (default: 'left') |  |
 | `shift` | boolean | no | Shift-click, which moves the whole stack across the window. Only a click takes it (default: false) |  |
 | `mode` | string: `click`, `swap-hotbar`, `swap-offhand`, `throw-one`, `throw-stack`, `pickup-all`, `clone` | no | What the player does to the slot (default: 'click'). 'click' is a mouse click, shaped by button and shift. 'swap-hotbar' is a number key, trading the slot with the hotbar slot named by hotbar; 'swap-offhand' is the offhand key. 'throw-one' is the drop key and 'throw-stack' the same with control held, both straight from the slot without the cursor. 'pickup-all' is the second half of a double-click: pick a stack up with a click first, and pickup-all on the slot it came from gathers every matching stack in the window onto the cursor. 'clone' is a creative middle-click, which puts a full stack of what the slot holds on an empty cursor. |  |
-| `hotbar` | integer | no | The number key for swap-hotbar, 1 being the leftmost hotbar slot. Only swap-hotbar takes it. | 1 to 9 |
+| `hotbar` | integer | no | The number key for swap-hotbar, 1 being the leftmost hotbar slot. Only swap-hotbar takes it. (1-based: the number key, not the slot index press-input's slot uses) | 1 to 9 |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `slot` (integer or null) -- The slot clicked, null for a click outside the window
 - `outside` (boolean)
@@ -333,7 +333,7 @@ Answers with structured content beside the text, shaped:
 
 ### drag-slots
 
-*fabric and azalea · deadline 5s · exclusive · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · exclusive · untrusted · needs a world · the bot answers*
 
 Drag the stack on the cursor across several slots of the open window, the way a player spreads items by holding a mouse button down.
 
@@ -342,7 +342,7 @@ Drag the stack on the cursor across several slots of the open window, the way a 
 | `slots` | array of integer | yes | The slots to drag across, in the order the mouse passes over them. A slot the cursor has too few items left for is passed over, the way the client does. | 1 to any number of items |
 | `button` | string: `left`, `right`, `middle` | no | Which mouse button drags (default: 'left'). 'left' shares the stack evenly, 'right' puts one in each slot, 'middle' fills each slot with a full stack and needs creative. |  |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `button` (string: `left`, `right`, `middle`)
 - `slots[]` (object) -- Every slot that was asked for, in the order given, including the ones the drag passed over
@@ -382,15 +382,15 @@ Answers with structured content beside the text, shaped:
 
 ### drop-held-item
 
-*fabric and azalea · deadline 5s · exclusive · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · exclusive · untrusted · needs a world · the bot answers*
 
-Drop whatever the cursor is holding, or the stack in a given slot. The window stays open.
+In the open window: drops the cursor stack or a slot. The window stays open. To throw from the hand use press-input drop.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
 | `slot` | integer | no | Slot to empty onto the ground. Omit it to drop what the cursor holds. | at least 0 |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `slot` (integer or null) -- The slot that was emptied, null when the cursor was
 - `dropped` (object or null) -- What went on the ground, null when there was nothing to drop
@@ -414,7 +414,7 @@ Hover the cursor over one slot of the open window and capture the frame with its
 | `height` | integer | no | Image height (default: 480) | 144 to 1080 |
 | `image` | boolean | no | Also capture the frame (default: true). false answers with the tooltip's lines only, which is cheaper when only the words are in question |  |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `slot` (integer) -- The slot hovered
 - `item` (object or null) -- What the slot holds, null when it is empty
@@ -439,6 +439,33 @@ Answers with structured content beside the text, shaped:
   - `width` (integer)
   - `height` (integer)
 
+### select-bundle-item
+
+*fabric only · deadline 5s · exclusive · untrusted · needs a world · the bot answers*
+
+Choose which item a bundle in the open window gives up next, as scrolling over its tooltip does. Nothing comes out yet: a right click on the bundle with an empty cursor (click-slot with button 'right') takes the chosen item out, and without a choice it takes the first. A left click, shift-click or number key on the bundle clears the choice. The answer lists what the bundle holds, numbered from 1, and an item that is not in it is refused with that list, so read-window's slot and this are all it takes to see inside one.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `slot` | integer | yes | The window slot the bundle is in, as read-window numbers it | at least 0 |
+| `item` | string | yes | The item to choose: its number in the bundle counting from 1, as a string, e.g. "2", or its name. A name that more than one stack in the bundle answers to is refused with their numbers. |  |
+
+## window
+
+### close-window
+
+*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers*
+
+Close whatever the bot has open -- a container, a book, a sign editor, a dialog -- the way Escape would. Answers that there was none rather than failing, because asking to close nothing is a no-op and not a mistake. A screen that does not close on Escape, such as the death screen, is refused.
+
+No arguments beyond `bot`.
+
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
+
+- `closed` (string or null) -- the title of the window that was closed, null when none was open
+- `closedComponent` (object or array or string or null) -- The component that title was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.
+- `screen` (string or null) -- What was closed when it was not a container window: "book", "lectern", "book editor", "sign editor", "dialog", or the screen's class name. Null for a container.
+
 ### open-container
 
 *fabric and azalea · deadline 30s · exclusive · untrusted · needs a world · the bot answers*
@@ -451,7 +478,7 @@ Open the chest-like block at a position, walking to it first when out of reach, 
 | `y` | number | yes | Y coordinate |  |
 | `z` | number | yes | Z coordinate |  |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `title` (string) -- Plain text, with colour codes and glyphs already taken out
 - `type` (integer or string) -- Registry id on a modern server, a number on an older one
@@ -467,33 +494,6 @@ Answers with structured content beside the text, shaped:
   - `labelComponent` (object or array or string or null) -- The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.
   - `loreComponents[]` (array) -- The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.
 - `titleComponent` (object or array or string or null) -- The component the window's title was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.
-
-### select-bundle-item
-
-*fabric only · deadline 5s · exclusive · untrusted · needs a world · the bot answers*
-
-Choose which item a bundle in the open window gives up next, as scrolling over its tooltip does. Nothing comes out yet: a right click on the bundle with an empty cursor (click-slot with button 'right') takes the chosen item out, and without a choice it takes the first. A left click, shift-click or number key on the bundle clears the choice. The answer lists what the bundle holds, numbered from 1, and an item that is not in it is refused with that list, so read-window's slot and this are all it takes to see inside one.
-
-| Argument | Type | Required | What it is | Limits |
-| --- | --- | --- | --- | --- |
-| `slot` | integer | yes | The window slot the bundle is in, as read-window numbers it | at least 0 |
-| `item` | string | yes | The item to choose: its number in the bundle counting from 1, or its name. A name that more than one stack in the bundle answers to is refused with their numbers. |  |
-
-## window
-
-### close-window
-
-*fabric and azalea · deadline 5s · needs a world · the bot answers*
-
-Close whatever the bot has open -- a container, a book, a sign editor, a dialog -- the way Escape would. Answers that there was none rather than failing, because asking to close nothing is a no-op and not a mistake. A screen that does not close on Escape, such as the death screen, is refused.
-
-No arguments beyond `bot`.
-
-Answers with structured content beside the text, shaped:
-
-- `closed` (string or null) -- the title of the window that was closed, null when none was open
-- `closedComponent` (object or array or string or null) -- The component that title was written as, as Minecraft's own JSON. The flattening is done from this when it is here, so the rule lives in one place instead of once per kind of bot. Null when there is none.
-- `screen` (string or null) -- What was closed when it was not a container window: "book", "lectern", "book editor", "sign editor", "dialog", or the screen's class name. Null for a container.
 
 ### open-inventory
 
@@ -514,17 +514,17 @@ Press a button that an open menu draws for itself rather than keeps in a slot: o
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
 | `option` | string | no | What to press, by name: an enchantment as the table shows it ("Unbreaking III"), a stonecutter result ("stone_brick_slab" or "Stone Brick Slab"), a loom pattern, or on a lectern "previous page", "next page", "page 3" or "take book". Part of a name is enough when only one option contains it. Give this or button, not both. |  |
-| `button` | integer | no | The raw button number, for a menu whose options have no names here. Its meaning is the menu's own and differs on every one. Give this or option, not both. | at least 0 |
+| `button` | integer | no | The raw button number, only for an option that has no name; give option otherwise. Its meaning is the menu's own and differs on every one. | at least 0 |
 
 ### read-container-options
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 Read what the open menu offers to press rather than click: an enchanting table's three offers with their cost, a stonecutter's results, a loom's patterns, a lectern's page turns, a beacon's effects with the pyramid levels each needs. read-window shows slots and none of these are in one. Answers that nothing is open rather than failing.
 
 No arguments beyond `bot`.
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `window` (object or null) -- null when nothing is open, which is a state and not a failure
   - `title` (string) -- Plain text, with colour codes and glyphs already taken out
@@ -548,13 +548,13 @@ Answers with structured content beside the text, shaped:
 
 ### read-trades
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 Read every trade on the trading screen that is open: what each one costs, what it gives, how many times it can still be made, and the villager's level and experience. The trades are not in any slot, so read-window cannot show them, and they arrive a moment after the screen opens: a screen read in the same tick lists none yet.
 
 No arguments beyond `bot`.
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `title` (string)
 - `titleComponent` (object or array or string or null) -- The component the title was written as, as Minecraft's own JSON
@@ -596,15 +596,18 @@ Answers with structured content beside the text, shaped:
 
 ### read-window
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 Read the window that is currently open: its title, its type, and every slot that has something in it. Answers that nothing is open rather than failing, because that is a state worth reporting.
 
-No arguments beyond `bot`.
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `part` | string: `container`, `inventory`, `all` | no | Which half to list (default: 'all'). 'container' is the menu's own slots, 'inventory' the player's below it; a plugin menu fills a page with panes, so the container half alone is the cheaper read after a click |  |
+| `lore` | boolean | no | Include each stack's lore lines (default: true). false lists names and counts only |  |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
-- `window` (object) -- null when nothing is open, which is a state and not a failure
+- `window` (object or null) -- null when nothing is open, which is a state and not a failure
   - `title` (string) -- Plain text, with colour codes and glyphs already taken out
   - `type` (integer or string) -- Registry id on a modern server, a number on an older one
   - `slotCount` (integer)
@@ -628,9 +631,9 @@ Pick a trade on the trading screen that is open, as pressing it in the list does
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `trade` | string | yes | The trade to pick: its number in read-trades, counting from 1, or the name of what it gives. A name that more than one trade gives is refused with their numbers. |  |
+| `trade` | string | yes | The trade to pick: its number in read-trades, counting from 1, as a string, e.g. "2", or the name of what it gives. A name that more than one trade gives is refused with their numbers. |  |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `trade` (object)
   - `number` (integer) -- The trade's place in the list, counting from 1. select-trade takes this.
@@ -698,16 +701,16 @@ Choose and confirm the effects of the beacon whose window is open, as its confir
 
 ### wait-for-window
 
-*fabric and azalea · deadline 30s · untrusted · needs a world · the bot answers*
+*fabric and azalea · deadline 30s · untrusted · read-only · needs a world · the bot answers*
 
 Wait until a GUI window opens and return its contents. Returns straight away if a matching window is already open.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `titlePattern` | string | no | Regular expression the window title must match. It matches when it matches the title as read-window shows it, font labels such as [gui/header] included, or the title's plain text (default: any window) | at most 256 characters |
+| `titlePattern` | string | no | Regular expression in the subset both bots share: no lookaround or backreferences; (?i) for case-insensitive. It matches when it matches the title as read-window shows it, font labels such as [gui/header] included, or the title's plain text (default: any window) | at most 256 characters |
 | `timeoutMs` | integer | no | How long to wait (default: 10000) | 100 to 120000 |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `titlePattern` (string or null) -- The pattern the caller waited on, or null for any window
 - `timeoutMs` (integer)
@@ -731,7 +734,7 @@ Answers with structured content beside the text, shaped:
 
 ### complete-command
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 Ask the server what completes a partial command, which is how to find out what a plugin offers without being told. "/" lists every command the bot may run.
 
@@ -741,7 +744,7 @@ Ask the server what completes a partial command, which is how to find out what a
 | `timeoutMs` | integer | no | How long to wait for the answer (default: 5000) | 100 to 30000 |
 | `limit` | integer | no | How many completions to show (default: 60) | 1 to 500 |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `text` (string) -- The partial command that was completed
 - `total` (integer) -- How many the server offered, before the limit was applied
@@ -749,23 +752,15 @@ Answers with structured content beside the text, shaped:
   - `name` (string)
   - `tooltip` (string or null)
 
-### detect-gamemode
-
-*fabric and azalea · deadline 5s · needs a world · the server answers from what it holds*
-
-Report the game mode the server assigned to the bot.
-
-No arguments beyond `bot`.
-
 ### get-world-state
 
-*fabric and azalea · deadline 5s · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · read-only · needs a world · the bot answers*
 
 Report the in-game time and weather, for a feature that only happens at a certain time of day. This is the clock the world ticks on, not whatever a server may draw on its HUD.
 
 No arguments beyond `bot`.
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `timeOfDay` (integer) -- Ticks into the day, 0 being sunrise
 - `day` (integer)
@@ -776,9 +771,9 @@ Answers with structured content beside the text, shaped:
 
 ### run-command
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers and the server adds what its feeds caught meanwhile*
+*fabric and azalea · deadline 5s · untrusted · destructive · needs a world · the bot answers and the server adds what its feeds caught meanwhile*
 
-Run a slash command as the bot and return what the server sent back: chat, or a dialog or title it opened when there was no chat.
+Runs with whatever permissions the bot has on the server; on the development cluster every player is op. Run a slash command as the bot and return what the server sent back: chat, or a dialog or title it opened when there was no chat.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
@@ -796,20 +791,9 @@ Send the bot to another backend server through the proxy and wait until it spawn
 | `target` | string | yes | Backend server name the proxy knows | at most 64 characters |
 | `timeoutMs` | integer | no | Give up after this long (default: 30000) | 1000 to 120000 |
 
-### wait-for-chat
-
-*fabric and azalea · deadline 5s · untrusted · needs a world · the server answers from what it holds*
-
-Wait until a chat line matching a regular expression arrives. Returns straight away if the latest chat line already says so; use run-command, which only counts replies after the command, when only new lines count.
-
-| Argument | Type | Required | What it is | Limits |
-| --- | --- | --- | --- | --- |
-| `pattern` | string | yes | JavaScript regular expression source | at most 256 characters |
-| `timeoutMs` | integer | no | How long to wait (default: 10000) | 100 to 120000 |
-
 ### wait-ticks
 
-*fabric and azalea · deadline 60s · needs a world · the bot answers*
+*fabric and azalea · deadline 60s · read-only · needs a world · the bot answers*
 
 Wait a number of server ticks so the server has time to apply a change.
 
@@ -817,11 +801,69 @@ Wait a number of server ticks so the server has time to apply a change.
 | --- | --- | --- | --- | --- |
 | `ticks` | integer | yes | How many ticks to wait (20 ticks is one second) | 1 to 400 |
 
+## sessions
+
+### detect-gamemode
+
+*fabric and azalea · deadline 5s · read-only · the server answers from what it holds*
+
+Report the game mode the server assigned to the bot. The same value get-bot-status and get-player-state report.
+
+No arguments beyond `bot`.
+
+### get-bot-status
+
+*fabric and azalea · deadline 5s · read-only · the server answers from what it holds*
+
+Report connection state, position and health for one bot, and whether it is dead. Answers from what the server last heard without asking the bot, so it works when the bot is stuck, kicked or not answering; it is what every failure message points at.
+
+No arguments beyond `bot`.
+
+### join-server
+
+*fabric and azalea · deadline 180s · the server drives the bot's session*
+
+Send a bot into a Minecraft server and wait until it has spawned. A bot already running under this name is used as it is; otherwise one is started, which in a cluster means the operator creates it. A fabric client takes about a minute to link, longer than one call waits: a call that runs out of patience says the bot is still starting, and calling join-server again with the same arguments waits for that bot rather than starting another. A failure says how far it got, because a bot that never started and a server that refused the login have different fixes.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `host` | string | yes | Server host or Kubernetes service name to connect to |  |
+| `port` | integer | no | Server port (default: 25565) | 1 to 65535 |
+| `username` | string | no | In-game username (default: the bot name) |  |
+| `owner` | string | no | Free-form label recording who asked for this bot. Omitted when not given. |  |
+| `kind` | string: `fabric`, `azalea` | no | Which kind of bot to start when none by this name is running. "fabric" is a real Minecraft client: every tool, a screenshot, dialogs, books and the creative inventory, at about 1.7GiB and a minute and a half to link. "azalea" is a headless client in a few megabytes that joins in under a second, for many bots at once or a fast loop, and runs only the tools whose descriptions do not say otherwise. (default: fabric) |  |
+| `minecraftVersion` | string | no | Minecraft version for a bot that has to be started. Both kinds are built for one version. (default: 26.1.2) | matching `^[0-9]+\.[0-9]+(\.[0-9]+)?$` |
+| `timeoutMs` | integer | no | How long to wait for the spawn once the bot is linked (default: 180000). A join the server holds in configuration past it -- a plugin waiting on a resource pack, a transfer that never comes -- fails as a spawn that never came, and the bot leaves that connection | 1000 to 600000 |
+
+### leave-server
+
+*fabric and azalea · deadline 5s · destructive · the server drives the bot's session*
+
+Take a bot out of the world it is in. The process stays up and linked, ready for the next join-server, so leaving and rejoining is cheap.
+
+No arguments beyond `bot`.
+
+### list-bots
+
+*fabric and azalea · deadline 5s · read-only · the server answers from what it holds*
+
+List every bot this server currently holds, including bots joined by other agents.
+
+No arguments.
+
+### restart-bot
+
+*fabric and azalea · deadline 90s · destructive · the server drives the bot's session*
+
+Put a bot back on the server it is on, under the same name. Use it after redeploying a plugin: the bot is still connected and still holding whatever the previous build gave it, and a stale inventory or scoreboard looks exactly like a bug in the new one.
+
+No arguments beyond `bot`.
+
 ## block
 
 ### dig-block
 
-*fabric and azalea · deadline 60s · exclusive · needs a world · the bot answers*
+*fabric and azalea · deadline 60s · exclusive · destructive · needs a world · the bot answers*
 
 Break the block at a position, walking to it first when out of reach.
 
@@ -833,17 +875,17 @@ Break the block at a position, walking to it first when out of reach.
 
 ### find-blocks
 
-*fabric and azalea · deadline 5s · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · read-only · needs a world · the bot answers*
 
 Find nearby blocks of a given type. The block is the one the client was sent, which a plugin can make different from the one the server holds: a custom block (CraftEngine, ItemsAdder, Nexo) is usually sent as a vanilla block such as stone or a note block. When what the server holds matters -- a quest objective counting a block, say -- ask the server, for example run-command "/execute if block X Y Z minecraft:stone".
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `blockType` | string | yes | Block name, for example oak_log |  |
+| `blockType` | string | yes | Block to find: exact registry id, with or without minecraft:, for example oak_log |  |
 | `maxDistance` | number | no | Search radius (default: 16) | at least 1 |
 | `count` | integer | no | How many to return (default: 1, clamped to 256) | 1 to 256 |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `blockType` (string)
 - `maxDistance` (number)
@@ -854,7 +896,7 @@ Answers with structured content beside the text, shaped:
 
 ### get-block-info
 
-*fabric and azalea · deadline 5s · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · read-only · needs a world · the bot answers*
 
 Describe the block at a position. The block is the one the client was sent, which a plugin can make different from the one the server holds: a custom block (CraftEngine, ItemsAdder, Nexo) is usually sent as a vanilla block such as stone or a note block. When what the server holds matters -- a quest objective counting a block, say -- ask the server, for example run-command "/execute if block X Y Z minecraft:stone".
 
@@ -864,7 +906,7 @@ Describe the block at a position. The block is the one the client was sent, whic
 | `y` | number | yes | Y coordinate |  |
 | `z` | number | yes | Z coordinate |  |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `position` (object) -- Where the caller asked about
   - `x` (integer)
@@ -880,16 +922,16 @@ Answers with structured content beside the text, shaped:
 
 ### get-target-block
 
-*fabric only · deadline 5s · needs a world · the bot answers*
+*fabric only · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 What the bot is looking at: the block under its crosshair, which face of it, or the entity in the way. A screenshot shows what a place looks like and carries no coordinates; this is how to find out where something is in order to build, dig or place there. Point with look-at first.
 
 No arguments beyond `bot`.
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `hit` (string: `block`, `entity`, `nothing`) -- What the crosshair is on
-- `position` (object) -- Where the caller asked about
+- `position` (object or null) -- Where the caller asked about, null when the crosshair is on nothing
   - `x` (integer)
   - `y` (integer)
   - `z` (integer)
@@ -928,7 +970,7 @@ Place the held block at a position, using an adjacent block as reference.
 
 ### read-block-entity
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 Read the data a block carries beyond its type: sign text, a container's custom name, a banner's pattern. Signs are the common case, since that is where servers write instructions into the world itself.
 
@@ -938,7 +980,7 @@ Read the data a block carries beyond its type: sign text, a container's custom n
 | `y` | number | yes | Y coordinate |  |
 | `z` | number | yes | Z coordinate |  |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `block` (string)
 - `position` (object)
@@ -962,20 +1004,20 @@ Equip an item from the inventory.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `itemName` | string | yes | Item name or a fragment of it |  |
+| `itemName` | string | yes | Item to equip: registry id with or without minecraft:, or a fragment of it or of the item's display name |  |
 | `destination` | string: `hand`, `head`, `torso`, `legs`, `feet`, `off-hand` | no | Where to equip it (default: 'hand') |  |
 
 ### find-item
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 Look for an item in the bot's inventory by exact or partial name.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `nameOrType` | string | yes | Item name or a fragment of it |  |
+| `nameOrType` | string | yes | Item to look for: registry id with or without minecraft:, or a fragment of it or of the item's display name |  |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `query` (string) -- What the caller asked for
 - `item` (object or null) -- Null when nothing in the inventory matches
@@ -991,27 +1033,27 @@ Answers with structured content beside the text, shaped:
 
 ### give-item
 
-*fabric and azalea · deadline 5s · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · destructive · needs a world · the bot answers*
 
 Put an item straight into the inventory. Creative mode only, which is what makes it useful: a test can start from the state it needs instead of gathering its way there.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `itemName` | string | yes | Exact item name, for example diamond_pickaxe |  |
+| `itemName` | string | yes | Item to give: exact registry id, with or without minecraft:, for example diamond_pickaxe |  |
 | `count` | integer | no | How many (default: 1) | 1 to 64 |
 | `slot` | integer | no | Inventory slot to fill (default: the first empty one) | 0 to 44 |
 
 ### list-inventory
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
-List every item in the bot's inventory with slot numbers.
+List every item in the bot's inventory with slot numbers. The wait for this is wait-for-item.
 
 Waited on by [`wait-for-item`](#wait-for-item).
 
 No arguments beyond `bot`.
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `items[]` (object)
   - `name` (string)
@@ -1026,22 +1068,22 @@ Answers with structured content beside the text, shaped:
 
 ### wait-for-item
 
-*fabric and azalea · deadline 130s · untrusted · needs a world · the bot answers and the server adds what its feeds caught meanwhile*
+*fabric and azalea · deadline 130s · untrusted · read-only · needs a world · the bot answers and the server adds what its feeds caught meanwhile*
 
-Wait until the bot is carrying something. The condition half of most quests: collect ten of these, be given that.
+Wait until the bot is carrying something. The condition half of most quests: collect ten of these, be given that. The read for this is list-inventory.
 
 Polls [`list-inventory`](#list-inventory) until its answer matches, so the answer is that tool's.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `pattern` | string | yes | JavaScript regular expression the inventory has to match | at most 256 characters |
+| `pattern` | string | yes | Java regular expression (java.util.regex), matched anywhere in what list-inventory shows | at most 256 characters |
 | `timeoutMs` | integer | no | How long to wait (default: 10000) | 100 to 120000 |
 
 ## entity
 
 ### find-entity
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 Find nearby entities, optionally filtered by type or name. Each comes with the id interact-entity and attack-entity take, and the label floating over it when there is one.
 
@@ -1051,7 +1093,7 @@ Find nearby entities, optionally filtered by type or name. Each comes with the i
 | `maxDistance` | number | no | Search radius (default: 16) | at least 1 |
 | `count` | integer | no | How many to return (default: 1) | 1 to 50 |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `query` (string or null) -- The filter the caller gave, or null for anything
 - `maxDistance` (number)
@@ -1079,7 +1121,7 @@ Answers with structured content beside the text, shaped:
 
 ### read-displays
 
-*fabric only · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric only · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 Read the text floating in the world: holograms, name tags and NPC labels. They are display entities, so find-entity only reports that they exist.
 
@@ -1090,7 +1132,7 @@ Waited on by [`wait-for-displays`](#wait-for-displays).
 | `maxDistance` | number | no | Search radius (default: 24) | at least 1 |
 | `count` | integer | no | How many to return (default: 20) | 1 to 50 |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `maxDistance` (number)
 - `displays[]` (object) -- Nearest first
@@ -1110,7 +1152,7 @@ Answers with structured content beside the text, shaped:
 
 ### wait-for-displays
 
-*fabric only · deadline 130s · untrusted · needs a world · the bot answers and the server adds what its feeds caught meanwhile*
+*fabric only · deadline 130s · untrusted · read-only · needs a world · the bot answers and the server adds what its feeds caught meanwhile*
 
 Wait until the text floating in the world says something: a hologram, a nameplate, an NPC's label.
 
@@ -1118,7 +1160,7 @@ Polls [`read-displays`](#read-displays) until its answer matches, so the answer 
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `pattern` | string | yes | JavaScript regular expression a display has to match | at most 256 characters |
+| `pattern` | string | yes | Java regular expression (java.util.regex), matched anywhere in what read-displays shows | at most 256 characters |
 | `maxDistance` | number | no | Search radius (default: 24) | at least 1 |
 | `timeoutMs` | integer | no | How long to wait (default: 10000) | 100 to 120000 |
 
@@ -1128,7 +1170,7 @@ Polls [`read-displays`](#read-displays) until its answer matches, so the answer 
 
 *fabric only · deadline 60s · exclusive · needs a world · the bot answers*
 
-Fly straight to a position. Requires creative mode.
+Fly straight to a position. Requires creative mode. Use move-to-position when not in creative, on an azalea bot, or when the path must go around blocks.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
@@ -1138,13 +1180,13 @@ Fly straight to a position. Requires creative mode.
 
 ### get-position
 
-*fabric and azalea · deadline 5s · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · read-only · needs a world · the bot answers*
 
 Report the block position the bot currently stands on.
 
 No arguments beyond `bot`.
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `position` (object)
   - `x` (integer)
@@ -1155,7 +1197,7 @@ Answers with structured content beside the text, shaped:
 
 *fabric and azalea · deadline 5s · needs a world · the bot answers*
 
-Make the bot jump once.
+Make the bot jump once. Moves the bot without pressing the jump key; a game that listens for the key needs press-input jump.
 
 No arguments beyond `bot`.
 
@@ -1186,7 +1228,7 @@ Hold a movement key for a while. Use this when pathfinding is not wanted.
 
 *fabric and azalea · deadline 60s · exclusive · needs a world · the bot answers*
 
-Walk the bot to a position using pathfinding.
+Walk the bot to a position using pathfinding. In creative on a fabric bot, fly-to is a straight line.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
@@ -1205,19 +1247,19 @@ Press a key the way a player does, tick by tick, through the client's own input:
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
 | `key` | string: `jump`, `sneak`, `sprint`, `use`, `attack`, `hotbar`, `scroll-up`, `scroll-down`, `swap-offhand`, `drop` | yes | The key to press. jump, sneak and sprint are the movement keys the server receives as input; use and attack are the right and left mouse buttons, clicking at whatever the bot is looking at or into the air; hotbar selects the hotbar slot given by slot, as its number key does; scroll-up and scroll-down move the selection one slot as the mouse wheel does; swap-offhand swaps the held item into the off-hand; drop throws one of the held item. |  |
-| `slot` | integer | no | The hotbar slot for hotbar, 0 being the leftmost. Only hotbar takes it. | 0 to 8 |
+| `slot` | integer | no | The hotbar slot for hotbar, 0 being the leftmost. Only hotbar takes it. (0-based: the slot index, not the number key click-slot's hotbar uses) | 0 to 8 |
 | `holdTicks` | integer | no | How many ticks each press keeps the key down (default: 1). Held use repeats every four ticks, as holding the button does; a wheel notch has nothing to hold. | 1 to 1200 |
 | `repeat` | integer | no | How many times to press (default: 1) | 1 to 200 |
 | `intervalTicks` | integer | no | How many ticks the key stays up between presses, so each one reaches the server as a press of its own (default: 1) | 1 to 1200 |
 | `after` | object | no | Press nothing until this shows, then press on the very tick it arrives, inside the bot rather than after a round trip: a bite's splash sound, or a timing window drawn on the action bar. Fails if it does not show within timeoutMs. |  |
 | `after.feed` | string: `actionBar`, `title`, `effect` | yes | The feed to watch |  |
-| `after.pattern` | string | yes | Regular expression. It matches when it matches the line as read-action-bar and read-title show it, font labels included, or the line's plain text; a sound or particle is its id, such as minecraft:entity.fishing_bobber.splash | at most 256 characters |
+| `after.pattern` | string | yes | Regular expression in the subset both bots share: no lookaround or backreferences; (?i) for case-insensitive. It matches when it matches the line as read-action-bar and read-title show it, font labels included, or the line's plain text; a sound or particle is its id, such as minecraft:entity.fishing_bobber.splash | at most 256 characters |
 | `until` | object | no | Stop as soon as this shows, letting go of a held key and skipping the presses left, on the tick it arrives. |  |
 | `until.feed` | string: `actionBar`, `title`, `effect` | yes | The feed to watch |  |
-| `until.pattern` | string | yes | Regular expression. It matches when it matches the line as read-action-bar and read-title show it, font labels included, or the line's plain text; a sound or particle is its id, such as minecraft:entity.fishing_bobber.splash | at most 256 characters |
+| `until.pattern` | string | yes | Regular expression in the subset both bots share: no lookaround or backreferences; (?i) for case-insensitive. It matches when it matches the line as read-action-bar and read-title show it, font labels included, or the line's plain text; a sound or particle is its id, such as minecraft:entity.fishing_bobber.splash | at most 256 characters |
 | `timeoutMs` | integer | no | How long the whole call may take, waiting for after included (default: 10000). Presses still to come when it runs out are not made. | 100 to 120000 |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `key` (string)
 - `slot` (integer or null) -- The slot hotbar was given, null for every other key
@@ -1255,21 +1297,21 @@ Run several inputs in one call, tick by tick inside the bot: key presses, window
 | --- | --- | --- | --- | --- |
 | `steps` | array of object | yes | The inputs, in order. Each step is exactly one of press, click, useItem, command, wait or waitFor; the other fields shape it | 1 to 32 items |
 | `steps[].press` | string: `jump`, `sneak`, `sprint`, `use`, `attack`, `hotbar`, `scroll-up`, `scroll-down`, `swap-offhand`, `drop` | no | A key to press, as press-input names it. Down for holdTicks, then up for one tick before the next step |  |
-| `steps[].slot` | integer | no | The hotbar slot for press: hotbar, 0 being the leftmost | 0 to 8 |
+| `steps[].slot` | integer | no | The hotbar slot for press: hotbar, 0 being the leftmost (0-based: the slot index, not the number key click-slot's hotbar uses) | 0 to 8 |
 | `steps[].holdTicks` | integer | no | How many ticks the key stays down, or the item stays in use (default: 1) | 1 to 1200 |
 | `steps[].useItem` | string: `main-hand`, `off-hand` | no | A hand whose item to use, as use-held-item does: the item's own right-click, whatever the crosshair is on. press: use is the player's click, which goes to the entity or block there first and uses the item only when nothing is. In use for holdTicks, then released, and the step ends one tick later as a press does |  |
 | `steps[].click` | integer | no | A window slot to click, as listed by read-window; the step ends when the server has sent the window back, as click-slot does | at least 0 |
 | `steps[].button` | string: `left`, `right` | no | For click (default: 'left') |  |
 | `steps[].shift` | boolean | no | For click (default: false) |  |
 | `steps[].mode` | string: `click`, `swap-hotbar`, `swap-offhand`, `throw-one`, `throw-stack`, `pickup-all`, `clone` | no | For click (default: 'click'), as click-slot describes them |  |
-| `steps[].hotbar` | integer | no | The number key for mode swap-hotbar | 1 to 9 |
+| `steps[].hotbar` | integer | no | The number key for mode swap-hotbar (1-based: the number key, not the slot index press-input's slot uses) | 1 to 9 |
 | `steps[].command` | string | no | A slash command sent on its tick, with or without the slash; what the server replies is on read-chat | at most 256 characters |
 | `steps[].wait` | integer | no | Client ticks between the end of the step before and the start of the step after | 1 to 1200 |
-| `steps[].waitFor` | string | no | Regular expression. Run nothing until a line matching it shows on feed, then move on at the end of the tick it arrives. Lines that arrived since the step before started count, so a reply the server sends while that step is still settling is not missed. Bounded by timeoutMs. A press that must land on the very tick a cue arrives is press-input's after | at most 256 characters |
+| `steps[].waitFor` | string | no | Regular expression in the subset both bots share: no lookaround or backreferences; (?i) for case-insensitive. Run nothing until a line matching it shows on feed, then move on at the end of the tick it arrives. Lines that arrived since the step before started count, so a reply the server sends while that step is still settling is not missed. Bounded by timeoutMs. A press that must land on the very tick a cue arrives is press-input's after | at most 256 characters |
 | `steps[].feed` | string: `actionBar`, `title`, `effect` | no | The feed waitFor watches (default: 'actionBar'), matched the way press-input's after is |  |
 | `timeoutMs` | integer | no | How long the whole sequence may take, waits included (default: 10000). Steps still to come when it runs out are not made | 100 to 120000 |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `asked` (integer) -- How many steps were given
 - `ran` (integer) -- How many steps ended without an error
@@ -1322,76 +1364,24 @@ Answers with structured content beside the text, shaped:
 
 *fabric and azalea · deadline 5s · needs a world · the bot answers*
 
-Hold the bot crouching or sprinting. Both stay on until turned off, so a plugin that only reacts to a crouching player can be reached. Nothing else here changes the stance.
+Hold the bot crouching or sprinting. Both stay on until turned off, so a plugin that only reacts to a crouching player can be reached. press-input sneak/sprint holds the key for holdTicks instead.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
 | `sneak` | boolean | no | Crouch, or stand up again |  |
 | `sprint` | boolean | no | Sprint, or stop sprinting |  |
 
-## sessions
-
-### get-bot-status
-
-*fabric and azalea · deadline 5s · needs a world · the server answers from what it holds*
-
-Report connection state, position and health for one bot, and whether it is dead.
-
-No arguments beyond `bot`.
-
-### join-server
-
-*fabric and azalea · deadline 180s · needs a world · the server drives the bot's session*
-
-Send a bot into a Minecraft server and wait until it has spawned. A bot already running under this name is used as it is; otherwise one is started, which in a cluster means the operator creates it. A fabric client takes about a minute to link, longer than one call waits: a call that runs out of patience says the bot is still starting, and calling join-server again with the same arguments waits for that bot rather than starting another. A failure says how far it got, because a bot that never started and a server that refused the login have different fixes.
-
-| Argument | Type | Required | What it is | Limits |
-| --- | --- | --- | --- | --- |
-| `name` | string | no | The same as bot, which is the name every other tool uses for it. Give one of the two. |  |
-| `host` | string | yes | Server host or Kubernetes service name to connect to |  |
-| `port` | integer | no | Server port (default: 25565) | 1 to 65535 |
-| `username` | string | no | In-game username (default: derived from name) |  |
-| `version` | string | no | Force a protocol version instead of auto-detecting |  |
-| `owner` | string | no | Free-form label recording who asked for this bot. Defaults to the authenticated caller. |  |
-| `kind` | string: `fabric`, `azalea` | no | Which kind of bot to start when none by this name is running. "fabric" is a real Minecraft client: every tool, a screenshot, dialogs, books and the creative inventory, at about 1.7GiB and a minute and a half to link. "azalea" is a headless client in a few megabytes that joins in under a second, for many bots at once or a fast loop, and runs only the tools whose descriptions do not say otherwise. (default: fabric) |  |
-| `minecraftVersion` | string | no | Minecraft version for a bot that has to be started. Both kinds are built for one version. (default: 26.1.2) | matching `^[0-9]+\.[0-9]+(\.[0-9]+)?$` |
-| `timeoutMs` | integer | no | How long to wait for the spawn once the bot is linked (default: 180000). A join the server holds in configuration past it -- a plugin waiting on a resource pack, a transfer that never comes -- fails as a spawn that never came, and the bot leaves that connection | 1000 to 600000 |
-
-### leave-server
-
-*fabric and azalea · deadline 5s · needs a world · the server drives the bot's session*
-
-Take a bot out of the world it is in. The process stays up and linked, ready for the next join-server, so leaving and rejoining is cheap.
-
-No arguments beyond `bot`.
-
-### list-bots
-
-*fabric and azalea · deadline 5s · needs a world · the server answers from what it holds*
-
-List every bot this server currently holds, including bots joined by other agents.
-
-No arguments beyond `bot`.
-
-### restart-bot
-
-*fabric and azalea · deadline 90s · needs a world · the server drives the bot's session*
-
-Put a bot back on the server it is on, under the same name. Use it after redeploying a plugin: the bot is still connected and still holding whatever the previous build gave it, and a stale inventory or scoreboard looks exactly like a bug in the new one.
-
-No arguments beyond `bot`.
-
 ## hud
 
 ### get-player-state
 
-*fabric and azalea · deadline 5s · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · read-only · needs a world · the bot answers*
 
-Report the health, hunger, experience and position the bot sees for itself, what it is riding, and whether it is dead.
+Report the health, hunger, experience and position the bot sees for itself, what it is riding, and whether it is dead. Asks the bot; use get-bot-status when it may not answer.
 
 No arguments beyond `bot`.
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `health` (number)
 - `food` (number)
@@ -1419,7 +1409,7 @@ Answers with structured content beside the text, shaped:
 
 ### read-action-bar
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the server answers from what it holds*
+*fabric and azalea · deadline 5s · untrusted · read-only · the server answers from what it holds*
 
 Read the action bar text above the hotbar, which servers use for live status. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by " | ", each tagged with the font that names it.
 
@@ -1429,7 +1419,7 @@ Read the action bar text above the hotbar, which servers use for live status. Re
 
 ### read-advancements
 
-*fabric only · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric only · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 Read the advancements the server has sent: which are done and when, and how far the rest have got. Vanilla alone has over a hundred, so by default only a server's own are listed -- any namespace but minecraft -- most recently progressed first. Servers track quests as advancements. The server only sends what the player could see in the advancements screen: an unfinished one appears once its parent is done, and a root with nothing finished under it is not sent at all, so a quest missing here may simply not be visible yet.
 
@@ -1439,7 +1429,7 @@ Read the advancements the server has sent: which are done and when, and how far 
 | `status` | string: `any`, `done`, `inProgress` | no | Which to list: done, inProgress (started and not done), or any (default: any) |  |
 | `count` | integer | no | How many to return, most recently progressed first (default: 10) | 1 to 200 |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `prefix` (string or null) -- The prefix asked for, or null for every namespace except minecraft
 - `status` (string)
@@ -1458,7 +1448,7 @@ Answers with structured content beside the text, shaped:
 
 ### read-boss-bars
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 Read every boss bar the server is showing above the hotbar.
 
@@ -1466,7 +1456,7 @@ Waited on by [`wait-for-boss-bars`](#wait-for-boss-bars).
 
 No arguments beyond `bot`.
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `bars[]` (object)
   - `title` (string) -- Empty when the server set none
@@ -1481,7 +1471,7 @@ Answers with structured content beside the text, shaped:
 
 ### read-dialog
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the server answers from what it holds*
+*fabric and azalea · deadline 5s · untrusted · read-only · the server answers from what it holds*
 
 Read the dialogs the server has opened on screen, with their title, body, the buttons they offer and what each input holds, and the point at which each was closed again. A dialog comes again with the new values when set-dialog-input changes one. press-dialog-button presses them. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by " | ", each tagged with the font that names it.
 
@@ -1491,7 +1481,7 @@ Read the dialogs the server has opened on screen, with their title, body, the bu
 
 ### read-player-list
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 List the players on the tab list, with their game mode and ping.
 
@@ -1499,7 +1489,7 @@ Waited on by [`wait-for-player-list`](#wait-for-player-list).
 
 No arguments beyond `bot`.
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `players[]` (object) -- Sorted by name
   - `name` (string)
@@ -1511,7 +1501,7 @@ Answers with structured content beside the text, shaped:
 
 ### read-scoreboard
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the bot answers*
+*fabric and azalea · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
 Read the scoreboard the server draws on screen, which most servers use for stats and quest progress.
 
@@ -1521,7 +1511,7 @@ Waited on by [`wait-for-scoreboard`](#wait-for-scoreboard).
 | --- | --- | --- | --- | --- |
 | `slot` | string: `sidebar`, `list`, `belowName` | no | Which display slot to read (default: 'sidebar') |  |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `slot` (string)
 - `board` (object or null) -- Null when nothing is displayed in that slot
@@ -1536,7 +1526,7 @@ Answers with structured content beside the text, shaped:
 
 ### read-stats
 
-*fabric only · deadline 10s · needs a world · the bot answers*
+*fabric only · deadline 10s · read-only · needs a world · the bot answers*
 
 Read the bot's statistics as the server counts them: kills per mob, blocks mined, items crafted and used, distance walked, time played, deaths. The client only holds the statistics it was last sent, so this asks the server and reads its answer, never an older copy. Without type or target the general statistics (minecraft:custom) are listed, with how many of each other type are nonzero; a kill or mining quest is checked with both, such as type minecraft:killed and target minecraft:zombie. Distances are kept in centimetres and times in ticks, and those are shown in their unit as well.
 
@@ -1546,7 +1536,7 @@ Read the bot's statistics as the server counts them: kills per mob, blocks mined
 | `target` | string | no | Only this target, such as "minecraft:zombie" for kills or "minecraft:jump" for a custom statistic. Given with type, that one statistic is answered even when it is zero; without type, every type counting it is listed (default: any target) | at most 256 characters |
 | `count` | integer | no | How many to return, highest value first (default: 30) | 1 to 500 |
 
-Answers with structured content beside the text, shaped:
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
 - `type` (string or null) -- The type asked for, with its namespace, or null when none was
 - `target` (string or null) -- The target asked for, with its namespace, or null when none was
@@ -1562,7 +1552,7 @@ Answers with structured content beside the text, shaped:
 
 ### read-title
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the server answers from what it holds*
+*fabric and azalea · deadline 5s · untrusted · read-only · the server answers from what it holds*
 
 Read the titles and subtitles the server has thrown across the screen, which is where servers put things the player must not miss. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by " | ", each tagged with the font that names it.
 
@@ -1572,9 +1562,9 @@ Read the titles and subtitles the server has thrown across the screen, which is 
 
 ### read-toasts
 
-*fabric only · deadline 5s · untrusted · needs a world · the server answers from what it holds*
+*fabric only · deadline 5s · untrusted · read-only · the server answers from what it holds*
 
-Read the toasts that popped up in the corner of the screen: an advancement made, with its id, frame and description, and recipes unlocked. A toast is gone within seconds, so these are kept as they arrive rather than read off the screen. A title drawn in custom fonts arrives as several pieces separated by " | ", each tagged with the font that names it.
+Read the toasts that popped up in the corner of the screen: an advancement made, with its id, frame and description, and recipes unlocked. A toast is gone within seconds, so these are kept as they arrive rather than read off the screen. A title drawn in custom fonts arrives as several pieces separated by " | ", each tagged with the font that names it. The wait for this is wait-for-toast.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
@@ -1582,18 +1572,18 @@ Read the toasts that popped up in the corner of the screen: an advancement made,
 
 ### wait-for-action-bar
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the server answers from what it holds*
+*fabric and azalea · deadline 130s · untrusted · read-only · the server answers from what it holds*
 
 Wait until the action bar shows text matching a regular expression. Returns straight away if it already says so.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `pattern` | string | yes | JavaScript regular expression source | at most 256 characters |
+| `pattern` | string | yes | Java regular expression (java.util.regex), matched anywhere in the line | at most 256 characters |
 | `timeoutMs` | integer | no | How long to wait (default: 10000) | 100 to 120000 |
 
 ### wait-for-boss-bars
 
-*fabric and azalea · deadline 130s · untrusted · needs a world · the bot answers and the server adds what its feeds caught meanwhile*
+*fabric and azalea · deadline 130s · untrusted · read-only · needs a world · the bot answers and the server adds what its feeds caught meanwhile*
 
 Wait until a boss bar says something. Servers put phase, progress and timers there.
 
@@ -1601,23 +1591,23 @@ Polls [`read-boss-bars`](#read-boss-bars) until its answer matches, so the answe
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `pattern` | string | yes | JavaScript regular expression a boss bar has to match | at most 256 characters |
+| `pattern` | string | yes | Java regular expression (java.util.regex), matched anywhere in what read-boss-bars shows | at most 256 characters |
 | `timeoutMs` | integer | no | How long to wait (default: 10000) | 100 to 120000 |
 
 ### wait-for-dialog
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the server answers from what it holds*
+*fabric and azalea · deadline 130s · untrusted · read-only · the server answers from what it holds*
 
 Wait until a dialog whose text matches a regular expression is opened. Returns straight away if it already says so.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `pattern` | string | yes | JavaScript regular expression source | at most 256 characters |
+| `pattern` | string | yes | Java regular expression (java.util.regex), matched anywhere in the line | at most 256 characters |
 | `timeoutMs` | integer | no | How long to wait (default: 10000) | 100 to 120000 |
 
 ### wait-for-player-list
 
-*fabric and azalea · deadline 130s · untrusted · needs a world · the bot answers and the server adds what its feeds caught meanwhile*
+*fabric and azalea · deadline 130s · untrusted · read-only · needs a world · the bot answers and the server adds what its feeds caught meanwhile*
 
 Wait until the tab list says something -- somebody joining, a rank appearing beside a name.
 
@@ -1625,12 +1615,12 @@ Polls [`read-player-list`](#read-player-list) until its answer matches, so the a
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `pattern` | string | yes | JavaScript regular expression the tab list has to match | at most 256 characters |
+| `pattern` | string | yes | Java regular expression (java.util.regex), matched anywhere in what read-player-list shows | at most 256 characters |
 | `timeoutMs` | integer | no | How long to wait (default: 10000) | 100 to 120000 |
 
 ### wait-for-scoreboard
 
-*fabric and azalea · deadline 130s · untrusted · needs a world · the bot answers and the server adds what its feeds caught meanwhile*
+*fabric and azalea · deadline 130s · untrusted · read-only · needs a world · the bot answers and the server adds what its feeds caught meanwhile*
 
 Wait until the scoreboard says something. A quest counting up, a balance changing, a timer: the sidebar is where a server writes progress and nothing pushes it, so this asks until it reads what you are waiting for.
 
@@ -1638,39 +1628,39 @@ Polls [`read-scoreboard`](#read-scoreboard) until its answer matches, so the ans
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `pattern` | string | yes | JavaScript regular expression the sidebar has to match | at most 256 characters |
+| `pattern` | string | yes | Java regular expression (java.util.regex), matched anywhere in what read-scoreboard shows | at most 256 characters |
 | `slot` | string: `sidebar`, `list`, `belowName` | no | Which display slot to read (default: 'sidebar') |  |
 | `timeoutMs` | integer | no | How long to wait (default: 10000) | 100 to 120000 |
 
 ### wait-for-title
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the server answers from what it holds*
+*fabric and azalea · deadline 130s · untrusted · read-only · the server answers from what it holds*
 
 Wait until a title or subtitle matching a regular expression is shown. Returns straight away if it already says so.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `pattern` | string | yes | JavaScript regular expression source | at most 256 characters |
+| `pattern` | string | yes | Java regular expression (java.util.regex), matched anywhere in the line | at most 256 characters |
 | `timeoutMs` | integer | no | How long to wait (default: 10000) | 100 to 120000 |
 
 ### wait-for-toast
 
-*fabric only · deadline 5s · untrusted · needs a world · the server answers from what it holds*
+*fabric only · deadline 130s · untrusted · read-only · the server answers from what it holds*
 
-Wait until a toast whose text matches a regular expression pops up: an advancement a server grants when a quest is done, or a recipe unlocked. The advancement's id is part of the text, so a pattern can name it. Returns straight away if the latest toast already says so.
+Wait until a toast whose text matches a regular expression pops up: an advancement a server grants when a quest is done, or a recipe unlocked. The advancement's id is part of the text, so a pattern can name it. Returns straight away if the latest toast already says so. The read for this is read-toasts.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `pattern` | string | yes | JavaScript regular expression source | at most 256 characters |
+| `pattern` | string | yes | Java regular expression (java.util.regex), matched anywhere in the line | at most 256 characters |
 | `timeoutMs` | integer | no | How long to wait (default: 10000) | 100 to 120000 |
 
 ## probe
 
 ### ping-server
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the server answers from what it holds*
+*fabric and azalea · deadline 5s · untrusted · read-only · the server answers from what it holds*
 
-Send a Minecraft server list ping and report version, protocol, player count and MOTD. Use it to check a server is up and speaks a version we can join before spending a bot slot.
+Send a Minecraft server list ping and report version, protocol, player count and MOTD. Use it to check a server is up and speaks a version we can join before spending a bot slot. The wait for this is wait-for-server.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
@@ -1680,9 +1670,9 @@ Send a Minecraft server list ping and report version, protocol, player count and
 
 ### wait-for-server
 
-*fabric and azalea · deadline 300s · needs a world · the server answers from what it holds*
+*fabric and azalea · deadline 300s · read-only · the server answers from what it holds*
 
-Wait until a Minecraft server answers a server list ping and reports it can be joined. Use it after restarting a server so the next join-server does not race the boot.
+Wait until a Minecraft server answers a server list ping and reports it can be joined. Use it after restarting a server so the next join-server does not race the boot. The read for this is ping-server.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
@@ -1694,7 +1684,7 @@ Wait until a Minecraft server answers a server list ping and reports it can be j
 
 ### read-chat
 
-*fabric and azalea · deadline 5s · untrusted · needs a world · the server answers from what it holds*
+*fabric and azalea · deadline 5s · untrusted · read-only · the server answers from what it holds*
 
 Read recent chat and system messages the bot received.
 
@@ -1712,11 +1702,22 @@ Say something in chat as the bot. Use run-command for slash commands.
 | --- | --- | --- | --- | --- |
 | `message` | string | yes | Text to say | at most 256 characters |
 
+### wait-for-chat
+
+*fabric and azalea · deadline 130s · untrusted · read-only · the server answers from what it holds*
+
+Wait until a chat line matching a regular expression arrives. Returns straight away if the latest chat line already says so; use run-command, which only counts replies after the command, when only new lines count.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `pattern` | string | yes | Java regular expression (java.util.regex), matched anywhere in the line | at most 256 characters |
+| `timeoutMs` | integer | no | How long to wait (default: 10000) | 100 to 120000 |
+
 ## effect
 
 ### read-effects
 
-*fabric only · deadline 5s · untrusted · needs a world · the server answers from what it holds*
+*fabric only · deadline 5s · untrusted · read-only · the server answers from what it holds*
 
 Read the sounds and particles the server has played near the bot, one line per play as it happened, nothing collapsed; the same sound twice is two lines. Each line is the namespaced id (sound:/particle: prefix). Particles come in bursts, so raise count or use wait-for-effect for one id.
 
@@ -1726,13 +1727,13 @@ Read the sounds and particles the server has played near the bot, one line per p
 
 ### wait-for-effect
 
-*fabric only · deadline 5s · untrusted · needs a world · the server answers from what it holds*
+*fabric only · deadline 130s · untrusted · read-only · the server answers from what it holds*
 
-Wait until a sound or particle whose name matches a regular expression is played. Returns straight away if it already says so.
+Wait until a sound or particle whose name matches a regular expression is played. Returns straight away if it already says so. The read for this is read-effects.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
-| `pattern` | string | yes | JavaScript regular expression source | at most 256 characters |
+| `pattern` | string | yes | Java regular expression (java.util.regex), matched anywhere in the line | at most 256 characters |
 | `timeoutMs` | integer | no | How long to wait (default: 10000) | 100 to 120000 |
 
 ## smelting

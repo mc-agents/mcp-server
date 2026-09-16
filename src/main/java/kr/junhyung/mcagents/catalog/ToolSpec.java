@@ -15,6 +15,9 @@ import java.util.Map;
  * @param untrusted the answer contains text a server or a player wrote, so the server wraps it
  * @param structured the bot sends a DTO and the server renders it, so two bots cannot describe the
  *                  same state differently
+ * @param readOnly  the call changes nothing in the world or on the server. A client that honours
+ *                  the hint lets these through without a prompt, which is about half the catalogue
+ * @param destructive the call can undo work: a block dug, a command run as op, a bot sent away
  * @param inputSchema what MCP advertises, including the optional {@code bot}
  * @param wireSchema  what a bot receives: no {@code bot}, nothing optional, already clamped
  * @param watches   the reading tool this one polls until its answer matches, for a wait on state
@@ -29,6 +32,8 @@ public record ToolSpec(
         boolean exclusive,
         boolean untrusted,
         boolean structured,
+        boolean readOnly,
+        boolean destructive,
         boolean needsWorld,
         int defaultDeadlineMs,
         Map<String, Object> inputSchema,

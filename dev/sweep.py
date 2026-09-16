@@ -12,11 +12,22 @@ SAMPLES = {
     "nameOrType": "diamond", "message": "hello", "command": "/help", "target": "lobby",
     "host": "127.0.0.1", "port": 25577, "name": "bob", "type": "minecraft:cow", "entity": "minecraft:cow",
     "text": "hi", "pattern": "never-matches-this", "titlePattern": "chest", "slot": 0,
-    "x": 0, "y": 64, "z": 0, "direction": "forward", "id": "test", "key": "test",
+    "x": 0, "y": 64, "z": 0, "direction": "forward", "id": "test", "key": "jump",
     "buttonId": "ok", "windowTitle": "Chest", "recipeIndex": 0, "timeoutMs": 1500,
     "collectMs": 200, "durationMs": 200, "fuelItem": "minecraft:coal", "inputItem": "minecraft:iron_ore",
     "prefix": "/he", "sound": "minecraft:entity.pig.ambient", "particle": "minecraft:flame",
     "scoreboard": "sidebar", "username": "bob", "owner": "test", "bot": "alice", "label": "Confirm", "ticks": 2,
+    "match": "[Accept]", "slots": [0, 1], "steps": [{"press": "jump"}], "item": "1", "trade": "1",
+    "primary": "speed", "value": True,
+}
+
+# The errors the world is allowed to answer with. The wait-for tools are asked for a pattern that
+# never arrives, and the two that talk to a Minecraft server directly have none to talk to in CI.
+# Anything else that errors is a tool the server refused, and the sweep exists to notice that.
+EXPECTED_ERRORS = {
+    "wait-for-action-bar", "wait-for-boss-bars", "wait-for-chat", "wait-for-dialog", "wait-for-displays",
+    "wait-for-effect", "wait-for-item", "wait-for-player-list", "wait-for-scoreboard", "wait-for-title",
+    "wait-for-toast", "ping-server", "wait-for-server",
 }
 
 
@@ -58,16 +69,21 @@ def call(sid, tool, args):
 
 
 sid = session()
-unwired, failed, ok = [], [], []
+unwired, failed, skipped, ok = [], [], [], []
 
 for tool in CATALOG["tools"]:
     if tool["name"] in ("join-server", "leave-server", "restart-bot", "switch-server"):
         continue  # driven separately; they move the bot out from under the rest
+    properties = tool["inputSchema"].get("properties", {})
     args = {k: SAMPLES[k] for k in tool["inputSchema"].get("required", []) or [] if k in SAMPLES}
     missing = [k for k in tool["inputSchema"].get("required", []) or [] if k not in SAMPLES]
     if missing:
+        skipped.append(tool["name"])
         print("SKIP %-22s no sample for %s" % (tool["name"], missing))
         continue
+    # A wait that is going to fail should fail quickly; wait-for-server's default is five minutes.
+    if "timeoutMs" in properties:
+        args["timeoutMs"] = SAMPLES["timeoutMs"]
 
     error, text = call(sid, tool["name"], args)
     if "not wired up yet" in text:
@@ -80,10 +96,18 @@ for tool in CATALOG["tools"]:
         ok.append(tool["name"])
         print("ok   %-22s %s" % (tool["name"], text))
 
-print("\nok %d | error %d | unwired %d" % (len(ok), len(failed), len(unwired)))
+unexpected = [name for name in failed if name not in EXPECTED_ERRORS]
+print("\nok %d | error %d (%d unexpected) | unwired %d | skipped %d"
+      % (len(ok), len(failed), len(unexpected), len(unwired), len(skipped)))
 
-# An error is usually the world saying no -- an empty inventory, no container underfoot. A tool
-# that is not wired up is the server saying nothing, and that is the only thing worth failing on.
+# A tool that is not wired up is the server saying nothing. A skipped tool was never asked, and an
+# error outside the named set is the server refusing -- every rpc tool answering "not in a world"
+# because the join failed looks exactly like that, and used to pass.
 if unwired:
     print("unwired:", unwired)
+if skipped:
+    print("skipped:", skipped)
+if unexpected:
+    print("unexpected errors:", unexpected)
+if unwired or skipped or unexpected:
     raise SystemExit(1)

@@ -60,6 +60,8 @@ public final class Catalog {
                     node.get("exclusive").asBoolean(),
                     node.get("untrusted").asBoolean(),
                     node.get("structured").asBoolean(),
+                    node.get("readOnly").asBoolean(),
+                    node.path("destructive").asBoolean(false),
                     /*
                     A tool the catalogue does not mark needs a world. screenshot is the exception,
                     and the exception is the point: the screen a bot is stuck on is the answer to

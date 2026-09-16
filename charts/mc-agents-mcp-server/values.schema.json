@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "mc-agents-mcp-server values",
+  "type": "object",
+  "additionalProperties": false,
+  "definitions": {
+    "labels": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "duration": {
+      "type": "string",
+      "pattern": "^[0-9]+(ms|s|m|h)$"
+    },
+    "quantity": {
+      "type": ["string", "number"]
+    }
+  },
+  "properties": {
+    "replicaCount": { "type": "integer", "minimum": 0 },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "registry": { "type": "string" },
+        "repository": { "type": "string" },
+        "tag": { "type": "string" },
+        "pullPolicy": { "type": "string", "enum": ["Always", "IfNotPresent", "Never"] }
+      }
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": { "name": { "type": "string" } },
+        "required": ["name"]
+      }
+    },
+    "nameOverride": { "type": "string" },
+    "fullnameOverride": { "type": "string" },
+    "serviceAccount": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "create": { "type": "boolean" },
+        "name": { "type": "string" },
+        "annotations": { "$ref": "#/definitions/labels" },
+        "automountToken": { "type": "boolean" }
+      }
+    },
+    "bots": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provision": { "type": "boolean" },
+        "namespace": { "type": "string" },
+        "mcpHost": { "type": "string" },
+        "profile": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "type": "string", "enum": ["MinecraftBotProfile", "ClusterMinecraftBotProfile"] },
+            "name": { "type": "string" }
+          }
+        }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "token": { "type": "string" },
+        "existingSecret": { "type": "string" },
+        "secretKey": { "type": "string", "minLength": 1 }
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string", "enum": ["ClusterIP", "NodePort", "LoadBalancer"] },
+        "mcpPort": { "$ref": "#/definitions/port" },
+        "botLinkPort": { "$ref": "#/definitions/port" },
+        "annotations": { "$ref": "#/definitions/labels" }
+      }
+    },
+    "networkPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "botSelector": { "$ref": "#/definitions/labels" },
+        "agentSelector": { "$ref": "#/definitions/labels" },
+        "metricsFrom": { "$ref": "#/definitions/labels" }
+      }
+    },
+    "maxBots": { "type": "integer", "minimum": 1 },
+    "feeds": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repeatFlushMs": { "type": "integer", "minimum": 1 },
+        "muted": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["chat", "actionBar", "title", "dialog", "effect", "toast"] }
+        }
+      }
+    },
+    "logLevel": { "type": "string", "enum": ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "OFF"] },
+    "logFormat": { "type": "string", "enum": ["", "ecs", "logstash", "gelf"] },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requests": { "type": "object", "additionalProperties": { "$ref": "#/definitions/quantity" } },
+        "limits": { "type": "object", "additionalProperties": { "$ref": "#/definitions/quantity" } }
+      }
+    },
+    "podAnnotations": { "$ref": "#/definitions/labels" },
+    "podLabels": { "$ref": "#/definitions/labels" },
+    "nodeSelector": { "$ref": "#/definitions/labels" },
+    "tolerations": { "type": "array", "items": { "type": "object" } },
+    "affinity": { "type": "object" },
+    "podSecurityContext": { "type": "object" },
+    "securityContext": { "type": "object" },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "serviceMonitor": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "namespace": { "type": "string" },
+            "labels": { "$ref": "#/definitions/labels" },
+            "interval": { "$ref": "#/definitions/duration" },
+            "scrapeTimeout": { "$ref": "#/definitions/duration" }
+          }
+        }
+      }
+    }
+  }
+}

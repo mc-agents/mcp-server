@@ -72,9 +72,16 @@ public class Orchestration {
     }
 
     public McpSchema.CallToolResult call(ToolSpec spec, Map<String, Object> arguments) {
+        return call(spec, arguments, Progress.NONE);
+    }
+
+    public McpSchema.CallToolResult call(ToolSpec spec, Map<String, Object> given, Progress progress) {
+        /* Nothing here crosses the wire as a call, so the catalogue's bounds are the server's to hold. */
+        Map<String, Object> arguments = Normaliser.bound(spec, given);
+
         try {
             return switch (spec.name()) {
-                case "join-server" -> join(spec, arguments);
+                case "join-server" -> join(spec, arguments, progress);
                 case "leave-server" -> leave(arguments);
                 case "restart-bot" -> restart(spec, arguments);
                 default -> ToolDispatcher.failure("%s is not an orchestration tool".formatted(spec.name()));
@@ -84,7 +91,7 @@ public class Orchestration {
         }
     }
 
-    private McpSchema.CallToolResult join(ToolSpec spec, Map<String, Object> arguments) {
+    private McpSchema.CallToolResult join(ToolSpec spec, Map<String, Object> arguments, Progress progress) {
         String name = botName(arguments);
         String[] address = hostAndPort(required(arguments, "host"), arguments.get("port"));
         String host = address[0];
@@ -93,7 +100,7 @@ public class Orchestration {
         String version = ToolDispatcher.stringArg(arguments, "version");
         String where = "%s:%d".formatted(host, port);
 
-        BotSession bot = linkedOrStarted(name, arguments);
+        BotSession bot = linkedOrStarted(name, arguments, progress);
         Messages.Status current = bot.status();
 
         if (current != null && READY.equals(current.state())) {
@@ -236,9 +243,10 @@ public class Orchestration {
                         id -> new Messages.Connect(id, host, port, username, version, timeoutMs)),
                 timeoutMs);
 
+        /* The reason is the server's: a kick message, a login refusal, whatever the bot was told. */
         if (!joined.ok()) {
             throw new JoinFailure(stageOf(joined),
-                    "bot \"%s\" could not join %s: %s".formatted(bot.name(), where, joined.text()));
+                    Trust.mark("bot \"%s\" could not join %s: %s".formatted(bot.name(), where, joined.text())));
         }
         if (bot.status() == null || !READY.equals(bot.status().state())) {
             throw new JoinFailure(JoinStage.SPAWN,
@@ -270,7 +278,7 @@ public class Orchestration {
      * <p>With no cluster there is nothing to ask, and saying that is the whole value of the LINK
      * stage. The fix is then in whoever should have started the bot, not on the game server.
      */
-    private BotSession linkedOrStarted(String name, Map<String, Object> arguments) {
+    private BotSession linkedOrStarted(String name, Map<String, Object> arguments, Progress progress) {
         BotRegistry.requireValidName(name);
 
         try {
@@ -291,7 +299,7 @@ public class Orchestration {
         boolean created = provisioner.request(name, kind, mcVersion, ToolDispatcher.stringArg(arguments, "owner"));
 
         try {
-            return awaitLink(name, kind);
+            return awaitLink(name, kind, progress);
         } catch (JoinFailure never) {
             /*
             A bot this call asked for and that never linked cannot be reached by leave-server under a
@@ -312,8 +320,9 @@ public class Orchestration {
      * it is the thing the server can see. A pod that is Running but has not linked is not usable,
      * and an operator status that says Running would be a more encouraging lie.
      */
-    private BotSession awaitLink(String name, String kind) {
-        long deadline = System.currentTimeMillis() + patience.toMillis();
+    private BotSession awaitLink(String name, String kind, Progress progress) {
+        long started = System.currentTimeMillis();
+        long deadline = started + patience.toMillis();
 
         while (System.currentTimeMillis() < deadline) {
             try {
@@ -325,6 +334,10 @@ public class Orchestration {
                     throw new JoinFailure(JoinStage.LINK,
                             "the bot named \"%s\" could not be started: %s".formatted(name, failed));
                 }
+                Duration asked = provisioner.age(name);
+                progress.report("waiting for the %s bot named \"%s\" to dial in%s".formatted(kind, name,
+                        asked == null ? "" : " (asked for %ds ago)".formatted(asked.toSeconds())),
+                        System.currentTimeMillis() - started, patience.toMillis());
                 try {
                     TimeUnit.MILLISECONDS.sleep(START_POLL_MS);
                 } catch (InterruptedException e) {
@@ -376,6 +389,7 @@ public class Orchestration {
         }
     }
 
+    /** The brand is the server's own string, and a plugin can make it anything, so the line is marked. */
     private static String describe(BotSession bot) {
         Messages.Status status = bot.status();
         StringBuilder body = new StringBuilder("Bot \"%s\" is on %s as %s"
@@ -395,7 +409,8 @@ public class Orchestration {
         if (status.gameMode() != null) {
             body.append(" in ").append(status.gameMode()).append(" mode");
         }
-        return body.append('.').toString();
+        body.append('.');
+        return status.serverBrand() == null ? body.toString() : Trust.mark(body.toString());
     }
 
     /*

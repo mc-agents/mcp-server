@@ -45,7 +45,10 @@ auth:
   enabled: true
   # The token itself. Use existingSecret anywhere the values file is not the secret store.
   token: ""
-  # Name of a Secret that already holds it. When set, the chart creates none.
+  # Name of a Secret that already holds it. When set, the chart creates none, and it cannot see
+  # the value either: a rotation of that Secret does not roll the pod, so follow it with
+  # `kubectl rollout restart`, or run stakater Reloader and set podAnnotations to
+  # reloader.stakater.com/auto: "true".
   existingSecret: ""
   secretKey: token
 
@@ -56,13 +59,18 @@ service:
   botLinkPort: 8765
   annotations: {}
 
-# Bots reach the link port and agents reach the MCP port. Nothing else needs either.
+# Bots reach the link port and agents reach the MCP port. Nothing else needs either, apart from
+# whatever scrapes /actuator/prometheus; kubelet probes arrive outside any policy.
 networkPolicy:
   enabled: false
   # Pods allowed to dial the bot link port. Empty means every pod in this namespace.
   botSelector: {}
   # Pods allowed to call /mcp. Empty means every pod in this namespace.
   agentSelector: {}
+  # Namespace labels a scraper may reach the MCP port from, beside the agent pods above. Empty
+  # opens it to no other namespace, except that with metrics.serviceMonitor on and given a
+  # namespace, that namespace is let in, since that is where the scraper is.
+  metricsFrom: {}
 
 # How many bots may be linked at once. A bot that is turned away says this number.
 maxBots: 16
@@ -75,6 +83,11 @@ feeds:
   muted: []
 
 logLevel: INFO
+
+# Log lines as JSON in one of Spring Boot's structured formats: ecs, logstash or gelf. Empty keeps
+# the plain lines, which are what a person reading `kubectl logs` wants; a log pipeline wants a
+# format it can index by field.
+logFormat: ""
 
 resources:
   requests:
@@ -101,9 +114,15 @@ securityContext:
     drop: ["ALL"]
 
 metrics:
+  # prometheus.io/scrape annotations on the pod, for a Prometheus that finds targets by them. A
+  # Prometheus run by the operator ignores these and takes the ServiceMonitor below instead.
   enabled: true
   serviceMonitor:
     enabled: false
+    # Where the ServiceMonitor is created. Empty is this release's namespace, which needs a
+    # Prometheus that watches every namespace; a Prometheus that watches only its own wants the
+    # ServiceMonitor there, and networkPolicy.metricsFrom then lets that namespace in.
+    namespace: ""
     labels: {}
     interval: 30s
     scrapeTimeout: 10s

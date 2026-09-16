@@ -59,3 +59,16 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- define "mc-agents-mcp-server.secretName" -}}
 {{- default (printf "%s-auth" (include "mc-agents-mcp-server.fullname" .)) .Values.auth.existingSecret -}}
 {{- end -}}
+
+{{/*
+Namespace labels a scraper reaches the MCP port from, as YAML for a namespaceSelector's matchLabels.
+Empty when nothing is let in, so the caller can leave the rule out: an empty namespaceSelector
+would open the port to every namespace, which is what the rule used to do.
+*/}}
+{{- define "mc-agents-mcp-server.metricsFrom" -}}
+{{- if .Values.networkPolicy.metricsFrom -}}
+{{- toYaml .Values.networkPolicy.metricsFrom -}}
+{{- else if and .Values.metrics.serviceMonitor.enabled .Values.metrics.serviceMonitor.namespace -}}
+kubernetes.io/metadata.name: {{ .Values.metrics.serviceMonitor.namespace | quote }}
+{{- end -}}
+{{- end -}}

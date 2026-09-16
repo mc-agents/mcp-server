@@ -56,6 +56,12 @@ public class LocalTools {
     }
 
     public McpSchema.CallToolResult call(ToolSpec spec, Map<String, Object> arguments) {
+        return call(spec, arguments, Progress.NONE);
+    }
+
+    public McpSchema.CallToolResult call(ToolSpec spec, Map<String, Object> given, Progress progress) {
+        /* Nothing here crosses the wire, so the catalogue's bounds are the server's to hold. */
+        Map<String, Object> arguments = Normaliser.bound(spec, given);
         String feed = FEED_OF.get(spec.name());
 
         if (feed != null) {
@@ -68,7 +74,7 @@ public class LocalTools {
             case "get-bot-status" -> status(arguments);
             case "detect-gamemode" -> gameMode(arguments);
             case "ping-server" -> ping(arguments);
-            case "wait-for-server" -> waitForServer(spec, arguments);
+            case "wait-for-server" -> waitForServer(spec, arguments, progress);
             default -> ToolDispatcher.failure("%s is not wired up yet".formatted(spec.name()));
         };
     }
@@ -119,7 +125,15 @@ public class LocalTools {
         append(body, "Last error", last.lastError());
         append(body, "Last seen", Instant.ofEpochMilli(last.ts()).toString());
 
-        return ToolDispatcher.text(body.toString());
+        /*
+        A kick reason, a login error and a brand are the server's words: a plugin that kicks with
+        an instruction in the message has written it straight into this answer.
+        */
+        return ToolDispatcher.text(serverWrote(last) ? Trust.mark(body.toString()) : body.toString());
+    }
+
+    private static boolean serverWrote(Messages.Status status) {
+        return status.reason() != null || status.lastError() != null || status.serverBrand() != null;
     }
 
     private McpSchema.CallToolResult gameMode(Map<String, Object> arguments) {
@@ -163,12 +177,13 @@ public class LocalTools {
      * connections outright, and there is nothing to subscribe to; the interval is short enough that
      * the wait is not what makes the development loop slow.
      */
-    private McpSchema.CallToolResult waitForServer(ToolSpec spec, Map<String, Object> arguments) {
+    private McpSchema.CallToolResult waitForServer(ToolSpec spec, Map<String, Object> arguments, Progress progress) {
         String host = ToolDispatcher.stringArg(arguments, "host");
         int port = intArg(arguments, "port", 25_565);
         int timeoutMs = intArg(arguments, "timeoutMs", spec.defaultDeadlineMs());
 
-        long deadline = System.currentTimeMillis() + timeoutMs;
+        long started = System.currentTimeMillis();
+        long deadline = started + timeoutMs;
         int attempts = 0;
         String lastFailure = "it was never reachable";
 
@@ -177,13 +192,16 @@ public class LocalTools {
             try {
                 ServerListPing.Pong pong = ServerListPing.ping(host, port, POLL_TIMEOUT_MS);
 
-                return ToolDispatcher.text(
+                /* The version string is the server's own, like the rest of a pong. */
+                return ToolDispatcher.text(Trust.mark(
                         "%s:%d is up after %d attempt(s): %s, %d of %d players online."
-                                .formatted(host, port, attempts, pong.version(), pong.online(), pong.max()));
+                                .formatted(host, port, attempts, pong.version(), pong.online(), pong.max())));
             } catch (IOException e) {
                 lastFailure = e.getMessage();
             }
 
+            progress.report("%s:%d has not answered %d attempt(s), the last saying: %s"
+                    .formatted(host, port, attempts, lastFailure), System.currentTimeMillis() - started, timeoutMs);
             try {
                 TimeUnit.MILLISECONDS.sleep(POLL_INTERVAL_MS);
             } catch (InterruptedException e) {
@@ -279,8 +297,10 @@ public class LocalTools {
         String body = all.stream()
                 .map(bot -> "  %s (%s): %s".formatted(bot.name(), bot.kind(), describe(bot)))
                 .reduce((a, b) -> a + "\n" + b).orElse("");
+        String listed = "%d bot(s):\n%s".formatted(all.size(), body);
 
-        return ToolDispatcher.text("%d bot(s):\n%s".formatted(all.size(), body));
+        /* A bot that was kicked is listed with the reason, and the reason is the server's. */
+        return ToolDispatcher.text(all.stream().anyMatch(LocalTools::showsReason) ? Trust.mark(listed) : listed);
     }
 
     /** "idle" is the protocol's word; "linked, not in a world" is what it means to a reader. */
@@ -295,8 +315,13 @@ public class LocalTools {
                     ? "on %s, dead".formatted(status.address())
                     : "on " + status.address();
         }
-        return status.reason() == null ? status.state()
-                : "%s (%s)".formatted(status.state(), status.reason());
+        return showsReason(bot) ? "%s (%s)".formatted(status.state(), status.reason()) : status.state();
+    }
+
+    private static boolean showsReason(BotSession bot) {
+        Messages.Status status = bot.status();
+        return status != null && status.reason() != null
+                && !"idle".equals(status.state()) && !"ready".equals(status.state());
     }
 
     private static String describe(FeedEntry line, boolean withSource) {

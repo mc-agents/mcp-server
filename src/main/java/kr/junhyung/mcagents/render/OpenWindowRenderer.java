@@ -1,5 +1,7 @@
 package kr.junhyung.mcagents.render;
 
+import java.util.Map;
+
 /**
  * A window, or the fact that there is not one.
  *
@@ -15,8 +17,13 @@ public final class OpenWindowRenderer implements Renderer<OpenWindowRenderer.Vie
 
     @Override
     public String render(View view) {
+        return render(view, Map.of());
+    }
+
+    @Override
+    public String render(View view, Map<String, Object> arguments) {
         if (view.window() != null) {
-            return WINDOW.render(view.window());
+            return WINDOW.render(view.window(), arguments);
         }
         return "No window is open. Run whatever opens the menu first, then wait-for-window.";
     }

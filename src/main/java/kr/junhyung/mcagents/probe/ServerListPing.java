@@ -29,6 +29,9 @@ public final class ServerListPing {
 
     private static final JsonMapper MAPPER = JsonMapper.builder().build();
 
+    /** A protocol string is at most 32767 characters, and a character is at most three bytes. */
+    private static final int MAX_STATUS_BYTES = 32767 * 3;
+
     /** What a server said about itself. {@code motd} is the server's own text, so it is untrusted. */
     public record Pong(String version, int protocol, int online, int max, String motd, long latencyMs) {}
 
@@ -73,17 +76,32 @@ public final class ServerListPing {
         return body.toByteArray();
     }
 
+    /**
+     * The packet and the status inside it are length-prefixed by the server, so the server chooses
+     * how much this allocates. The protocol caps the string at 32767 characters, three bytes each
+     * at most in UTF-8, and a claim above that is refused before anything is allocated: the tool
+     * runs without a bot, and a server that names two gigabytes must not take the pod down.
+     */
     private static String readStatus(DataInputStream in) throws IOException {
-        readVarInt(in);
+        /* The packet wraps the string in a type byte and a length prefix of up to five. */
+        bounded(readVarInt(in), "packet", MAX_STATUS_BYTES + 6);
 
         if (readVarInt(in) != 0x00) {
             throw new IOException("the server answered a status request with something else");
         }
 
-        byte[] json = new byte[readVarInt(in)];
+        byte[] json = new byte[bounded(readVarInt(in), "status", MAX_STATUS_BYTES)];
         in.readFully(json);
 
         return new String(json, StandardCharsets.UTF_8);
+    }
+
+    private static int bounded(int length, String what, int ceiling) throws IOException {
+        if (length < 0 || length > ceiling) {
+            throw new IOException("the server claimed a %s of %d bytes, and the most it can be is %d"
+                    .formatted(what, length, ceiling));
+        }
+        return length;
     }
 
     /**

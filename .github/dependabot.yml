@@ -1,0 +1,24 @@
+version: 2
+updates:
+  # Versions are literal in the two build files, with no catalogue to move them through. Spring
+  # Boot, Spring AI and the MCP SDK go in one update: the AI starter is built against one SDK, and
+  # raising either alone is a build that does not compile.
+  - package-ecosystem: gradle
+    directories: ["/", "/e2e"]
+    schedule:
+      interval: weekly
+    groups:
+      spring:
+        patterns:
+          - "org.springframework.boot*"
+          - "org.springframework.ai*"
+          - "io.modelcontextprotocol.sdk*"
+
+  # The workflow had drifted to two versions of setup-gradle before this existed.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+# Docker is left out on purpose: the Paper image floats on a java tag and the bot images on
+# latest-mc<version>, and moving either is a release of its own.

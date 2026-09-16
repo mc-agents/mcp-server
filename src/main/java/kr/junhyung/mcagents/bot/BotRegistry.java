@@ -20,6 +20,10 @@ public final class BotRegistry {
     private final int max;
 
     public BotRegistry(int max) {
+        /* A limit of zero would refuse every bot with a message naming zero as the limit, which reads as a bug rather than a setting. */
+        if (max < 1) {
+            throw new IllegalArgumentException("max bots has to be at least 1, and was " + max);
+        }
         this.max = max;
     }
 

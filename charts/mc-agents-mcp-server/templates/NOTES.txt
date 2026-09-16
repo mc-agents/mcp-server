@@ -15,6 +15,12 @@ The token is in the Secret {{ include "mc-agents-mcp-server.secretName" . }}:
 
   kubectl -n {{ .Release.Namespace }} get secret {{ include "mc-agents-mcp-server.secretName" . }} \
     -o jsonpath='{.data.{{ .Values.auth.secretKey }}}' | base64 -d
+{{- if .Values.auth.existingSecret }}
+
+That Secret is yours, so rotating it does not roll the pod. Follow a rotation with
+`kubectl -n {{ .Release.Namespace }} rollout restart deployment/{{ include "mc-agents-mcp-server.fullname" . }}`,
+or run stakater Reloader with `reloader.stakater.com/auto: "true"` in podAnnotations.
+{{- end }}
 {{- else -}}
 auth.enabled is false, so anything that can reach the MCP port can drive every bot.
 {{- end }}

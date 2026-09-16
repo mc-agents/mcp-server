@@ -186,6 +186,40 @@ class CatalogContractTest {
         }
     }
 
+    /**
+     * {@code readOnly} becomes the hint a client uses to skip the prompt, so every tool has to
+     * say, and the claim has to be true: a tool that is exclusive moves the bot, a wait reads
+     * whatever it watches, and a tool the server answers alone changes nothing in the world.
+     */
+    @Test
+    void everyToolSaysWhetherItIsReadOnlyAndTheClaimHoldsUp() throws IOException {
+        Map<String, JsonNode> byName = new java.util.HashMap<>();
+        for (JsonNode tool : tools()) {
+            byName.put(tool.get("name").asString(), tool);
+        }
+
+        for (JsonNode tool : tools()) {
+            String name = tool.get("name").asString();
+
+            assertTrue(tool.has("readOnly"), name + " does not say whether it is read-only");
+            boolean readOnly = tool.get("readOnly").asBoolean();
+
+            if (tool.get("exclusive").asBoolean()) {
+                assertFalse(readOnly, name + " is exclusive, so it acts on the bot, so it is not read-only");
+            }
+            if (SERVER_LOCAL_ROUTE.equals(tool.get("route").asString())) {
+                assertTrue(readOnly, name + " is answered by the server and changes nothing in the world");
+            }
+            if (tool.has("watches")) {
+                assertEquals(byName.get(tool.get("watches").asString()).get("readOnly").asBoolean(), readOnly,
+                        name + " disagrees with the tool it watches about being read-only");
+            }
+            if (tool.path("destructive").asBoolean(false)) {
+                assertFalse(readOnly, name + " cannot be both destructive and read-only");
+            }
+        }
+    }
+
     /** A renderer for a tool the catalogue has never heard of would never be reached. */
     @Test
     void everyRendererNamesAToolTheCatalogueHas() throws IOException {

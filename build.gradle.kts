@@ -24,6 +24,7 @@ dependencies {
     implementation("io.fabric8:kubernetes-client:7.3.1")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("com.networknt:json-schema-validator:3.0.6")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -35,9 +36,25 @@ java {
 // second copy that can drift from the one the other repositories read. The include has to sit on
 // the copy and not on the source set: on the source set it filters every resource, which silently
 // left application.yaml out of the jar.
-tasks.processResources { from("catalog") { include("*.json") } }
+tasks.processResources {
+    from("catalog") { include("*.json") }
 
-tasks.test { useJUnitPlatform() }
+    // initialize reports the version from VERSION. ReplaceTokens rather than expand(), because
+    // expand() is Groovy templating and reads every ${ENV:default} placeholder as its own.
+    filesMatching("application.yaml") {
+        filter<org.apache.tools.ant.filters.ReplaceTokens>("tokens" to mapOf("version" to project.version.toString()))
+    }
+}
+
+tasks.test {
+    useJUnitPlatform()
+    // A failure in CI has only this to go on, so it carries the whole exception and its causes.
+    testLogging {
+        events("failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showCauses = true
+    }
+}
 
 /* The plain jar is a library artifact nothing here consumes. */
 tasks.bootJar { archiveFileName = "app.jar" }

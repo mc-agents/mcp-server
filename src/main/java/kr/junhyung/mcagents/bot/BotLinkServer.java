@@ -2,6 +2,7 @@ package kr.junhyung.mcagents.bot;
 
 import kr.junhyung.mcagents.catalog.Catalog;
 import kr.junhyung.mcagents.catalog.ToolSpec;
+import kr.junhyung.mcagents.protocol.Frame;
 import kr.junhyung.mcagents.protocol.Messages;
 import kr.junhyung.mcagents.protocol.ProtocolViolation;
 import java.io.IOException;
@@ -20,6 +21,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.spi.LoggingEventBuilder;
+import org.springframework.boot.web.server.context.WebServerApplicationContext;
 import org.springframework.context.SmartLifecycle;
 import tools.jackson.databind.ObjectMapper;
 
@@ -39,19 +42,20 @@ public class BotLinkServer implements SmartLifecycle {
     private static final Logger log = LoggerFactory.getLogger(BotLinkServer.class);
 
     /** A bot that has connected but not introduced itself is dropped. */
-    private static final int HELLO_TIMEOUT_MS = 5_000;
+    public static final int HELLO_TIMEOUT_MS = 5_000;
 
     private static final int HEARTBEAT_MS = 5_000;
 
     /** Every feed a bot pushes, in the order the protocol lists them. */
     public static final List<String> FEEDS = List.of("chat", "actionBar", "title", "dialog", "effect", "toast");
 
+    /** What every bot is told at the handshake, from the same constants the link enforces. */
     private static final Map<String, Object> LIMITS = Map.of(
-            "frameBytes", 16 * 1024 * 1024,
-            "jsonFrameBytes", 1024 * 1024,
-            "blobBytes", 8 * 1024 * 1024,
-            "pendingBlobBytes", 32 * 1024 * 1024,
-            "inFlightCalls", 8,
+            "frameBytes", Frame.MAX_FRAME_BYTES,
+            "jsonFrameBytes", Frame.MAX_JSON_BYTES,
+            "blobBytes", BotLink.BLOB_BYTES,
+            "pendingBlobBytes", BotLink.PENDING_BLOB_BYTES,
+            "inFlightCalls", BotLink.IN_FLIGHT_CALLS,
             "deadlineCeilingMs", 600_000);
 
     private final Catalog catalog;
@@ -60,6 +64,7 @@ public class BotLinkServer implements SmartLifecycle {
     private final ScheduledExecutorService timers;
     private final int port;
     private final int repeatFlushMs;
+    private final int helloTimeoutMs;
     private final Map<String, Boolean> events;
 
     private final AtomicBoolean running = new AtomicBoolean();
@@ -74,6 +79,12 @@ public class BotLinkServer implements SmartLifecycle {
      */
     public BotLinkServer(Catalog catalog, BotRegistry bots, ObjectMapper mapper,
             ScheduledExecutorService timers, int port, int repeatFlushMs, Set<String> mutedFeeds) {
+        this(catalog, bots, mapper, timers, port, repeatFlushMs, mutedFeeds, HELLO_TIMEOUT_MS);
+    }
+
+    /** The hello timeout is a parameter so a test can watch a silent bot be dropped without waiting five seconds. */
+    public BotLinkServer(Catalog catalog, BotRegistry bots, ObjectMapper mapper,
+            ScheduledExecutorService timers, int port, int repeatFlushMs, Set<String> mutedFeeds, int helloTimeoutMs) {
         if (repeatFlushMs <= 0) {
             throw new IllegalArgumentException("repeatFlushMs has to be positive, and was " + repeatFlushMs);
         }
@@ -90,6 +101,7 @@ public class BotLinkServer implements SmartLifecycle {
         this.timers = timers;
         this.port = port;
         this.repeatFlushMs = repeatFlushMs;
+        this.helloTimeoutMs = helloTimeoutMs;
 
         Map<String, Boolean> valves = new LinkedHashMap<>();
         FEEDS.forEach(feed -> valves.put(feed, !mutedFeeds.contains(feed)));
@@ -141,6 +153,18 @@ public class BotLinkServer implements SmartLifecycle {
         return running.get();
     }
 
+    /**
+     * Just inside the web server's phase: this starts after Tomcat is up and stops after Tomcat
+     * has drained its requests, before it is torn down. The default phase stops first, which
+     * closed every link while calls were still in flight, so a rollout failed whatever an agent
+     * was in the middle of. Nothing is sent to the bots on the way out: a shutdown frame makes
+     * both kinds exit the process instead of redialling the replica that replaces this one.
+     */
+    @Override
+    public int getPhase() {
+        return WebServerApplicationContext.GRACEFUL_SHUTDOWN_PHASE - 512;
+    }
+
     private void accept() {
         while (running.get()) {
             try {
@@ -166,7 +190,7 @@ public class BotLinkServer implements SmartLifecycle {
         String name = null;
         try {
             link = new BotLink(socket, mapper, timers);
-            Messages.Hello hello = link.awaitHello(HELLO_TIMEOUT_MS);
+            Messages.Hello hello = link.awaitHello(helloTimeoutMs);
 
             BotSession session = admit(link, hello);
             name = session.name();
@@ -187,10 +211,10 @@ public class BotLinkServer implements SmartLifecycle {
                 link.fault(e.code, e.getMessage());
             }
         } catch (SocketTimeoutException e) {
-            log.warn("a bot connected and never introduced itself within {}ms", HELLO_TIMEOUT_MS);
+            log.warn("a bot connected and never introduced itself within {}ms", helloTimeoutMs);
             if (link != null) {
                 link.fault(ProtocolViolation.Code.HELLO_EXPECTED.name(),
-                        "no hello arrived within %dms of connecting".formatted(HELLO_TIMEOUT_MS));
+                        "no hello arrived within %dms of connecting".formatted(helloTimeoutMs));
             }
         } catch (IOException e) {
             log.debug("a bot link ended: {}", e.toString());
@@ -326,10 +350,21 @@ public class BotLinkServer implements SmartLifecycle {
             session.accept(status);
         }
 
+        /**
+         * The bot's fields ride as key-values rather than formatted into the message, so a
+         * structured log format indexes them; the bot's name stays in the message for the plain
+         * console, where key-values are not shown.
+         */
         @Override
         public void log(Messages.Log entry) {
-            BotLinkServer.log.atLevel(levelOf(entry.level())).log("bot \"{}\": {} {}",
-                    session.name(), entry.message(), entry.fields() == null ? Map.of() : entry.fields());
+            LoggingEventBuilder line = BotLinkServer.log.atLevel(levelOf(entry.level()))
+                    .addKeyValue("bot", session.name());
+            Map<String, Object> fields = entry.fields() == null ? Map.of() : entry.fields();
+
+            for (Map.Entry<String, Object> field : fields.entrySet()) {
+                line = line.addKeyValue(field.getKey(), field.getValue());
+            }
+            line.log("bot \"{}\": {}", session.name(), entry.message());
         }
 
         private static org.slf4j.event.Level levelOf(String level) {

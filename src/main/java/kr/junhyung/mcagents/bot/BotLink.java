@@ -42,15 +42,30 @@ public final class BotLink implements AutoCloseable {
 
     private static final int DEAD_AFTER_MISSED_BEATS = 3;
 
+    /**
+     * What {@code helloOk} advertises, and what this link then holds a bot to. One blob at most
+     * this big, this many bytes of blobs waiting for the result that names them, each waiting this
+     * long before it is forgotten, and this many calls unanswered at once.
+     */
+    public static final int BLOB_BYTES = 8 * 1024 * 1024;
+
+    public static final int PENDING_BLOB_BYTES = 32 * 1024 * 1024;
+
+    public static final long BLOB_TTL_MS = 30_000;
+
+    public static final int IN_FLIGHT_CALLS = 8;
+
     private final Socket socket;
     private final ObjectMapper mapper;
     private final ScheduledExecutorService timers;
+    private final long blobTtlMs;
     private final OutputStream out;
     private final InputStream in;
 
     private final AtomicLong nextCallId = new AtomicLong(1);
     private final Map<Long, PendingCall> pending = new ConcurrentHashMap<>();
-    private final Map<UUID, byte[]> blobs = new ConcurrentHashMap<>();
+    private final Map<UUID, StoredBlob> blobs = new ConcurrentHashMap<>();
+    private final AtomicLong pendingBlobBytes = new AtomicLong();
     private final AtomicBoolean closed = new AtomicBoolean();
 
     private volatile Messages.Hello hello;
@@ -58,9 +73,16 @@ public final class BotLink implements AutoCloseable {
     private volatile long ackedEventSeq;
 
     public BotLink(Socket socket, ObjectMapper mapper, ScheduledExecutorService timers) throws IOException {
+        this(socket, mapper, timers, BLOB_TTL_MS);
+    }
+
+    /** The TTL is a parameter so a test can watch a blob expire without waiting thirty seconds. */
+    public BotLink(Socket socket, ObjectMapper mapper, ScheduledExecutorService timers, long blobTtlMs)
+            throws IOException {
         this.socket = socket;
         this.mapper = mapper;
         this.timers = timers;
+        this.blobTtlMs = blobTtlMs;
         socket.setTcpNoDelay(true);
         socket.setKeepAlive(true);
         this.out = new BufferedOutputStream(socket.getOutputStream());
@@ -194,12 +216,50 @@ public final class BotLink implements AutoCloseable {
         FrameCodec.write(out, new Frame.Json(mapper.writeValueAsBytes(message)));
     }
 
-    public void rememberBlob(UUID id, byte[] content) {
-        blobs.put(id, content);
+    /**
+     * Hold a blob until the result that names it arrives. A result that never comes -- the bot
+     * crashed between the two frames, or lied -- would otherwise leave the bytes here for the life
+     * of the link, so every blob is forgotten after the TTL and the total waiting is capped.
+     */
+    public void rememberBlob(UUID id, byte[] content) throws ProtocolViolation {
+        if (content.length > BLOB_BYTES) {
+            throw new ProtocolViolation(ProtocolViolation.Code.FRAME_TOO_LARGE,
+                    "a blob of %d bytes exceeds the %d byte limit".formatted(content.length, BLOB_BYTES));
+        }
+        if (pendingBlobBytes.addAndGet(content.length) > PENDING_BLOB_BYTES) {
+            pendingBlobBytes.addAndGet(-content.length);
+            throw new ProtocolViolation(ProtocolViolation.Code.FRAME_TOO_LARGE,
+                    "%d bytes of blobs are already waiting for a result, which is past the %d byte limit"
+                            .formatted(pendingBlobBytes.get(), PENDING_BLOB_BYTES));
+        }
+
+        ScheduledFuture<?> expiry = timers.schedule(() -> forgetBlob(id), blobTtlMs, TimeUnit.MILLISECONDS);
+        StoredBlob replaced = blobs.put(id, new StoredBlob(content, expiry));
+
+        /* An id sent twice keeps the later bytes; the earlier ones are no longer waiting. */
+        if (replaced != null) {
+            replaced.expiry().cancel(false);
+            pendingBlobBytes.addAndGet(-replaced.content().length);
+        }
     }
 
     public byte[] takeBlob(UUID id) {
-        return blobs.remove(id);
+        StoredBlob stored = forgetBlob(id);
+        return stored == null ? null : stored.content();
+    }
+
+    private StoredBlob forgetBlob(UUID id) {
+        StoredBlob stored = blobs.remove(id);
+        if (stored != null) {
+            stored.expiry().cancel(false);
+            pendingBlobBytes.addAndGet(-stored.content().length);
+        }
+        return stored;
+    }
+
+    /** How many bytes of blobs are waiting for a result to name them. */
+    public long pendingBlobBytes() {
+        return pendingBlobBytes.get();
     }
 
     public void noteAck(long seq) {
@@ -232,6 +292,18 @@ public final class BotLink implements AutoCloseable {
             java.util.function.LongFunction<Messages.ToBot> build) {
         long id = nextCallId.getAndIncrement();
         PendingCall call = new PendingCall();
+
+        /*
+        The bot was told at the handshake how many calls it has to hold at once, and the ninth is
+        the server's to refuse rather than the bot's to drop. It fails as a bot-class failure: the
+        session is fine, and get-bot-status shows what it is busy with.
+        */
+        if (pending.size() >= IN_FLIGHT_CALLS) {
+            call.future.complete(failed(id, "bot", "TOO_MANY_IN_FLIGHT",
+                    "the bot already has %d calls in flight, which is the limit. Wait for one to finish."
+                            .formatted(IN_FLIGHT_CALLS)));
+            return call.future;
+        }
         pending.put(id, call);
 
         call.timeout = timers.schedule(() -> abandon(id, label, deadlineMs), deadlineMs + CALL_GRACE_MS,
@@ -308,7 +380,9 @@ public final class BotLink implements AutoCloseable {
             return;
         }
         failEverythingInFlight("the link to the bot closed");
-        blobs.clear();
+        for (UUID id : Set.copyOf(blobs.keySet())) {
+            forgetBlob(id);
+        }
         try {
             socket.close();
         } catch (IOException ignored) {
@@ -320,4 +394,6 @@ public final class BotLink implements AutoCloseable {
         private final CompletableFuture<Messages.Result> future = new CompletableFuture<>();
         private volatile ScheduledFuture<?> timeout;
     }
+
+    private record StoredBlob(byte[] content, ScheduledFuture<?> expiry) {}
 }

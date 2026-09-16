@@ -48,6 +48,33 @@ Leaving `MCP_AUTH_TOKEN` unset leaves `/mcp` open and says so in the log. That i
 default for a laptop and the wrong one anywhere a pod can reach it, so the chart sets one.
 `/actuator` is never behind the token: a probe cannot carry one.
 
+Where it listens follows from the token. `MCP_BIND_HOST` overrides; without it the server binds
+`127.0.0.1` when `MCP_AUTH_TOKEN` is blank and `0.0.0.0` otherwise, because a server with no
+token is a laptop's and one with a token is a pod's. The chart and the operator set `0.0.0.0`
+explicitly all the same. On `/mcp` a request with no `Origin` header passes, which is what Claude
+Code and most clients outside a browser send; an `Origin` of `localhost` or `127.0.0.1` on any
+port passes; `MCP_ALLOWED_ORIGINS` (a comma-separated list) extends that. The `Host` header is
+not checked.
+
+Everything else the server reads from its environment, with what it means and what it does when
+unset:
+
+| variable | meaning | default |
+| --- | --- | --- |
+| `MCP_AUTH_TOKEN` | The bearer token `/mcp` requires. Blank leaves it open | |
+| `MCP_PORT` | The HTTP port: `/mcp` and `/actuator` | `3000` |
+| `MCP_BIND_HOST` | The address that port binds | `127.0.0.1` without a token, `0.0.0.0` with one |
+| `MCP_ALLOWED_ORIGINS` | Browser origins `/mcp` accepts beside localhost, comma separated | none |
+| `BOT_LINK_PORT` | Where bots dial in | `8765` |
+| `BOT_LINK_REPEAT_FLUSH_MS` | How often a bot re-sends an action bar, title or dialog that is still showing; a run nothing has repeated for three of these is closed | `1000` |
+| `BOT_LINK_MUTED_FEEDS` | Feeds bots are told not to push, comma separated: `chat`, `actionBar`, `title`, `dialog`, `effect`, `toast`. `effect` is the one a busy server floods | none |
+| `MCP_MAX_BOTS` | How many bots may be linked at once. A bot turned away is told this number | `16` |
+| `MCP_BOTS_PROVISION` | Whether `join-server` creates a `MinecraftBot` for a name nothing runs under: `auto` looks for a cluster only from inside one, `always` uses whatever kubeconfig is around, `never` does not look | `auto` |
+| `MCP_BOTS_NAMESPACE` | Where those bots are created | the pod's own namespace |
+| `MCP_BOTS_MCP_HOST` | What a created bot is told to dial | the chart's Service in that namespace |
+| `MCP_BOTS_PROFILE_KIND`, `MCP_BOTS_PROFILE_NAME` | The `MinecraftBotProfile` (or `ClusterMinecraftBotProfile`, by kind) every bot started here is built from | the operator's: the namespace's `default`, then the cluster's |
+| `MCP_LOG_LEVEL` | Log level for `kr.junhyung.mcagents` | `INFO` |
+
 The image comes from Paketo buildpacks, not a Dockerfile:
 
 ```
@@ -58,11 +85,39 @@ The JVM's heap is then sized from the container's real limit rather than a perce
 guessed, and an SBOM comes with it. One invocation builds one architecture; CI runs it on a
 native runner per architecture and joins the two into a manifest list.
 
+A push to `main` publishes the image and the chart. The stamped tag, `<version>-<utc stamp>.g<sha>`,
+is immutable; `:<version>` and `:latest` move to the newest build of that version, so a deployment
+that must not change pins the stamped tag or the digest.
+
 Agents connect to `/mcp`; bots dial in on `:8765`. Every tool in the catalogue is in `tools/list` before any
 bot has linked, because an MCP client reads that list once when its session opens.
 
 [`dev/`](dev/README.md) has a fake bot that speaks the whole protocol, a sweep that calls every
 tool, and a one-liner for calling one by hand. None of them needs a Minecraft client.
+
+### Connecting an agent
+
+```bash
+claude mcp add --transport http mc-agents http://127.0.0.1:3000/mcp -H "Authorization: Bearer $MCP_AUTH_TOKEN"
+```
+
+The same thing in a project's `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "mc-agents": {
+      "type": "http",
+      "url": "http://127.0.0.1:3000/mcp",
+      "headers": { "Authorization": "Bearer ${MCP_AUTH_TOKEN}" }
+    }
+  }
+}
+```
+
+A wrong or missing token is answered `401` with `WWW-Authenticate: Bearer`, so a client that
+cannot connect has that to look for. Against the development cluster, `make -C dev/cluster names`
+prints this line with the cluster's own token in it.
 
 ### End to end
 
@@ -104,10 +159,24 @@ it; creating bots still needs the operator's CRDs.
 
 ### Known limits
 
-**The bot port has no authentication.** A NetworkPolicy opens `:8765` to this server alone. Giving
+**The bot port has no authentication.** The gate is a NetworkPolicy: `networkPolicy.enabled` in
+the chart, off by default, or one the operator's user adds. The chart's opens `:8765` to the bot
+pods alone, `/mcp` to the agent pods, and its third rule opens the MCP port to the namespaces in
+`networkPolicy.metricsFrom` for scraping, and to nothing else; kubelet probes need no rule. Giving
 every bot a rotating token would put secret rotation in the operator, for a port that does not
 leave the cluster.
+
+**The token carries no identity.** Every agent presents the same bearer token, so the server cannot
+say who asked for a bot; `join-server`'s `owner` is the only audit trail, and it is whatever the
+caller wrote.
+
+**Cancelling a call does not stop the bot.** The MCP SDK gives a tool handler no cancellation hook,
+though the bot protocol has `cancel`. An abandoned `move-to-position` keeps walking to its deadline,
+and the bot refuses another exclusive tool until then (`RemoteTools.claim`). When the SDK exposes
+one: complete the pending `BotLink` call with `Messages.Cancel` and release the claim.
 
 **One replica.** Bots are a shared resource, and sharing them across replicas needs leases and a
 roster. The requirement that replicas scale is about bot pods, which do scale, so that complexity
 is not paid for here.
+
+Licensed under the Apache License 2.0; see [LICENSE](LICENSE).

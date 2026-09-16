@@ -3,12 +3,20 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ include "mc-agents-mcp-server.fullname" . }}
+  {{- with .Values.metrics.serviceMonitor.namespace }}
+  namespace: {{ . }}
+  {{- end }}
   labels:
     {{- include "mc-agents-mcp-server.labels" . | nindent 4 }}
     {{- with .Values.metrics.serviceMonitor.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
+  {{- if .Values.metrics.serviceMonitor.namespace }}
+  # Created away from the Service it points at, so it has to say where that is.
+  namespaceSelector:
+    matchNames: [{{ .Release.Namespace }}]
+  {{- end }}
   selector:
     matchLabels:
       {{- include "mc-agents-mcp-server.selectorLabels" . | nindent 6 }}

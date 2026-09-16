@@ -75,6 +75,10 @@ Every JSON frame is a flat object with a `t` discriminator.
 | `result` | `id`, `ok`, `text`, `data?`, `blobs[]?`, `error?`, `elapsedMs` |
 | `event` | `seq`, `kind`, `source`, `text`, `segments[]?`, `component?`, `data?`, `ts`, `firstTs`, `repeats`, `closed` |
 | `status` | `state`, `ts`, and whatever it knows: `address`, `username`, `mcVersion`, `serverBrand`, `gameMode`, `dimension`, `position`, `health`, `food`, `dead`, `causeOfDeath`, `reason`, `lastError` |
+| `log` | `level`, `message`, `fields?` |
+| `pong` | `nonce` (the integer the `ping` carried), `ts`, `busy` (how many calls are in flight, an integer) |
+
+`capabilities[]` is `{tool, argsHash}`. `features[]` holds `blob`, `eventFold`, `structuredDialog`.
 
 `status.state` is one of five:
 
@@ -101,10 +105,6 @@ without a word about why. `dead` is the flag, and `causeOfDeath` is what the dea
 it was up. A bot never respawns by itself -- a server under test may be checking what happens on
 death, and a bot that got up again at once would hide exactly that -- so the flag stays until
 `respawn` is called.
-| `log` | `level`, `message`, `fields?` |
-| `pong` | `nonce` (the integer the `ping` carried), `ts`, `busy` (how many calls are in flight, an integer) |
-
-`capabilities[]` is `{tool, argsHash}`. `features[]` holds `blob`, `eventFold`, `structuredDialog`.
 
 ### Server to bot
 
@@ -216,7 +216,9 @@ bot was not in a world.
 ## Errors
 
 A `result` with `ok:false` carries `error: {class, code, message, retryable, detail?}`. The class
-decides what the server does with the session, and telling them apart is the point.
+decides what the server does with the session, and telling them apart is the point. `retryable` is
+a hint the caller sees as `(retryable)` on the end of the failure; the server never retries on its
+own, because a tool that half ran is not the same call twice.
 
 | class | Means | Server does | Reaches the caller as |
 | --- | --- | --- | --- |
@@ -224,16 +226,16 @@ decides what the server does with the session, and telling them apart is the poi
 | `timeout` | The bot could not finish inside `deadlineMs` | Nothing | `Failed: {tool} did not finish within {n}ms.` |
 | `cancelled` | A `cancel` arrived | Nothing | `Failed: cancelled` |
 | `unsupported` | This kind of bot does not have the tool | Drops it from the session's capabilities | Names a kind that does |
-| `args` | The bot could not read `args` | Suspects a catalogue mismatch. Logs, drops that one tool | Says a version mismatch is likely |
-| `bot` | The link or the game connection broke | Marks the session `disconnected`/`faulted`, abandons waiters | `Use get-bot-status to inspect it.` |
+| `args` | The bot could not use `args` as given: a slot outside the window it has open, a hand it does not know -- what the schema cannot judge | Nothing; a build that disagrees with the catalogue never had the tool offered, since the hashes are compared at the handshake | `Failed: {message}` |
+| `bot` | The link or the game connection broke | Reports the failure. The session itself is reaped by the heartbeat and by the next `status`, not by the call | `Failed: {message} Use get-bot-status to inspect it.` |
 | `internal` | Something threw inside the bot | Logs. Keeps the session — one broken tool must not kill a bot | `Failed: {message}` |
 
 Protocol violations are never a `result`. The offender gets a `fault` frame and the connection
 closes: `FRAME_TOO_LARGE`, `BAD_FRAME_TYPE`, `MALFORMED_JSON`, `UNKNOWN_MESSAGE`, `MISSING_FIELD`,
-`HELLO_EXPECTED`, `HELLO_TWICE`, `DUPLICATE_CALL_ID`, `EVENT_SEQ_REGRESSION`, `BLOB_BEFORE_HELLO`.
+`HELLO_EXPECTED`, `HELLO_TWICE`, `BLOB_BEFORE_HELLO`. An `event` carrying a `seq` the server has
+already seen is not one: a folded run is re-sent under its own number, which is the third invariant.
 
-A `result` for an id the server has already abandoned is **not** a violation. It is dropped and
-counted.
+A `result` for an id the server has already abandoned is **not** a violation. It is dropped.
 
 ## Deadlines and cancellation
 
@@ -244,9 +246,9 @@ timer fires first, it stops what it was doing, and answers `class: "timeout"`. T
 healthy.
 
 If the server's timer fires first the bot has gone quiet. The server abandons the id, sends
-`cancel`, and tells the caller the link may be stalled rather than that the tool failed. Three
-abandoned calls in a row on one bot marks the session faulted — that is a bot whose event loop has
-stopped, not a slow tool.
+`cancel`, and tells the caller the link may be stalled rather than that the tool failed. Whether
+the bot is gone is the heartbeat's to say: a link that misses three beats is closed, and nothing
+is counted per call.
 
 **Cancellation is cooperative.** A bot that receives `cancel` behaves as though its deadline just
 expired and answers `class: "cancelled"`. A `cancel` for an unknown id is ignored, not a violation:

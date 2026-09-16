@@ -1,11 +1,16 @@
 package kr.junhyung.mcagents.tool;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import kr.junhyung.mcagents.bot.BotRegistry;
 import kr.junhyung.mcagents.bot.BotSession;
 import kr.junhyung.mcagents.catalog.ToolSpec;
 import io.modelcontextprotocol.spec.McpSchema;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
@@ -17,31 +22,65 @@ import org.springframework.stereotype.Component;
 @Component
 public class ToolDispatcher {
 
+    private static final Logger log = LoggerFactory.getLogger(ToolDispatcher.class);
+
     private final BotRegistry bots;
     private final LocalTools local;
     private final RemoteTools remote;
     private final Orchestration orchestration;
+    private final MeterRegistry meters;
 
     public ToolDispatcher(BotRegistry bots, LocalTools local, RemoteTools remote,
-            Orchestration orchestration) {
+            Orchestration orchestration, MeterRegistry meters) {
         this.bots = bots;
         this.local = local;
         this.remote = remote;
         this.orchestration = orchestration;
+        this.meters = meters;
     }
 
     public McpSchema.CallToolResult call(ToolSpec spec, Map<String, Object> arguments) {
+        return call(spec, arguments, Progress.NONE);
+    }
+
+    /**
+     * One line per call, whatever happened to it. An agent's transcript says "did not answer
+     * within 30000ms" and nothing else; this is the server's side of that sentence, naming the
+     * tool, the bot and how long it really took. A failure is worth a WARN on its own, because
+     * {@code isError} travels inside an HTTP 200 and no request log will ever show it.
+     */
+    public McpSchema.CallToolResult call(ToolSpec spec, Map<String, Object> arguments, Progress progress) {
+        long started = System.nanoTime();
+        McpSchema.CallToolResult result = dispatch(spec, arguments, progress);
+        long elapsedNanos = System.nanoTime() - started;
+        boolean failed = Boolean.TRUE.equals(result.isError());
+
+        Timer.builder("mcagents.tool.calls")
+                .tag("tool", spec.name())
+                .tag("outcome", failed ? "failed" : "ok")
+                .register(meters)
+                .record(elapsedNanos, TimeUnit.NANOSECONDS);
+
+        log.atLevel(failed ? org.slf4j.event.Level.WARN : org.slf4j.event.Level.DEBUG)
+                .log("{} bot={} {}ms: {}", spec.name(), stringArg(arguments, "bot"),
+                        elapsedNanos / 1_000_000, firstLineOf(result));
+
+        return result;
+    }
+
+    private McpSchema.CallToolResult dispatch(ToolSpec spec, Map<String, Object> arguments, Progress progress) {
         try {
             return switch (spec.route()) {
-                case LOCAL -> local.call(spec, arguments);
+                case LOCAL -> local.call(spec, arguments, progress);
                 case RPC -> remote.call(spec, resolve(spec, arguments), arguments);
-                case COMPOSE -> remote.compose(spec, resolve(spec, arguments), arguments);
-                case ORCHESTRATE -> orchestration.call(spec, arguments);
+                case COMPOSE -> remote.compose(spec, resolve(spec, arguments), arguments, progress);
+                case ORCHESTRATE -> orchestration.call(spec, arguments, progress);
             };
         } catch (IllegalArgumentException | IllegalStateException e) {
             return failure(e.getMessage());
         } catch (RuntimeException e) {
-            return failure("%s failed: %s".formatted(spec.name(), e));
+            /* The class name is noise to an agent; the message is the sentence. A null one has neither. */
+            return failure("%s failed: %s".formatted(spec.name(), e.getMessage() == null ? e.toString() : e.getMessage()));
         }
     }
 
@@ -88,6 +127,19 @@ public class ToolDispatcher {
     static String stringArg(Map<String, Object> arguments, String name) {
         Object value = arguments == null ? null : arguments.get(name);
         return value instanceof String text && !text.isBlank() ? text : null;
+    }
+
+    static String textOf(McpSchema.CallToolResult result) {
+        return result.content().stream()
+                .filter(McpSchema.TextContent.class::isInstance)
+                .map(content -> ((McpSchema.TextContent) content).text())
+                .findFirst().orElse("");
+    }
+
+    static String firstLineOf(McpSchema.CallToolResult result) {
+        String text = textOf(result);
+        int newline = text.indexOf('\n');
+        return newline < 0 ? text : text.substring(0, newline);
     }
 
     static McpSchema.CallToolResult text(String body) {

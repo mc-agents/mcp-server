@@ -3,9 +3,12 @@ package kr.junhyung.mcagents.tool;
 import kr.junhyung.mcagents.catalog.Catalog;
 import kr.junhyung.mcagents.catalog.ToolSpec;
 import io.modelcontextprotocol.server.McpServerFeatures;
+import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,6 +26,8 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class ToolRegistrar {
+
+    private static final Logger log = LoggerFactory.getLogger(ToolRegistrar.class);
 
     private final Catalog catalog;
     private final ToolDispatcher dispatcher;
@@ -44,14 +49,51 @@ public class ToolRegistrar {
                 spec.advertisedDescription(catalog.kinds()),
                 schemaOf(spec),
                 null,
-                null,
+                annotationsOf(spec),
                 Map.of(
                         "mcAgents/kinds", spec.kinds(),
                         "mcAgents/route", spec.route().name().toLowerCase(java.util.Locale.ROOT)),
                 null);
 
         return new McpServerFeatures.SyncToolSpecification(
-                tool, (exchange, request) -> dispatcher.call(spec, request.arguments()));
+                tool, (exchange, request) -> dispatcher.call(spec, request.arguments(), progressOf(exchange, request)));
+    }
+
+    /**
+     * The hints a client uses to decide what to ask a person about. {@code readOnly} and
+     * {@code destructive} are the catalogue's; idempotence is the reads plus the two setters
+     * whose second call changes nothing. Every tool acts on one server the bot is already on,
+     * which is what a closed world means here. No title: the name is the title.
+     */
+    static McpSchema.ToolAnnotations annotationsOf(ToolSpec spec) {
+        return new McpSchema.ToolAnnotations(
+                null,
+                spec.readOnly(),
+                spec.destructive(),
+                spec.readOnly() || "look-at".equals(spec.name()) || "set-stance".equals(spec.name()),
+                false,
+                null);
+    }
+
+    /**
+     * A progress channel exists only when the client asked for one. Sending on it is best effort:
+     * a client that has gone away between polls is the call's problem to notice when it ends,
+     * not a reason to fail it midway.
+     */
+    private static Progress progressOf(McpSyncServerExchange exchange, McpSchema.CallToolRequest request) {
+        Object token = request.meta() == null ? null : request.meta().get("progressToken");
+
+        if (token == null) {
+            return Progress.NONE;
+        }
+        return (message, elapsedMs, totalMs) -> {
+            try {
+                exchange.progressNotification(new McpSchema.ProgressNotification(
+                        token, (double) elapsedMs, (double) totalMs, message, null));
+            } catch (RuntimeException e) {
+                log.debug("a progress notification for {} was not delivered: {}", request.name(), e.toString());
+            }
+        };
     }
 
     @SuppressWarnings("unchecked")

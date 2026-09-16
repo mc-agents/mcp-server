@@ -15,23 +15,25 @@ spec:
     # the gate that decision assumes exists, so turning the policy on is what makes it true.
     - from:
         - podSelector:
-            {{- if .Values.networkPolicy.botSelector }}
             matchLabels:
               {{- toYaml .Values.networkPolicy.botSelector | nindent 14 }}
-            {{- end }}
       ports:
         - port: bot-link
     - from:
         - podSelector:
-            {{- if .Values.networkPolicy.agentSelector }}
             matchLabels:
               {{- toYaml .Values.networkPolicy.agentSelector | nindent 14 }}
-            {{- end }}
       ports:
         - port: mcp
-    # Probes and scrapes come from outside any pod selector.
-    - ports:
+    {{- with include "mc-agents-mcp-server.metricsFrom" . }}
+    # The scraper lives in another namespace, so it needs a rule of its own on the MCP port,
+    # which is where /actuator/prometheus is. Kubelet probes need no rule: they come from the
+    # node, and NetworkPolicy does not apply to them.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              {{- . | nindent 14 }}
+      ports:
         - port: mcp
-      from:
-        - namespaceSelector: {}
+    {{- end }}
 {{- end }}

@@ -17,8 +17,8 @@ public final class Renderers {
 
     private record Entry<T>(Class<T> view, Renderer<T> renderer) {
 
-        String render(ObjectMapper mapper, JsonNode data) {
-            return renderer.render(mapper.convertValue(data, view));
+        String render(ObjectMapper mapper, JsonNode data, Map<String, Object> arguments) {
+            return renderer.render(mapper.convertValue(data, view), arguments);
         }
     }
 
@@ -87,6 +87,11 @@ public final class Renderers {
      * and saying so is more use than quietly falling back to a line meant for debugging.
      */
     public static Optional<String> render(String tool, JsonNode data) {
+        return render(tool, data, Map.of());
+    }
+
+    /** {@code arguments} are the call's as MCP received them, for the few renderers that shape their answer by one. */
+    public static Optional<String> render(String tool, JsonNode data, Map<String, Object> arguments) {
         Entry<?> entry = BY_TOOL.get(tool);
 
         if (entry == null) {
@@ -94,7 +99,7 @@ public final class Renderers {
         }
 
         try {
-            return Optional.of(entry.render(MAPPER, data));
+            return Optional.of(entry.render(MAPPER, data, arguments == null ? Map.of() : arguments));
         } catch (RuntimeException cause) {
             throw new RenderException(tool, tool + " sent data this server cannot read: " + cause.getMessage(), cause);
         }

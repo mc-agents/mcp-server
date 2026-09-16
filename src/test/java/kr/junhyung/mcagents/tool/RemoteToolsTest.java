@@ -3,7 +3,9 @@ package kr.junhyung.mcagents.tool;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.modelcontextprotocol.spec.McpSchema;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -13,11 +15,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import kr.junhyung.mcagents.bot.BotLink;
+import kr.junhyung.mcagents.bot.BotProvisioner;
+import kr.junhyung.mcagents.bot.BotRegistry;
 import kr.junhyung.mcagents.bot.BotSession;
 import kr.junhyung.mcagents.catalog.Catalog;
+import kr.junhyung.mcagents.catalog.ToolSpec;
 import kr.junhyung.mcagents.protocol.Frame;
 import kr.junhyung.mcagents.protocol.FrameCodec;
 import kr.junhyung.mcagents.protocol.Messages;
@@ -47,6 +57,11 @@ class RemoteToolsTest {
     private final Catalog catalog = Catalog.load();
     private final RemoteTools remote = new RemoteTools(catalog);
     private final Queue<Runnable> whileTheCommandRuns = new ConcurrentLinkedQueue<>();
+
+    /** What the bot answers a call with; the command sentence unless a test says otherwise. */
+    private final AtomicReference<Function<Messages.Call, Messages.Result>> answer = new AtomicReference<>(
+            call -> new Messages.Result(call.id(), true, "Ran /" + call.args().get("command") + ".", null, null, null, 1));
+    private final AtomicInteger callsReceived = new AtomicInteger();
 
     private ServerSocket listener;
     private Socket botSide;
@@ -90,11 +105,11 @@ class RemoteToolsTest {
                 Frame.Json frame = assertInstanceOf(Frame.Json.class, FrameCodec.read(botSide.getInputStream()));
                 Messages.Call call = assertInstanceOf(Messages.Call.class,
                         mapper.readValue(frame.payload(), Messages.ToBot.class));
+                callsReceived.incrementAndGet();
                 for (Runnable arrival = whileTheCommandRuns.poll(); arrival != null; arrival = whileTheCommandRuns.poll()) {
                     arrival.run();
                 }
-                FrameCodec.write(botSide.getOutputStream(), new Frame.Json(mapper.writeValueAsBytes(
-                        new Messages.Result(call.id(), true, "Ran /" + call.args().get("command") + ".", null, null, null, 1))));
+                FrameCodec.write(botSide.getOutputStream(), new Frame.Json(mapper.writeValueAsBytes(answer.get().apply(call))));
             }
         } catch (IOException closed) {
             // The test is over.
@@ -172,6 +187,114 @@ class RemoteToolsTest {
         assertEquals("Ran /dialog clear @s. The server sent no chat in the 200ms after it."
                 + " If the command opens a menu, read-window shows it.",
                 ran("dialog clear @s"));
+    }
+
+    /**
+     * The dispatcher an agent's call goes through, with this bot in its registry: the second half
+     * of a withdrawal is that the next call is refused there, before anything is sent.
+     */
+    private ToolDispatcher dispatcher() {
+        BotRegistry bots = new BotRegistry(2);
+        bots.add(bot);
+        return new ToolDispatcher(bots, new LocalTools(bots), remote,
+                new Orchestration(bots, new BotProvisioner(null, null, null, 0, null)), new SimpleMeterRegistry());
+    }
+
+    private void botFailsWith(String errorClass, String code, String message, boolean retryable) {
+        answer.set(call -> new Messages.Result(call.id(), false, message, null, null,
+                new Messages.Failure(errorClass, code, message, retryable, null), 1));
+    }
+
+    private static String text(McpSchema.CallToolResult result) {
+        return ((McpSchema.TextContent) result.content().getFirst()).text();
+    }
+
+    /**
+     * A bot that answers "unsupported" after offering the tool at the handshake loses it: the
+     * next call is refused by the dispatcher and never reaches the bot.
+     */
+    @Test
+    void aToolTheBotTurnsOutNotToHaveIsWithdrawnAndTheNextCallNeverLeaves() {
+        ToolSpec position = catalog.require("get-position");
+        bot.acceptCapabilities(List.of(new Messages.Capability(position.name(), position.wireSchemaHash())));
+        botFailsWith("unsupported", "UNSUPPORTED", "no such tool", false);
+        ToolDispatcher dispatcher = dispatcher();
+
+        McpSchema.CallToolResult first = dispatcher.call(position, Map.of("bot", "fab"));
+        McpSchema.CallToolResult second = dispatcher.call(position, Map.of("bot", "fab"));
+
+        assertTrue(first.isError(), text(first));
+        assertTrue(text(first).contains("does not implement \"get-position\" after all"), text(first));
+        assertTrue(text(second).contains("does not implement \"get-position\""), text(second));
+        assertEquals(1, callsReceived.get(), "the second call should have been refused without a round trip");
+    }
+
+    /**
+     * "args" is the bot refusing what the schema could not judge -- a slot outside the window it
+     * has open -- and the tool stays offered: withdrawing it on the first such refusal took
+     * click-slot away from a whole session over one bad slot number.
+     */
+    @Test
+    void aBotThatRefusesTheArgumentsKeepsTheTool() {
+        ToolSpec position = catalog.require("get-position");
+        bot.acceptCapabilities(List.of(new Messages.Capability(position.name(), position.wireSchemaHash())));
+        botFailsWith("args", "BAD_ARGS", "slot 99 is outside the window", false);
+        ToolDispatcher dispatcher = dispatcher();
+
+        McpSchema.CallToolResult first = dispatcher.call(position, Map.of("bot", "fab"));
+        McpSchema.CallToolResult second = dispatcher.call(position, Map.of("bot", "fab"));
+
+        assertTrue(first.isError(), text(first));
+        assertEquals("Failed: slot 99 is outside the window", text(first));
+        assertTrue(second.isError(), text(second));
+        assertEquals(2, callsReceived.get(), "the second call should have reached the bot");
+    }
+
+    /**
+     * The other classes reach the caller as the table in docs/bot-protocol.md says: a bot-class
+     * failure points at get-bot-status, a timeout names the deadline, and a retryable hint is
+     * shown rather than acted on.
+     */
+    @Test
+    void theOtherErrorClassesAreWordedAsTheProtocolPromises() {
+        ToolSpec position = catalog.require("get-position");
+
+        botFailsWith("bot", "LINK_LOST", "the game connection dropped", true);
+        String broken = text(remote.call(position, bot, Map.of()));
+        botFailsWith("timeout", "DEADLINE", "still pathing", false);
+        String late = text(remote.call(position, bot, Map.of()));
+        botFailsWith("tool", "NO_WINDOW", "no window is open", false);
+        String refused = text(remote.call(position, bot, Map.of()));
+
+        assertEquals("Failed: the game connection dropped Use get-bot-status to inspect it. (retryable)", broken);
+        assertEquals("Failed: get-position did not finish within %dms: still pathing".formatted(position.defaultDeadlineMs()), late);
+        assertEquals("Failed: no window is open", refused);
+    }
+
+    /** An exclusive refusal names what the bot is busy with, since "an exclusive tool" sent callers to list-bots to guess. */
+    @Test
+    void anExclusiveRefusalNamesTheToolThatIsRunning() throws Exception {
+        ToolSpec walk = catalog.require("move-to-position");
+        CountDownLatch walking = new CountDownLatch(1);
+        CountDownLatch arrived = new CountDownLatch(1);
+        answer.set(call -> {
+            walking.countDown();
+            try {
+                arrived.await(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            return new Messages.Result(call.id(), true, "Arrived.", null, null, null, 1);
+        });
+
+        Thread first = Thread.ofVirtual().start(() -> remote.call(walk, bot, Map.of("x", 1, "y", 64, "z", 1)));
+        assertTrue(walking.await(5, TimeUnit.SECONDS));
+        McpSchema.CallToolResult second = remote.call(walk, bot, Map.of("x", 2, "y", 64, "z", 2));
+        arrived.countDown();
+        first.join();
+
+        assertTrue(second.isError(), text(second));
+        assertTrue(text(second).contains("already running move-to-position, which is exclusive"), text(second));
     }
 
     /** What was already showing before the command is not its answer, on a folded feed as on chat. */

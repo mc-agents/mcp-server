@@ -143,6 +143,32 @@ class NormaliserTest {
         assertEquals("\"run-inputs\" steps[1] is not an object", thrown.getMessage());
     }
 
+    /**
+     * The same bounds, on the tools whose arguments never cross the wire. A local tool read them
+     * raw, so a timeout of two billion pinned a thread and a port of 99999 was handed to a bot.
+     * Refused rather than clamped: the endpoint's own validation refuses the same value in the
+     * same terms, and a clamped port is a different server.
+     */
+    @Test
+    void anArgumentOutsideItsRangeIsRefusedOnAToolTheServerAnswersAlone() {
+        ToolSpec ping = catalog.require("ping-server");
+        ToolSpec join = catalog.require("join-server");
+        ToolSpec wait = catalog.require("wait-for-chat");
+
+        assertEquals(30_000, Normaliser.bound(ping, Map.of("host", "paper", "timeoutMs", 30_000)).get("timeoutMs"));
+
+        IllegalArgumentException timeout = assertThrows(IllegalArgumentException.class,
+                () -> Normaliser.bound(ping, Map.of("host", "paper", "timeoutMs", Integer.MAX_VALUE)));
+        IllegalArgumentException port = assertThrows(IllegalArgumentException.class,
+                () -> Normaliser.bound(join, Map.of("host", "paper", "port", 99_999)));
+        IllegalArgumentException pattern = assertThrows(IllegalArgumentException.class,
+                () -> Normaliser.bound(wait, Map.of("pattern", "x".repeat(257))));
+
+        assertTrue(timeout.getMessage().contains("timeoutMs") && timeout.getMessage().contains("30000"), timeout.getMessage());
+        assertTrue(port.getMessage().contains("port") && port.getMessage().contains("65535"), port.getMessage());
+        assertTrue(pattern.getMessage().contains("pattern") && pattern.getMessage().contains("256"), pattern.getMessage());
+    }
+
     @SuppressWarnings("unchecked")
     private static Map<String, Object> stepOf(Map<String, Object> wire, int index) {
         return ((List<Map<String, Object>>) wire.get("steps")).get(index);
