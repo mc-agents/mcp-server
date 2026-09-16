@@ -16,7 +16,7 @@ dependencies {
     testImplementation("io.modelcontextprotocol.sdk:mcp-core")
     /* The SDK finds its JSON mapper by service loader, and this is the one that supplies it. */
     testRuntimeOnly("io.modelcontextprotocol.sdk:mcp-json-jackson3")
-    testImplementation(platform("org.junit:junit-bom:6.1.1"))
+    testImplementation(platform("org.junit:junit-bom:6.1.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(platform("org.testcontainers:testcontainers-bom:2.0.5"))
     testImplementation("org.testcontainers:testcontainers")
