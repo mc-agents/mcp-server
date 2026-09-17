@@ -21,7 +21,7 @@ dependencies {
     testImplementation(platform("org.testcontainers:testcontainers-bom:2.0.5"))
     testImplementation("org.testcontainers:testcontainers")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
-    testImplementation("org.slf4j:slf4j-simple:2.0.17")
+    testImplementation("org.slf4j:slf4j-simple:2.0.19")
     /* Compiled against as well as run: the shard filter is one of the launcher's. */
     testImplementation("org.junit.platform:junit-platform-launcher")
 }
