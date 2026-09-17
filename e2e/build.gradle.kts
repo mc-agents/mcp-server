@@ -53,6 +53,14 @@ tasks.test {
     systemProperty("e2e.minecraft.version", providers.gradleProperty("e2e.minecraft.version")
         .orElse(providers.environmentVariable("E2E_MINECRAFT_VERSION"))
         .getOrElse("26.1.2"))
+    /*
+    What goes in front of the Paper image's Docker Hub name, as "junhyung.cloud/docker-hub/". Empty
+    is Docker Hub itself, so a laptop needs no login; CI sets the registry's proxy cache, which does.
+    Ryuk and sshd are Testcontainers' own pulls and follow TESTCONTAINERS_HUB_IMAGE_NAME_PREFIX.
+    */
+    systemProperty("e2e.hub.prefix", providers.gradleProperty("e2e.hub.prefix")
+        .orElse(providers.environmentVariable("E2E_HUB_PREFIX"))
+        .getOrElse(""))
     /* Which share of the cases to go through, as 2/4. CI runs every share at once, each in a world of its own. */
     systemProperty("e2e.shard", providers.gradleProperty("e2e.shard")
         .orElse(providers.environmentVariable("E2E_SHARD"))

@@ -68,11 +68,13 @@ unset:
 | `BOT_LINK_PORT` | Where bots dial in | `8765` |
 | `BOT_LINK_REPEAT_FLUSH_MS` | How often a bot re-sends an action bar, title or dialog that is still showing; a run nothing has repeated for three of these is closed | `1000` |
 | `BOT_LINK_MUTED_FEEDS` | Feeds bots are told not to push, comma separated: `chat`, `actionBar`, `title`, `dialog`, `effect`, `toast`. `effect` is the one a busy server floods | none |
+| `BOT_LINK_TOKEN` | What a bot's `hello` has to carry; one without an equal `linkToken` is refused. Blank takes any bot that dials in | blank |
 | `MCP_MAX_BOTS` | How many bots may be linked at once. A bot turned away is told this number | `16` |
 | `MCP_BOTS_PROVISION` | Whether `join-server` creates a `MinecraftBot` for a name nothing runs under: `auto` looks for a cluster only from inside one, `always` uses whatever kubeconfig is around, `never` does not look | `auto` |
 | `MCP_BOTS_NAMESPACE` | Where those bots are created | the pod's own namespace |
 | `MCP_BOTS_MCP_HOST` | What a created bot is told to dial | the chart's Service in that namespace |
 | `MCP_BOTS_PROFILE_KIND`, `MCP_BOTS_PROFILE_NAME` | The `MinecraftBotProfile` (or `ClusterMinecraftBotProfile`, by kind) every bot started here is built from | the operator's: the namespace's `default`, then the cluster's |
+| `MCP_BOTS_LINK_SECRET` | The Secret (key `token`) in that namespace a bot started here reads its `BOT_LINK_TOKEN` from, written as `spec.linkTokenSecretRef`. Blank declares bots without one | blank |
 | `MCP_LOG_LEVEL` | Log level for `kr.junhyung.mcagents` | `INFO` |
 
 The image comes from Paketo buildpacks, not a Dockerfile:
@@ -84,10 +86,6 @@ The image comes from Paketo buildpacks, not a Dockerfile:
 The JVM's heap is then sized from the container's real limit rather than a percentage someone
 guessed, and an SBOM comes with it. One invocation builds one architecture; CI runs it on a
 native runner per architecture and joins the two into a manifest list.
-
-A push to `main` publishes the image and the chart. The stamped tag, `<version>-<utc stamp>.g<sha>`,
-is immutable; `:<version>` and `:latest` move to the newest build of that version, so a deployment
-that must not change pins the stamped tag or the digest.
 
 Agents connect to `/mcp`; bots dial in on `:8765`. Every tool in the catalogue is in `tools/list` before any
 bot has linked, because an MCP client reads that list once when its session opens.
@@ -146,6 +144,32 @@ say; the Minecraft version is the one the bots support, 26.1.2:
 CI shares a fabric bot's cases out between four runners, each with a server and a bot of its own,
 and a failure names the shard it happened in. The same share runs locally with `-Pe2e.shard=2/4`.
 
+The Paper server, and Testcontainers' own ryuk and sshd, are Docker Hub images. Locally they are
+pulled from there with no login. In CI they come through the registry's private proxy cache, which
+is what `-Pe2e.hub.prefix=junhyung.cloud/docker-hub/` (or `E2E_HUB_PREFIX`) puts in front of the
+Paper image's name and `TESTCONTAINERS_HUB_IMAGE_NAME_PREFIX` puts in front of the other two;
+both are empty by default. The bot images are on the public `mc-agents` project either way.
+
+### Releases
+
+A push to `main` publishes the image and the chart, once every job before it is green: the unit
+tests and the tool sweep, the two architectures' images, and every end-to-end shard. A red shard
+blocks the tags, the chart and the release rather than shipping beside them; there is no branch
+ruleset, and this gate is what stands between a red suite and a release. A push that changes
+nothing the image or the chart is built from publishes nothing.
+
+The stamped tag, `<version>-<utc stamp>.g<sha>`, is immutable; `:<version>` and `:latest` move to
+the newest build of that version, so a deployment that must not change pins the stamped tag or the
+digest. The same push tags the commit `v<version>` and makes a GitHub Release whose notes are the
+commits since the previous tag, followed by the catalogue version and the bot tags the suite ran
+against (the ones [`dev/cluster/mcpserver.yaml`](dev/cluster/mcpserver.yaml) pins);
+[`hack/release-notes.sh`](hack/release-notes.sh) writes them, and runs locally.
+
+Which release of each repository goes with which is the operator's to say, since the operator is
+what installs the set: the table is
+[operator/docs/compatibility.md](https://github.com/mc-agents/operator/blob/main/docs/compatibility.md),
+one row per operator release, with the order the pieces are released in.
+
 ## Status
 
 The server answers the whole catalogue. `join-server` sends a bot that has linked into a world, and
@@ -159,12 +183,15 @@ it; creating bots still needs the operator's CRDs.
 
 ### Known limits
 
-**The bot port has no authentication.** The gate is a NetworkPolicy: `networkPolicy.enabled` in
-the chart, off by default, or one the operator's user adds. The chart's opens `:8765` to the bot
-pods alone, `/mcp` to the agent pods, and its third rule opens the MCP port to the namespaces in
-`networkPolicy.metricsFrom` for scraping, and to nothing else; kubelet probes need no rule. Giving
-every bot a rotating token would put secret rotation in the operator, for a port that does not
-leave the cluster.
+**The bot port has two gates, and both are off by default.** The first is a NetworkPolicy:
+`networkPolicy.enabled` in the chart, or one the operator's user adds. The chart's opens `:8765`
+to the bot pods alone, `/mcp` to the agent pods, and its third rule opens the MCP port to the
+namespaces in `networkPolicy.metricsFrom` for scraping, and to nothing else; kubelet probes need
+no rule. The second is the link token, `botLink.token` or `botLink.existingSecret` in the chart
+(`BOT_LINK_TOKEN` on the server): a bot's `hello` has to carry it or the bot is refused, so a pod
+that gets past the policy still cannot introduce itself as a bot. Bots the server starts are
+pointed at the same Secret; one declared by hand needs `spec.linkTokenSecretRef`. The operator
+sets both up for an `MCPServer`. With neither, any pod that can reach the port is a bot.
 
 **The token carries no identity.** Every agent presents the same bearer token, so the server cannot
 say who asked for a bot; `join-server`'s `owner` is the only audit trail, and it is whatever the

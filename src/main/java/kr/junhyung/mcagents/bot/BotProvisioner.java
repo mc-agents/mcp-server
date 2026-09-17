@@ -44,6 +44,7 @@ public class BotProvisioner {
     private final String mcpHost;
     private final int mcpPort;
     private final Profile profile;
+    private final String linkSecret;
 
     /**
      * The profile a bot takes its image and pod settings from, written into every MinecraftBot this
@@ -52,12 +53,20 @@ public class BotProvisioner {
     public record Profile(String kind, String name) {
     }
 
-    public BotProvisioner(KubernetesClient client, String namespace, String mcpHost, int mcpPort, Profile profile) {
+    /**
+     * @param linkSecret the Secret holding the link token this server's bots have to present, in the
+     *                   namespace bots are created in. Null when the server was given none: the bot
+     *                   is then declared without one, and a server that requires a token would
+     *                   refuse it, which is the operator's to prevent by handing out both
+     */
+    public BotProvisioner(KubernetesClient client, String namespace, String mcpHost, int mcpPort, Profile profile,
+            String linkSecret) {
         this.client = client;
         this.namespace = namespace;
         this.mcpHost = mcpHost;
         this.mcpPort = mcpPort;
         this.profile = profile;
+        this.linkSecret = linkSecret;
     }
 
     /** Whether there is a cluster with the operator's CRD installed. Checked once, at startup. */
@@ -212,7 +221,8 @@ public class BotProvisioner {
                 && spec.get("botName") instanceof String botName ? botName : null;
     }
 
-    private GenericKubernetesResource declare(String objectName, String botName, String kind,
+    /** The object join-server asks the operator for. Package-private so a test can read what it says without a cluster. */
+    GenericKubernetesResource declare(String objectName, String botName, String kind,
             String minecraftVersion, String owner) {
         Map<String, Object> spec = new LinkedHashMap<>();
         spec.put("kind", kind);
@@ -225,6 +235,10 @@ public class BotProvisioner {
         }
         if (profile != null) {
             spec.put("profileRef", Map.of("kind", profile.kind(), "name", profile.name()));
+        }
+        /* The key is the operator's default; naming it keeps a bot declared by hand and one declared here alike. */
+        if (linkSecret != null) {
+            spec.put("linkTokenSecretRef", Map.of("name", linkSecret, "key", "token"));
         }
 
         Map<String, String> labels = new LinkedHashMap<>();

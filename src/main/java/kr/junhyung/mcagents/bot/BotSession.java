@@ -27,6 +27,7 @@ public final class BotSession {
     private final BotLink link;
     private final Map<String, EventFeed> feeds = new ConcurrentHashMap<>();
     private final Map<String, String> capabilities = new ConcurrentHashMap<>();
+    private volatile List<Messages.RejectedTool> rejectedTools = List.of();
     private final long joinedAt = System.currentTimeMillis();
 
     private final Set<StatusWaiter> statusWaiters = ConcurrentHashMap.newKeySet();
@@ -78,6 +79,18 @@ public final class BotSession {
 
     public int capabilityCount() {
         return capabilities.size();
+    }
+
+    /**
+     * What the bot offered and the handshake refused, kept so list-bots can say a tool is dark
+     * rather than leaving an agent to find out by calling it.
+     */
+    public void rejectCapabilities(List<Messages.RejectedTool> refused) {
+        rejectedTools = List.copyOf(refused);
+    }
+
+    public List<Messages.RejectedTool> rejectedTools() {
+        return rejectedTools;
     }
 
     public boolean supports(String tool) {

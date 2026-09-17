@@ -45,6 +45,13 @@ public final class Messages {
 
     public record Capability(String tool, String argsHash) {}
 
+    /**
+     * @param linkToken what the bot was given to prove it belongs to this server, when it was
+     *                  given one. A server with a token configured refuses a hello without an equal
+     *                  one; a server without ignores the field, which is what lets a bot ship this
+     *                  before the operator hands tokens out. Never logged
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Hello(
             List<Integer> protocols,
             String botName,
@@ -53,7 +60,8 @@ public final class Messages {
             String mcVersion,
             String catalogVersion,
             List<Capability> capabilities,
-            List<String> features) implements FromBot {}
+            List<String> features,
+            String linkToken) implements FromBot {}
 
     public record RejectedTool(String tool, String reason) {}
 

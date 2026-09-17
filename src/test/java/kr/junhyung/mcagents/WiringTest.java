@@ -34,7 +34,7 @@ class WiringTest {
     @Test
     void aProvisionSettingThatIsNoneOfTheThreeIsRefusedAtStartup() {
         IllegalArgumentException refused = assertThrows(IllegalArgumentException.class,
-                () -> wiring.botProvisioner("alwyas", "", "", "", "", 8765));
+                () -> wiring.botProvisioner("alwyas", "", "", "", "", "", 8765));
 
         assertEquals("MCP_BOTS_PROVISION is \"alwyas\"; it has to be auto, always or never", refused.getMessage());
     }

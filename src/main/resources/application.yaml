@@ -72,6 +72,9 @@ mcagents:
     # Feeds bots are told not to push, comma separated: chat, actionBar, title, dialog, effect, toast.
     # effect is the one a busy server floods.
     muted-feeds: ${BOT_LINK_MUTED_FEEDS:}
+    # What a bot's hello has to carry. Empty takes any bot that dials in, which is a laptop's
+    # setting; the operator hands the same token to the server and to every bot it starts.
+    token: ${BOT_LINK_TOKEN:}
   bots:
     max: ${MCP_MAX_BOTS:16}
     # auto looks for a cluster only from inside one. always uses whatever kubeconfig is around,
@@ -86,6 +89,9 @@ mcagents:
     profile:
       kind: ${MCP_BOTS_PROFILE_KIND:}
       name: ${MCP_BOTS_PROFILE_NAME:}
+    # The Secret (key "token") a bot started here is pointed at for its link token, in the namespace
+    # above. Empty declares bots without one, for a server that requires none.
+    link-secret: ${MCP_BOTS_LINK_SECRET:}
   auth:
     token: ${MCP_AUTH_TOKEN:}
 

@@ -28,6 +28,7 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,7 @@ class BotLinkServerTest {
 
     private final ScheduledExecutorService timers = Executors.newScheduledThreadPool(2);
     private final List<Socket> open = new ArrayList<>();
+    private final SimpleMeterRegistry meters = new SimpleMeterRegistry();
 
     private Catalog catalog;
     private BotRegistry bots;
@@ -56,7 +58,7 @@ class BotLinkServerTest {
     void start() {
         catalog = Catalog.load();
         bots = new BotRegistry(4);
-        server = new BotLinkServer(catalog, bots, mapper, timers, 0, 1_000, Set.of());
+        server = new BotLinkServer(catalog, bots, mapper, timers, 0, 1_000, Set.of(), "", meters);
         server.start();
     }
 
@@ -86,8 +88,22 @@ class BotLinkServerTest {
     }
 
     private Messages.Hello hello(String name, String kind, List<Messages.Capability> capabilities) {
+        return hello(name, kind, capabilities, null);
+    }
+
+    private Messages.Hello hello(String name, String kind, List<Messages.Capability> capabilities, String linkToken) {
         return new Messages.Hello(List.of(catalog.protocol()), name, kind, "0.1.0", "26.1.2",
-                catalog.version(), capabilities, List.of("blob", "eventFold"));
+                catalog.version(), capabilities, List.of("blob", "eventFold"), linkToken);
+    }
+
+    private void requireLinkToken(String token) {
+        server.stop();
+        server = new BotLinkServer(catalog, bots, mapper, timers, 0, 1_000, Set.of(), token, meters);
+        server.start();
+    }
+
+    private double rejectedToolsGauge(String bot) {
+        return meters.get("mcagents.bots.rejected_tools").tag("bot", bot).gauge().value();
     }
 
     /** Whatever the catalogue says this kind of bot can run, so the test does not pin a tool name. */
@@ -133,7 +149,7 @@ class BotLinkServerTest {
     @Test
     void theHandshakeCarriesTheCadenceAndTheValvesThisServerWasGiven() throws Exception {
         server.stop();
-        server = new BotLinkServer(catalog, bots, mapper, timers, 0, 250, Set.of("effect"));
+        server = new BotLinkServer(catalog, bots, mapper, timers, 0, 250, Set.of("effect"), "", meters);
         server.start();
 
         Socket bot = dial();
@@ -149,7 +165,7 @@ class BotLinkServerTest {
     @Test
     void aFeedThatDoesNotExistCannotBeMuted() {
         assertThrows(IllegalArgumentException.class,
-                () -> new BotLinkServer(catalog, bots, mapper, timers, 0, 1_000, Set.of("effects")));
+                () -> new BotLinkServer(catalog, bots, mapper, timers, 0, 1_000, Set.of("effects"), "", meters));
     }
 
     /*
@@ -186,15 +202,92 @@ class BotLinkServerTest {
 
         assertEquals(1, ok.rejectedTools().size());
         assertEquals(first.tool(), ok.rejectedTools().get(0).tool());
-        assertFalse(awaitSession("alice").supports(first.tool()));
+        BotSession session = awaitSession("alice");
+        assertFalse(session.supports(first.tool()));
         assertEquals(reported.size() - 1, ok.acceptedTools().size());
+
+        /* Visible on the server's side too: the bot is the only one told by helloOk. */
+        assertEquals(List.of(first.tool()), session.rejectedTools().stream().map(Messages.RejectedTool::tool).toList());
+        assertEquals(1.0, rejectedToolsGauge("alice"));
+
+        bot.close();
+        for (int attempt = 0; attempt < 100 && bots.size() > 0; attempt++) {
+            TimeUnit.MILLISECONDS.sleep(20);
+        }
+        assertNull(meters.find("mcagents.bots.rejected_tools").tag("bot", "alice").gauge(),
+                "a bot that left does not keep reporting its dark tools");
+    }
+
+    @Test
+    void aBotWithoutRejectedToolsReportsZeroOfThem() throws Exception {
+        Socket bot = dial();
+        send(bot, hello("alice", "fabric", everything("fabric")));
+        assertInstanceOf(Messages.HelloOk.class, read(bot));
+        awaitSession("alice");
+
+        assertEquals(0.0, rejectedToolsGauge("alice"));
+    }
+
+    /*
+    The NetworkPolicy is the first gate on the port and the token the second: a pod that gets
+    past the policy still cannot introduce itself as a bot. The refusal comes before the name is
+    taken, so an impostor cannot hold a name the real bot is about to dial in under.
+    */
+    @Test
+    void aBotWithTheLinkTokenThisServerRequiresIsAdmitted() throws Exception {
+        requireLinkToken("s3cret");
+
+        Socket bot = dial();
+        send(bot, hello("alice", "fabric", List.of(), "s3cret"));
+
+        assertInstanceOf(Messages.HelloOk.class, read(bot));
+        awaitSession("alice");
+    }
+
+    @Test
+    void aBotWithoutTheLinkTokenThisServerRequiresIsRefusedBeforeItHasAName() throws Exception {
+        requireLinkToken("s3cret");
+
+        Socket silent = dial();
+        send(silent, hello("alice", "fabric", List.of(), null));
+        Messages.Fault fault = assertInstanceOf(Messages.Fault.class, read(silent));
+        assertEquals("UNAUTHORIZED", fault.code());
+        assertTrue(fault.message().contains("alice"), fault.message());
+        assertFalse(fault.message().contains("s3cret"), "the token must not travel back in the refusal");
+        assertThrows(EOFException.class, () -> read(silent));
+
+        Socket wrong = dial();
+        send(wrong, hello("alice", "fabric", List.of(), "s3cre"));
+        assertEquals("UNAUTHORIZED", assertInstanceOf(Messages.Fault.class, read(wrong)).code());
+
+        assertEquals(0, bots.size());
+
+        Socket real = dial();
+        send(real, hello("alice", "fabric", List.of(), "s3cret"));
+        assertInstanceOf(Messages.HelloOk.class, read(real));
+        awaitSession("alice");
+    }
+
+    /* Tolerant when unset, so the server can ship before the bots and the operator carry a token. */
+    @Test
+    void aServerWithNoLinkTokenIgnoresWhateverTheHelloCarries() throws Exception {
+        Socket withToken = dial();
+        send(withToken, hello("alice", "fabric", List.of(), "anything"));
+        assertInstanceOf(Messages.HelloOk.class, read(withToken));
+
+        Socket without = dial();
+        send(without, hello("bob", "fabric", List.of(), null));
+        assertInstanceOf(Messages.HelloOk.class, read(without));
+
+        awaitSession("alice");
+        awaitSession("bob");
     }
 
     @Test
     void aBotSpeakingAnotherProtocolIsToldSoAndClosed() throws Exception {
         Socket bot = dial();
         send(bot, new Messages.Hello(List.of(catalog.protocol() + 99), "alice", "fabric",
-                "0.1.0", "26.1.2", catalog.version(), List.of(), List.of()));
+                "0.1.0", "26.1.2", catalog.version(), List.of(), List.of(), null));
 
         Messages.Fault fault = assertInstanceOf(Messages.Fault.class, read(bot));
 
@@ -266,7 +359,7 @@ class BotLinkServerTest {
     @Test
     void aBotThatNeverSaysHelloIsDroppedAfterTheTimeout() throws Exception {
         server.stop();
-        server = new BotLinkServer(catalog, bots, mapper, timers, 0, 1_000, Set.of(), 200);
+        server = new BotLinkServer(catalog, bots, mapper, timers, 0, 1_000, Set.of(), "", meters, 200);
         server.start();
 
         Socket bot = dial();

@@ -45,7 +45,13 @@ final class BotWorld implements AutoCloseable {
     private final GenericContainer<?> server;
     private final GenericContainer<?> bot;
 
-    BotWorld(Path fixture, Path fixturePlugin, String minecraftVersion, String botImage, String botKind, int linkPort) {
+    /**
+     * @param hubPrefix what goes in front of the Paper image's Docker Hub name. Empty is Docker Hub;
+     *                  CI pulls through the registry's proxy cache, where an anonymous pull limit is
+     *                  not what fails a shard
+     */
+    BotWorld(Path fixture, Path fixturePlugin, String minecraftVersion, String botImage, String botKind,
+            String hubPrefix, int linkPort) {
         /*
         The bot dials this process, which is not in a container. Host networking would do it on a
         Linux runner and not on a Mac, where a container's localhost is the virtual machine's;
@@ -53,7 +59,7 @@ final class BotWorld implements AutoCloseable {
         */
         Testcontainers.exposeHostPorts(linkPort);
 
-        server = new GenericContainer<>("itzg/minecraft-server:java25")
+        server = new GenericContainer<>(hubPrefix + "itzg/minecraft-server:java25")
             .withEnv("EULA", "TRUE")
             .withEnv("TYPE", "PAPER")
             .withEnv("VERSION", minecraftVersion)
@@ -91,6 +97,7 @@ final class BotWorld implements AutoCloseable {
         bot = new GenericContainer<>(botImage)
             .withEnv("MCP_SERVER_HOST", "host.testcontainers.internal")
             .withEnv("MCP_SERVER_PORT", String.valueOf(linkPort))
+            .withEnv("BOT_LINK_TOKEN", Server.LINK_TOKEN)
             .withEnv("BOT_NAME", BOT)
             .withEnv("MC_VERSION", minecraftVersion)
             .withNetwork(network)

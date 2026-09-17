@@ -74,7 +74,7 @@ joins the two with a manifest list, because a cross-build here means running the
 under emulation.
 */
 tasks.bootBuildImage {
-    imageName = "${project.findProperty("imageName") ?: "junhyung.cloud/library/mcp-server"}:${project.version}"
+    imageName = "${project.findProperty("imageName") ?: "junhyung.cloud/mc-agents/mcp-server"}:${project.version}"
     environment = mapOf("BP_JVM_VERSION" to "25")
 
     /* Credentials come from the environment so nothing has to be passed on a command line. */

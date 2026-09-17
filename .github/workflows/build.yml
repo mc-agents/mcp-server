@@ -9,9 +9,9 @@ on:
 env:
   REGISTRY: junhyung.cloud
   # Charts must not share a repository with the image: the same tag overwrites the other.
-  CHART_REPO: oci://junhyung.cloud/library/charts
-  CHART_REPO_HOST: junhyung.cloud/library/charts
-  IMAGE: junhyung.cloud/library/mcp-server
+  CHART_REPO: oci://junhyung.cloud/mc-agents/charts
+  CHART_REPO_HOST: junhyung.cloud/mc-agents/charts
+  IMAGE: junhyung.cloud/mc-agents/mcp-server
 
 jobs:
   check:
@@ -90,7 +90,9 @@ jobs:
   # scripts somebody had to run and read.
   #
   # It drives the published bot image, so a change that needs both sides fails here until the bot
-  # is published. That is the coupling the shared catalogue already has, made visible.
+  # is published. That is the coupling the shared catalogue already has, made visible, and publish
+  # waits on every shard: a red one blocks the tags, the chart and the release rather than
+  # shipping beside them.
   e2e:
     name: e2e (${{ matrix.kind }} ${{ matrix.shard }}/${{ matrix.shards }})
     needs: check
@@ -122,11 +124,26 @@ jobs:
           java-version: "25"
       - uses: gradle/actions/setup-gradle@v5
 
-      # No registry login: the bot images are pulled anonymously, and a pull request Dependabot
-      # opens runs without the repository's secrets, so a login here failed every one of them.
+      # The Paper server, ryuk and Testcontainers' sshd come from Docker Hub, and five shards on a
+      # shared runner pool meet its anonymous pull limit. In CI they come through the registry's
+      # private proxy cache instead, which needs this login. A pull request Dependabot opens runs
+      # without the repository's secrets, which is why the login was dropped once; it comes back for
+      # the proxy, and Dependabot pull requests get the same two names as Dependabot secrets, set by
+      # the owner. The bot images are on the public mc-agents project and need no login.
+      - uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
       - name: what an agent gets
         env:
-          BOT_IMAGE: junhyung.cloud/library/bot-${{ matrix.kind }}:latest-mc${{ env.MINECRAFT }}
+          BOT_IMAGE: junhyung.cloud/mc-agents/bot-${{ matrix.kind }}:latest-mc${{ env.MINECRAFT }}
+          # Both prefixes are empty by default so a laptop pulls from Docker Hub without a login:
+          # this one is read by the suite for the Paper image, the Testcontainers one covers ryuk
+          # and sshd, which the suite never names.
+          E2E_HUB_PREFIX: ${{ env.REGISTRY }}/docker-hub/
+          TESTCONTAINERS_HUB_IMAGE_NAME_PREFIX: ${{ env.REGISTRY }}/docker-hub/
         run: |
           # The bot is the slowest pull of the run, nearly two minutes for fabric, and the suite asks
           # for it only once its server is up. Started here it downloads while Gradle and the server
@@ -200,8 +217,10 @@ jobs:
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
         run: ./gradlew bootBuildImage --publishImage --imageName "$IMAGE:$TAG"
 
+  # Nothing is published unless every shard is green. There is no branch ruleset: a push to main
+  # stays allowed, and this gate is what stands between a red suite and a release.
   publish:
-    needs: [tag, image]
+    needs: [tag, image, e2e]
     runs-on: ubuntu-latest
     permissions:
       # write for the git tag and the release, and in this job alone.
@@ -210,6 +229,10 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The release notes are the commits since the previous tag, and a shallow clone has
+          # neither the tags nor the commits.
+          fetch-depth: 0
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v4
         with:
@@ -253,6 +276,10 @@ jobs:
       # The image tags map the version to a build; this maps it to a commit, which is what a
       # bisect or a diff between two releases needs. A tag that is already there is left where it
       # is: a re-run of this job must not say a different commit shipped the version.
+      #
+      # The notes are the commits since the previous tag plus the catalogue version and the bot
+      # tags the suite ran against. GitHub's generated notes list pull requests, and a repository
+      # pushed to directly has none to list.
       - name: tag and release
         env:
           VERSION: ${{ needs.tag.outputs.version }}
@@ -263,7 +290,8 @@ jobs:
             git push origin "v$VERSION"
           fi
           if ! gh release view "v$VERSION" > /dev/null 2>&1; then
-            gh release create "v$VERSION" --generate-notes
+            ./hack/release-notes.sh "$VERSION" release-notes.md
+            gh release create "v$VERSION" --title "v$VERSION" --notes-file release-notes.md
           fi
 
       - env:

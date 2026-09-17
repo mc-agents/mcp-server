@@ -23,6 +23,13 @@ import java.util.regex.Pattern;
  */
 final class Server implements AutoCloseable {
 
+    /**
+     * Required of every bot that dials in, so a run proves the bot presents the token and the
+     * server admits it: an operator hands both sides one, and a bot image that dropped it would
+     * link on a laptop and be refused in every cluster.
+     */
+    static final String LINK_TOKEN = "e2e-link-token";
+
     private static final Duration BOOT = Duration.ofMinutes(2);
     private static final Duration POLL = Duration.ofMillis(250);
 
@@ -41,6 +48,7 @@ final class Server implements AutoCloseable {
                     javaBinary(), "-jar", jar.toString(),
                     "--server.port=0",
                     "--mcagents.bot-link.port=0",
+                    "--mcagents.bot-link.token=" + LINK_TOKEN,
                     /* A bot that is already linked is the one join-server uses; nothing to create. */
                     "--mcagents.bots.provision=never")
                 .redirectErrorStream(true)

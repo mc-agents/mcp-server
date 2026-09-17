@@ -44,7 +44,7 @@ mineflayer 가 못 하던 넷은 끝까지 남아 있었습니다: 다이얼로�
 | 항목 | 결정 | 근거 |
 | --- | --- | --- |
 | 저장소 | `github.com/mc-agents` 아래 넷 | |
-| 레지스트리 | **junhyung.cloud/library** | 이미 쓰던 Harbor 입니다. push 는 로봇 계정(저장소 시크릿 `REGISTRY_USERNAME`·`REGISTRY_PASSWORD`), pull 은 익명으로 됩니다. cosign 키리스는 유지 |
+| 레지스트리 | **junhyung.cloud/mc-agents** | 이미 쓰던 Harbor 입니다. push 는 로봇 계정(저장소 시크릿 `REGISTRY_USERNAME`·`REGISTRY_PASSWORD`), pull 은 익명으로 됩니다. cosign 키리스는 유지 |
 | 연결 방향 | **봇이 다이얼, MCP 서버가 리스너** | 파드가 뜨면 스스로 붙으므로 서버가 파드 IP 를 추적할 필요가 없고, 로컬 개발 봇이 클러스터 밖에서 붙습니다 |
 | MCP 서버 레플리카 | **당분간 1** | 늘리려면 봇을 공유 자원으로 보고 lease·roster·팬아웃이 필요합니다. "레플리카를 늘린다"는 요구는 **봇 파드**에 대한 것이므로 그 복잡도를 지금 지불하지 않습니다 |
 | 도구 카탈로그 | **MCP 서버가 소유** | `tools/list` 는 봇이 0개여도 완전해야 합니다(MCP 클라이언트가 세션 시작 때 한 번 읽음). 기본값·클램프·좌표 바닥내림을 서버가 하면 두 봇이 의견을 가질 수 없습니다 |
@@ -159,7 +159,7 @@ mixin 여섯 개는 그대로 붙었습니다.
   프로세스가 비싼 쪽이므로, 그것을 끝내는 것은 operator 의 결정입니다.
 - **봇 포트에 인증이 없습니다.** README 의 알려진 한계에 적혀 있습니다. MCP 포트에는
   공유 베어러 토큰이 붙었고, `/actuator` 는 프로브가 자격을 들 수 없으므로 예외입니다.
-- **레지스트리는 `junhyung.cloud/library` 입니다.** ghcr 은 새 패키지를 비공개로 만들어
+- **레지스트리는 `junhyung.cloud/mc-agents` 입니다.** ghcr 은 새 패키지를 비공개로 만들어
   `read:packages` 없이는 받을 수 없었습니다. push 는 Harbor 로봇 계정(저장소 시크릿
   `REGISTRY_USERNAME`·`REGISTRY_PASSWORD`), pull 은 익명으로 됩니다.
 - **mcp-server 이미지는 Dockerfile 이 아니라 Paketo buildpack 으로 굽습니다.** 힙을 컨테이너의

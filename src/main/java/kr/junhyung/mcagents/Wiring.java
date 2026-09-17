@@ -183,10 +183,11 @@ public class Wiring {
             @Value("${mcagents.bots.mcp-host:}") String mcpHost,
             @Value("${mcagents.bots.profile.kind:}") String profileKind,
             @Value("${mcagents.bots.profile.name:}") String profileName,
+            @Value("${mcagents.bots.link-secret:}") String linkSecret,
             @Value("${mcagents.bot-link.port:8765}") int port) {
         if (!wanted(provision)) {
             log.info("not running in a cluster, so join-server uses bots that dial in");
-            return new BotProvisioner(null, null, null, port, null);
+            return new BotProvisioner(null, null, null, port, null, null);
         }
 
         try {
@@ -195,7 +196,7 @@ public class Wiring {
 
             if (where == null) {
                 log.info("no Kubernetes namespace is in scope, so join-server cannot start a bot");
-                return new BotProvisioner(null, null, null, port, null);
+                return new BotProvisioner(null, null, null, port, null, null);
             }
 
             client.getKubernetesVersion();
@@ -204,10 +205,11 @@ public class Wiring {
             BotProvisioner.Profile profile = profileName.isBlank() ? null
                     : new BotProvisioner.Profile(profileKind.isBlank() ? "MinecraftBotProfile" : profileKind, profileName);
 
-            return new BotProvisioner(client, where, mcpHost.isBlank() ? defaultHost(where) : mcpHost, port, profile);
+            return new BotProvisioner(client, where, mcpHost.isBlank() ? defaultHost(where) : mcpHost, port, profile,
+                    linkSecret.isBlank() ? null : linkSecret);
         } catch (RuntimeException e) {
             log.info("no cluster to start bots in ({}), so join-server uses bots that dial in", e.getMessage());
-            return new BotProvisioner(null, null, null, port, null);
+            return new BotProvisioner(null, null, null, port, null, null);
         }
     }
 
@@ -239,7 +241,9 @@ public class Wiring {
     public BotLinkServer botLinkServer(Catalog catalog, BotRegistry bots,
             ScheduledExecutorService timers, @Value("${mcagents.bot-link.port:8765}") int port,
             @Value("${mcagents.bot-link.repeat-flush-ms:1000}") int repeatFlushMs,
-            @Value("${mcagents.bot-link.muted-feeds:}") Set<String> mutedFeeds) {
-        return new BotLinkServer(catalog, bots, wireMapper(), timers, port, repeatFlushMs, mutedFeeds);
+            @Value("${mcagents.bot-link.muted-feeds:}") Set<String> mutedFeeds,
+            @Value("${mcagents.bot-link.token:}") String linkToken,
+            MeterRegistry meters) {
+        return new BotLinkServer(catalog, bots, wireMapper(), timers, port, repeatFlushMs, mutedFeeds, linkToken, meters);
     }
 }

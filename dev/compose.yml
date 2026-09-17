@@ -11,11 +11,14 @@
 # Forwarding is off: the backends are in offline mode and take the name from the handshake, which
 # is enough to move a bot between two of them. A real deployment uses modern forwarding and a
 # shared secret, and none of that changes what the tool does.
+#
+# HUB_PREFIX goes in front of both Docker Hub image names, as "junhyung.cloud/docker-hub/", for a
+# machine that pulls through the registry's proxy cache. Empty is Docker Hub itself, with no login.
 name: mc-agents-proxy-dev
 
 services:
   velocity:
-    image: itzg/bungeecord:java25
+    image: ${HUB_PREFIX:-}itzg/bungeecord:java25
     tty: true
     stdin_open: true
     ports:
@@ -36,7 +39,7 @@ services:
         condition: service_healthy
 
   lobby: &backend
-    image: itzg/minecraft-server:java25
+    image: ${HUB_PREFIX:-}itzg/minecraft-server:java25
     tty: true
     stdin_open: true
     environment: &backend-env

@@ -5,10 +5,14 @@ import kr.junhyung.mcagents.catalog.ToolSpec;
 import kr.junhyung.mcagents.protocol.Frame;
 import kr.junhyung.mcagents.protocol.Messages;
 import kr.junhyung.mcagents.protocol.ProtocolViolation;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -33,9 +37,10 @@ import tools.jackson.databind.ObjectMapper;
  * round, so nothing here tracks pod addresses, and a bot running on a laptop attaches to a server
  * in a cluster without either of them being routable to the other.
  *
- * <p>The port carries no authentication. A NetworkPolicy opens it to this server alone, and giving
- * every bot a rotating token would put secret rotation in the operator for a port that never
- * leaves the cluster. This is written down as a known limit in the README.
+ * <p>A NetworkPolicy is the first gate on the port, and the link token the second: a pod that
+ * gets past the policy still cannot introduce itself as a bot without the token the operator
+ * handed both sides. A server given no token takes any hello, which is what lets the server, the
+ * bots and the operator each ship this on their own.
  */
 public class BotLinkServer implements SmartLifecycle {
 
@@ -66,6 +71,8 @@ public class BotLinkServer implements SmartLifecycle {
     private final int repeatFlushMs;
     private final int helloTimeoutMs;
     private final Map<String, Boolean> events;
+    private final byte[] linkToken;
+    private final MeterRegistry meters;
 
     private final AtomicBoolean running = new AtomicBoolean();
     private volatile ServerSocket listener;
@@ -76,15 +83,18 @@ public class BotLinkServer implements SmartLifecycle {
      *                      showing" stays answerable. A run closes after three of these without a repeat
      * @param mutedFeeds    feeds bots are told not to push. {@code effect} on a busy server is a
      *                      firehose, and the valve is only worth having if it can be closed
+     * @param linkToken     what a hello has to carry to be admitted. Blank admits every hello
      */
     public BotLinkServer(Catalog catalog, BotRegistry bots, ObjectMapper mapper,
-            ScheduledExecutorService timers, int port, int repeatFlushMs, Set<String> mutedFeeds) {
-        this(catalog, bots, mapper, timers, port, repeatFlushMs, mutedFeeds, HELLO_TIMEOUT_MS);
+            ScheduledExecutorService timers, int port, int repeatFlushMs, Set<String> mutedFeeds,
+            String linkToken, MeterRegistry meters) {
+        this(catalog, bots, mapper, timers, port, repeatFlushMs, mutedFeeds, linkToken, meters, HELLO_TIMEOUT_MS);
     }
 
     /** The hello timeout is a parameter so a test can watch a silent bot be dropped without waiting five seconds. */
     public BotLinkServer(Catalog catalog, BotRegistry bots, ObjectMapper mapper,
-            ScheduledExecutorService timers, int port, int repeatFlushMs, Set<String> mutedFeeds, int helloTimeoutMs) {
+            ScheduledExecutorService timers, int port, int repeatFlushMs, Set<String> mutedFeeds,
+            String linkToken, MeterRegistry meters, int helloTimeoutMs) {
         if (repeatFlushMs <= 0) {
             throw new IllegalArgumentException("repeatFlushMs has to be positive, and was " + repeatFlushMs);
         }
@@ -102,6 +112,8 @@ public class BotLinkServer implements SmartLifecycle {
         this.port = port;
         this.repeatFlushMs = repeatFlushMs;
         this.helloTimeoutMs = helloTimeoutMs;
+        this.linkToken = linkToken == null || linkToken.isBlank() ? null : linkToken.getBytes(StandardCharsets.UTF_8);
+        this.meters = meters;
 
         Map<String, Boolean> valves = new LinkedHashMap<>();
         FEEDS.forEach(feed -> valves.put(feed, !mutedFeeds.contains(feed)));
@@ -123,7 +135,8 @@ public class BotLinkServer implements SmartLifecycle {
         acceptor = Thread.ofVirtual().name("bot-link-acceptor").start(this::accept);
         timers.scheduleWithFixedDelay(this::beat, HEARTBEAT_MS, HEARTBEAT_MS, TimeUnit.MILLISECONDS);
 
-        log.info("listening for bots on port {}", listener.getLocalPort());
+        log.info("listening for bots on port {}{}", listener.getLocalPort(),
+                linkToken == null ? ", taking any bot that dials in: no link token is set" : ", link token required");
     }
 
     /** The bound port, which is not {@link #port} when the configuration asked for an ephemeral one. */
@@ -188,12 +201,17 @@ public class BotLinkServer implements SmartLifecycle {
     private void handle(Socket socket) {
         BotLink link = null;
         String name = null;
+        Gauge rejectedTools = null;
         try {
             link = new BotLink(socket, mapper, timers);
             Messages.Hello hello = link.awaitHello(helloTimeoutMs);
 
             BotSession session = admit(link, hello);
             name = session.name();
+            rejectedTools = Gauge.builder("mcagents.bots.rejected_tools", session, bot -> bot.rejectedTools().size())
+                    .tag("bot", name)
+                    .description("Tools this bot offered at the handshake that the server refused")
+                    .register(meters);
 
             log.info("bot \"{}\" ({}, mc {}) linked with {} of {} tools",
                     name, hello.kind(), hello.mcVersion(),
@@ -222,6 +240,13 @@ public class BotLinkServer implements SmartLifecycle {
             if (link != null) {
                 link.close();
             }
+            /*
+            Gone before the name is free: a bot redialling under the same name registers its own
+            gauge only once the registry lets it in, and must not find this one still there.
+            */
+            if (rejectedTools != null) {
+                meters.remove(rejectedTools);
+            }
             if (name != null) {
                 bots.remove(name, "the link to the bot closed");
             }
@@ -249,10 +274,29 @@ public class BotLinkServer implements SmartLifecycle {
         } catch (IllegalArgumentException e) {
             throw new Rejected("BAD_NAME", e.getMessage());
         }
+        /*
+        Before the name is taken: an impostor must not be able to hold a name a real bot is about to
+        dial in under. The comparison is constant-time so what it takes to refuse a token says
+        nothing about how much of it was right, and the message names the bot and not the token.
+        */
+        if (linkToken != null && !MessageDigest.isEqual(linkToken,
+                hello.linkToken() == null ? new byte[0] : hello.linkToken().getBytes(StandardCharsets.UTF_8))) {
+            throw new Rejected("UNAUTHORIZED",
+                    "bot \"%s\" did not present the link token this server requires".formatted(hello.botName()));
+        }
 
         BotSession session = new BotSession(hello.botName(), hello.kind(), link, timers);
         Vetted vetted = vet(hello);
         session.acceptCapabilities(vetted.accepted());
+        session.rejectCapabilities(vetted.rejected());
+        /*
+        One line per tool, because a tool that went dark at a handshake is the fact that explains a
+        refusal an agent meets an hour later, and helloOk carries it only to the bot.
+        */
+        for (Messages.RejectedTool refused : vetted.rejected()) {
+            log.warn("bot \"{}\" ({}) offered {} and it was refused: {}",
+                    hello.botName(), hello.kind(), refused.tool(), refused.reason());
+        }
 
         try {
             bots.add(session);

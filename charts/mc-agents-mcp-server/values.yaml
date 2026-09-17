@@ -4,13 +4,13 @@
 replicaCount: 1
 
 image:
-  registry: junhyung.cloud/library
+  registry: junhyung.cloud/mc-agents
   repository: mcp-server
   # Empty falls back to Chart.appVersion. A promotion swaps only this value.
   tag: ""
   pullPolicy: IfNotPresent
 
-# junhyung.cloud/library allows anonymous pull, so nothing is needed by default.
+# junhyung.cloud/mc-agents allows anonymous pull, so nothing is needed by default.
 imagePullSecrets: []
 
 nameOverride: ""
@@ -39,6 +39,22 @@ bots:
   profile:
     kind: MinecraftBotProfile
     name: ""
+  # The Secret a bot started here is pointed at for its link token (spec.linkTokenSecretRef, key
+  # "token"), in the namespace above. Empty is the chart's own link Secret, which is in this
+  # release's namespace: a bot in another namespace needs a copy of it there, named here.
+  linkSecret: ""
+
+# The second gate on the bot link, after the NetworkPolicy: a bot's hello has to carry this token
+# or the server refuses it, so a pod that reaches the port still cannot introduce itself as a bot.
+# Unset, the server takes any bot that dials in. The bots the operator starts from this chart's
+# MinecraftBots are handed the same Secret; a bot declared by hand needs spec.linkTokenSecretRef
+# pointing at it.
+botLink:
+  # The token itself. Use existingSecret anywhere the values file is not the secret store.
+  token: ""
+  # Name of a Secret that already holds it under the key "token". The chart then creates none, and
+  # a rotation does not roll the pod, as with auth.existingSecret.
+  existingSecret: ""
 
 # A shared bearer token on /mcp. /actuator is never behind it: a probe cannot carry one.
 auth:

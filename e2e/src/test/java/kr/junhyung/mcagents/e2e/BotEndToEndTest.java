@@ -92,6 +92,7 @@ class BotEndToEndTest {
             System.getProperty("e2e.minecraft.version"),
             System.getProperty("e2e.bot.image"),
             System.getProperty("e2e.bot.kind"),
+            System.getProperty("e2e.hub.prefix", ""),
             server.linkPort());
         world.start();
 
@@ -2789,7 +2790,12 @@ class BotEndToEndTest {
         assertTrue(ran.contains("-> Too soon [barrier] x1"), ran);
         assertEquals(1, counted("fx_untrack"), ran);
         assertEquals(1, counted("fx_too_soon"), ran);
-        assertTrue(gap >= 20 && gap <= 28, "the server saw the clicks " + gap + " ticks apart: " + ran);
+        /*
+        The gap is in the server's ticks, and a server that lagged while the bot waited counts
+        fewer of them than the bot did: 18 on a loaded machine. What the bound has to tell apart
+        is a wait from a double click, which the server sees a tick or two apart.
+        */
+        assertTrue(gap >= 15 && gap <= 28, "the server saw the clicks " + gap + " ticks apart: " + ran);
 
         /* The wait is measured on the bot's own clock too: from the first click's end to the second's start. */
         Matcher first = Pattern.compile("\n  1\\. ticks (\\d+)-(\\d+): ").matcher(ran);

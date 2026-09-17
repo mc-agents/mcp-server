@@ -30,6 +30,7 @@ everything, and a second way to say it is a second thing that can disagree.
 | `MC_VERSION` | the version to claim; `auto` negotiates | `auto` |
 | `HEALTH_PORT` | where `/healthz` and `/readyz` are served | `8080` |
 | `RECONNECT_MIN_MS`, `RECONNECT_MAX_MS` | backoff bounds for redialling | `500`, `15000` |
+| `BOT_LINK_TOKEN` | what to send as `hello.linkToken`. The operator sets it from the server's link Secret; a bot must never log it | unset: no `linkToken` in `hello` |
 
 A `fabric` bot needs three more, because it runs a real client:
 
@@ -71,7 +72,7 @@ Every JSON frame is a flat object with a `t` discriminator.
 
 | `t` | Fields |
 | --- | --- |
-| `hello` | `protocols[]`, `botName`, `kind`, `agentVersion`, `mcVersion`, `catalogVersion`, `capabilities[]`, `features[]` |
+| `hello` | `protocols[]`, `botName`, `kind`, `agentVersion`, `mcVersion`, `catalogVersion`, `capabilities[]`, `features[]`, `linkToken?` |
 | `result` | `id`, `ok`, `text`, `data?`, `blobs[]?`, `error?`, `elapsedMs` |
 | `event` | `seq`, `kind`, `source`, `text`, `segments[]?`, `component?`, `data?`, `ts`, `firstTs`, `repeats`, `closed` |
 | `status` | `state`, `ts`, and whatever it knows: `address`, `username`, `mcVersion`, `serverBrand`, `gameMode`, `dimension`, `position`, `health`, `food`, `dead`, `causeOfDeath`, `reason`, `lastError` |
@@ -79,6 +80,15 @@ Every JSON frame is a flat object with a `t` discriminator.
 | `pong` | `nonce` (the integer the `ping` carried), `ts`, `busy` (how many calls are in flight, an integer) |
 
 `capabilities[]` is `{tool, argsHash}`. `features[]` holds `blob`, `eventFold`, `structuredDialog`.
+
+`linkToken` is the bot's proof that it belongs to this server. A NetworkPolicy is the first gate
+on the port; this is the second, so a pod that gets past the policy still cannot introduce itself
+as a bot. When the server has a token configured (`mcagents.bot-link.token`, env `BOT_LINK_TOKEN`),
+a `hello` without an equal one is answered with a `fault` `UNAUTHORIZED` and the connection closes,
+before the name is taken -- an impostor must not hold a name the real bot is about to dial in
+under. The comparison is constant-time. When the server has none, the field is ignored, which is
+what lets the server, the bots and the operator each ship this on their own. The server logs a
+refusal at WARN with the bot's name and never the token; a bot never logs it either.
 
 `status.state` is one of five:
 
@@ -148,7 +158,8 @@ The server reads any other code as a login problem, which is where a join fails 
 so a bot may add codes without the server having to learn them first.
 
 A bot that has not sent `hello` within 5s is dropped. A frame before `hello`, or a second `hello`,
-is a violation.
+is a violation. A `hello` the server refuses -- the wrong protocol, a name it cannot use or one
+already taken, a missing or unequal `linkToken` -- gets a `fault` naming which, then the close.
 
 ## Four invariants
 
@@ -267,6 +278,12 @@ argument schema they compiled against.
 | Bot reports a tool the catalogue does not have | Ignored. The bot is newer |
 | `argsHash` disagrees | **That one tool** is disabled. The rest keep working |
 | Catalogue has a tool the bot did not report | Treated as absent |
+
+A disabled tool is visible on both sides, because the two catalogues disagreeing is a fact that
+explains a refusal an agent meets an hour later. The server logs every tool it refuses at WARN with
+the reason, counts them in the gauge `mcagents.bots.rejected_tools{bot}`, and `list-bots` and
+`get-bot-status` name them as "disabled: schema mismatch". A bot logs the `rejectedTools` list
+from `helloOk` at WARN.
 
 ### How `argsHash` is computed
 

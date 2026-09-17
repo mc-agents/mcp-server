@@ -11,8 +11,8 @@ spec:
       {{- include "mc-agents-mcp-server.selectorLabels" . | nindent 6 }}
   policyTypes: [Ingress]
   ingress:
-    # The bot link carries no authentication, by the decision in docs/architecture.md. This is
-    # the gate that decision assumes exists, so turning the policy on is what makes it true.
+    # The first gate on the bot link; the link token in botLink is the second, and a server with
+    # neither takes any pod that can reach the port.
     - from:
         - podSelector:
             matchLabels:

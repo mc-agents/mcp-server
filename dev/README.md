@@ -133,7 +133,9 @@ other bot ended up sending a dialog packet no server could decode.
 Velocity with two Paper backends, `lobby` and `arena`, on different worlds so a bot that thinks it
 switched and did not is caught by where it is standing. Forwarding is off and everything is offline
 mode; a real deployment uses modern forwarding and a shared secret, and none of that changes what
-the tool does. Nothing else in `dev/` needs this running.
+the tool does. Nothing else in `dev/` needs this running. The images are Docker Hub's;
+`HUB_PREFIX=junhyung.cloud/docker-hub/` pulls them through the registry's proxy cache instead,
+for a machine that is logged in to it.
 
 ## A real server to point at
 

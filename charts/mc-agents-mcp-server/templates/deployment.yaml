@@ -33,6 +33,15 @@ spec:
         checksum/auth: {{ include "mc-agents-mcp-server.secretName" . | sha256sum }}-{{ .Values.auth.token | sha256sum }}
         {{- end }}
         {{- end }}
+        {{- if include "mc-agents-mcp-server.linkTokenEnabled" . }}
+        # The same, for the link token: a server still holding the old one refuses every bot that
+        # was handed the new one.
+        {{- if .Values.botLink.existingSecret }}
+        checksum/link: {{ include "mc-agents-mcp-server.linkSecretName" . | sha256sum }}
+        {{- else }}
+        checksum/link: {{ include "mc-agents-mcp-server.linkSecretName" . | sha256sum }}-{{ .Values.botLink.token | sha256sum }}
+        {{- end }}
+        {{- end }}
         {{- if .Values.metrics.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "3000"
@@ -103,6 +112,17 @@ spec:
                 secretKeyRef:
                   name: {{ include "mc-agents-mcp-server.secretName" . }}
                   key: {{ .Values.auth.secretKey }}
+            {{- end }}
+            {{- if include "mc-agents-mcp-server.linkTokenEnabled" . }}
+            - name: BOT_LINK_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mc-agents-mcp-server.linkSecretName" . }}
+                  key: token
+            {{- if .Values.bots.provision }}
+            - name: MCP_BOTS_LINK_SECRET
+              value: {{ include "mc-agents-mcp-server.botsLinkSecret" . | quote }}
+            {{- end }}
             {{- end }}
           startupProbe:
             httpGet:

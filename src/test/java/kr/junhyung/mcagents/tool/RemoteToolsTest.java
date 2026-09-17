@@ -197,7 +197,7 @@ class RemoteToolsTest {
         BotRegistry bots = new BotRegistry(2);
         bots.add(bot);
         return new ToolDispatcher(bots, new LocalTools(bots), remote,
-                new Orchestration(bots, new BotProvisioner(null, null, null, 0, null)), new SimpleMeterRegistry());
+                new Orchestration(bots, new BotProvisioner(null, null, null, 0, null, null)), new SimpleMeterRegistry());
     }
 
     private void botFailsWith(String errorClass, String code, String message, boolean retryable) {

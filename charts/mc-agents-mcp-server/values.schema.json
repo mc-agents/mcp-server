@@ -68,7 +68,16 @@
             "kind": { "type": "string", "enum": ["MinecraftBotProfile", "ClusterMinecraftBotProfile"] },
             "name": { "type": "string" }
           }
-        }
+        },
+        "linkSecret": { "type": "string" }
+      }
+    },
+    "botLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "token": { "type": "string" },
+        "existingSecret": { "type": "string" }
       }
     },
     "auth": {

@@ -91,9 +91,11 @@ public class LocalTools {
         Messages.Status last = bot.status();
 
         if (last == null) {
-            return ToolDispatcher.text(
+            StringBuilder idle = new StringBuilder(
                     "Bot \"%s\" (kind: %s) is linked but has not joined a world. Call join-server to send it to one."
                             .formatted(bot.name(), bot.kind()));
+            append(idle, "Disabled", disabled(bot));
+            return ToolDispatcher.text(idle.toString());
         }
 
         StringBuilder body = new StringBuilder("Bot \"%s\" (kind: %s) is %s."
@@ -124,6 +126,7 @@ public class LocalTools {
 
         append(body, "Last error", last.lastError());
         append(body, "Last seen", Instant.ofEpochMilli(last.ts()).toString());
+        append(body, "Disabled", disabled(bot));
 
         /*
         A kick reason, a login error and a brand are the server's words: a plugin that kicks with
@@ -295,7 +298,8 @@ public class LocalTools {
             return ToolDispatcher.text("No bots are connected. Call join-server to add one.");
         }
         String body = all.stream()
-                .map(bot -> "  %s (%s): %s".formatted(bot.name(), bot.kind(), describe(bot)))
+                .map(bot -> "  %s (%s): %s%s".formatted(bot.name(), bot.kind(), describe(bot),
+                        disabled(bot) == null ? "" : "; " + disabled(bot)))
                 .reduce((a, b) -> a + "\n" + b).orElse("");
         String listed = "%d bot(s):\n%s".formatted(all.size(), body);
 
@@ -316,6 +320,21 @@ public class LocalTools {
                     : "on " + status.address();
         }
         return showsReason(bot) ? "%s (%s)".formatted(status.state(), status.reason()) : status.state();
+    }
+
+    /**
+     * The tools the handshake refused, or null when it refused none. An agent that calls one gets
+     * a refusal naming it; this is so the agent can see it coming, and so a person reading the
+     * answer knows the bot and the server were built against different catalogues.
+     */
+    private static String disabled(BotSession bot) {
+        List<Messages.RejectedTool> refused = bot.rejectedTools();
+
+        if (refused.isEmpty()) {
+            return null;
+        }
+        return "%d tool(s) disabled: schema mismatch (%s)".formatted(refused.size(),
+                refused.stream().map(Messages.RejectedTool::tool).sorted().reduce((a, b) -> a + ", " + b).orElse(""));
     }
 
     private static boolean showsReason(BotSession bot) {

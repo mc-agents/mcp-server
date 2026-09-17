@@ -60,6 +60,29 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- default (printf "%s-auth" (include "mc-agents-mcp-server.fullname" .)) .Values.auth.existingSecret -}}
 {{- end -}}
 
+{{/* Whether bots have to present a link token: either the value or a Secret that holds it is given. */}}
+{{- define "mc-agents-mcp-server.linkTokenEnabled" -}}
+{{- if or .Values.botLink.token .Values.botLink.existingSecret -}}true{{- end -}}
+{{- end -}}
+
+{{- define "mc-agents-mcp-server.linkSecretName" -}}
+{{- default (printf "%s-link" (include "mc-agents-mcp-server.fullname" .)) .Values.botLink.existingSecret -}}
+{{- end -}}
+
+{{/*
+The Secret a bot started here is told to read its token from. It has to be in the namespace the
+bots are made in, which the chart's own Secret is not when that namespace is another.
+*/}}
+{{- define "mc-agents-mcp-server.botsLinkSecret" -}}
+{{- if .Values.bots.linkSecret -}}
+{{- .Values.bots.linkSecret -}}
+{{- else if and .Values.bots.namespace (ne .Values.bots.namespace .Release.Namespace) -}}
+{{- fail (printf "botLink is on and bots are created in %s, where the link Secret %s of namespace %s cannot be read. Copy it there and name the copy in bots.linkSecret." .Values.bots.namespace (include "mc-agents-mcp-server.linkSecretName" .) .Release.Namespace) -}}
+{{- else -}}
+{{- include "mc-agents-mcp-server.linkSecretName" . -}}
+{{- end -}}
+{{- end -}}
+
 {{/*
 Namespace labels a scraper reaches the MCP port from, as YAML for a namespaceSelector's matchLabels.
 Empty when nothing is let in, so the caller can leave the rule out: an empty namespaceSelector
