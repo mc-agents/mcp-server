@@ -21,7 +21,7 @@ dependencies {
     thing here that talks to Kubernetes. Absent a cluster the client simply reports there is
     none, and join-server says a bot has to be started by hand.
     */
-    implementation("io.fabric8:kubernetes-client:7.3.1")
+    implementation("io.fabric8:kubernetes-client:7.9.0")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("com.networknt:json-schema-validator:3.0.6")
