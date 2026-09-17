@@ -21,7 +21,7 @@ jobs:
       # both alone, so :<version> keeps pointing at the build that was tested with it.
       shipped: ${{ steps.version.outputs.shipped }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           # The version check diffs against the commit this one replaced, which a shallow
           # clone does not have.
@@ -115,7 +115,7 @@ jobs:
       # The one Minecraft version the bots support. Moving to another is a release of its own.
       MINECRAFT: "26.1.2"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -155,7 +155,7 @@ jobs:
       value: ${{ steps.tag.outputs.value }}
       version: ${{ steps.tag.outputs.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - id: tag
         run: |
           version=$(tr -d '[:space:]' < VERSION)
@@ -181,7 +181,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -209,7 +209,7 @@ jobs:
       # Lets cosign fetch a short-lived certificate from Fulcio, so no key lives in the repo.
       id-token: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
