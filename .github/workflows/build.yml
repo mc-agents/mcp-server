@@ -30,7 +30,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 25
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@v6
 
       # A force push leaves nothing to compare against: the commit it names is gone from the
       # repository, and the first push to a branch names the all-zero sha. Only the shape check
@@ -120,7 +120,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "25"
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@v6
 
       # No registry login: the bot images are pulled anonymously, and a pull request Dependabot
       # opens runs without the repository's secrets, so a login here failed every one of them.
@@ -186,7 +186,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 25
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@v6
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
