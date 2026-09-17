@@ -122,12 +122,8 @@ jobs:
           java-version: "25"
       - uses: gradle/actions/setup-gradle@v5
 
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-
+      # No registry login: the bot images are pulled anonymously, and a pull request Dependabot
+      # opens runs without the repository's secrets, so a login here failed every one of them.
       - name: what an agent gets
         env:
           BOT_IMAGE: junhyung.cloud/library/bot-${{ matrix.kind }}:latest-mc${{ env.MINECRAFT }}
