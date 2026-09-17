@@ -2,8 +2,8 @@ apiVersion: v2
 name: mc-agents-mcp-server
 description: The MCP endpoint agents drive Minecraft bots through.
 type: application
-version: 0.61.1
-appVersion: "0.61.1"
+version: 0.61.2
+appVersion: "0.61.2"
 keywords:
   - minecraft
   - mcp
