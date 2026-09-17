@@ -73,7 +73,7 @@
     {
       "name": "attack-entity",
       "group": "world",
-      "description": "Attack an entity, walking to it first when out of reach. Say which entity with exactly one of name, label, id or crosshair; none, or more than one, is refused. A label is text floating in the world: a text_display, or an invisible armor stand showing its name. The entity under a label is the one a player could click whose feet are no higher than the label and at most 3 blocks below it, and at most 1 block from it horizontally; of several, the one nearest the label.",
+      "description": "Attack an entity, walking to it first when out of reach. A hit is counted when the server acknowledges it -- the entity flinches, takes damage or dies -- and a swing the server ignored is made again; three in a row it ignores fail the call, which is what an entity out of reach or invulnerable looks like. Say which entity with exactly one of name, label, id or crosshair; none, or more than one, is refused. A label is text floating in the world: a text_display, or an invisible armor stand showing its name. The entity under a label is the one a player could click whose feet are no higher than the label and at most 3 blocks below it, and at most 1 block from it horizontally; of several, the one nearest the label.",
       "route": "rpc",
       "kinds": [
         "fabric",
@@ -118,7 +118,7 @@
             "minimum": 1
           },
           "times": {
-            "description": "How many swings to land (default: 1, at most 20)",
+            "description": "How many hits to land (default: 1, at most 20)",
             "type": "integer",
             "minimum": 1,
             "maximum": 20
@@ -9977,5 +9977,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:3382d033b53465bf71626a4d4d63e7aac528f6140d3be2f425c40adfbc67545e"
+  "catalogHash": "sha256:e53efd45609c2d2dc7d0cddab7acb9d806319450648af9dcf79ce0aafdc5f32b"
 }

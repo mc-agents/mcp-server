@@ -43,7 +43,7 @@ Right-click the block at a position, walking to it first when out of reach. Pres
 
 *fabric and azalea · deadline 30s · exclusive · needs a world · the bot answers*
 
-Attack an entity, walking to it first when out of reach. Say which entity with exactly one of name, label, id or crosshair; none, or more than one, is refused. A label is text floating in the world: a text_display, or an invisible armor stand showing its name. The entity under a label is the one a player could click whose feet are no higher than the label and at most 3 blocks below it, and at most 1 block from it horizontally; of several, the one nearest the label.
+Attack an entity, walking to it first when out of reach. A hit is counted when the server acknowledges it -- the entity flinches, takes damage or dies -- and a swing the server ignored is made again; three in a row it ignores fail the call, which is what an entity out of reach or invulnerable looks like. Say which entity with exactly one of name, label, id or crosshair; none, or more than one, is refused. A label is text floating in the world: a text_display, or an invisible armor stand showing its name. The entity under a label is the one a player could click whose feet are no higher than the label and at most 3 blocks below it, and at most 1 block from it horizontally; of several, the one nearest the label.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
@@ -52,7 +52,7 @@ Attack an entity, walking to it first when out of reach. Say which entity with e
 | `id` | integer | no | The id find-entity gave the entity. Not limited by maxDistance. | at least 0 |
 | `crosshair` | boolean | no | Pass true to take whatever entity the crosshair is on, as the client's own hit test finds it, without turning or walking. It reaches what a player clicks and a name does not: an interaction hitbox, an invisible model base. Turn the bot first. |  |
 | `maxDistance` | number | no | Search radius for name and label (default: 8) | at least 1 |
-| `times` | integer | no | How many swings to land (default: 1, at most 20) | 1 to 20 |
+| `times` | integer | no | How many hits to land (default: 1, at most 20) | 1 to 20 |
 
 ### fish
 
