@@ -19,15 +19,17 @@ SAMPLES = {
     "scoreboard": "sidebar", "username": "bob", "owner": "test", "bot": "alice", "label": "Confirm", "ticks": 2,
     "match": "[Accept]", "slots": [0, 1], "steps": [{"press": "jump"}], "item": "1", "trade": "1",
     "primary": "speed", "value": True,
+    "from": {"x": 0, "y": 64, "z": 0}, "to": {"x": 3, "y": 66, "z": 3}, "operation": "set",
 }
 
 # The errors the world is allowed to answer with. The wait-for tools are asked for a pattern that
-# never arrives, and the two that talk to a Minecraft server directly have none to talk to in CI.
-# Anything else that errors is a tool the server refused, and the sweep exists to notice that.
+# never arrives, the two that talk to a Minecraft server directly have none to talk to in CI, and
+# the two that drive WorldEdit find none behind the fake bot, which is the refusal they are meant
+# to give. Anything else that errors is a tool the server refused, and the sweep exists to notice that.
 EXPECTED_ERRORS = {
     "wait-for-action-bar", "wait-for-boss-bars", "wait-for-chat", "wait-for-dialog", "wait-for-displays",
     "wait-for-effect", "wait-for-item", "wait-for-player-list", "wait-for-scoreboard", "wait-for-title",
-    "wait-for-toast", "ping-server", "wait-for-server",
+    "wait-for-toast", "ping-server", "wait-for-server", "build-region", "verify-region",
 }
 
 
@@ -82,8 +84,11 @@ for tool in CATALOG["tools"]:
         print("SKIP %-22s no sample for %s" % (tool["name"], missing))
         continue
     # A wait that is going to fail should fail quickly; wait-for-server's default is five minutes.
-    if "timeoutMs" in properties:
-        args["timeoutMs"] = SAMPLES["timeoutMs"]
+    # A pattern is optional to build-region and required by the waits; without one build-region is
+    # refused for the argument and never reaches the server it exists to talk to.
+    for key in ("timeoutMs", "pattern"):
+        if key in properties:
+            args[key] = SAMPLES[key]
 
     error, text = call(sid, tool["name"], args)
     if "not wired up yet" in text:

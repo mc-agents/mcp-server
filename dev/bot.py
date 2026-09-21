@@ -60,7 +60,7 @@ def status(sock, st, **extra):
 def chat(sock, text):
     global seq
     seq += 1
-    send(sock, {"t": "event", "seq": seq, "kind": "chat", "source": "server", "text": text,
+    send(sock, {"t": "event", "seq": seq, "kind": "chat", "source": "system", "text": text,
                 "segments": [], "ts": now(), "firstTs": now(), "repeats": 1, "closed": False})
 
 
