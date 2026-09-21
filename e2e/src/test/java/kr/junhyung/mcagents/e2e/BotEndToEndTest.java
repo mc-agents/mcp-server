@@ -3115,7 +3115,8 @@ class BotEndToEndTest {
      */
     @Test
     void aBuiltShapeReadsBackAsTheLayersItWasBuiltIn() {
-        agent.requires("read-region");
+        agent.requiresOffered("read-region", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 0, "y", -60, "z", 0), "to", Map.of("x", 0, "y", -60, "z", 0)));
         world.run("fill 24 -60 -4 28 -60 0 minecraft:stone");
         world.run("setblock 27 -59 -3 minecraft:gold_block");
         world.run("tp " + BotWorld.BOT + " 26 -59 4");
@@ -3139,7 +3140,8 @@ class BotEndToEndTest {
      */
     @Test
     void readingWithoutAirCountsTheBuildAndSaysWhyThereIsNoMap() {
-        agent.requires("read-region");
+        agent.requiresOffered("read-region", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 0, "y", -60, "z", 0), "to", Map.of("x", 0, "y", -60, "z", 0)));
         world.run("fill 24 -60 -4 28 -60 0 minecraft:stone");
         world.run("setblock 27 -59 -3 minecraft:gold_block");
         world.run("tp " + BotWorld.BOT + " 26 -59 4");
@@ -3165,7 +3167,8 @@ class BotEndToEndTest {
      */
     @Test
     void aBoxPastTheTopOfTheWorldCountsWhatIsOutsideItRatherThanRefusing() {
-        agent.requires("read-region");
+        agent.requiresOffered("read-region", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 0, "y", -60, "z", 0), "to", Map.of("x", 0, "y", -60, "z", 0)));
 
         String read = agent.mustCall("read-region", Map.of("bot", BotWorld.BOT,
             "from", Map.of("x", 2, "y", 318, "z", 0), "to", Map.of("x", 3, "y", 321, "z", 1)));

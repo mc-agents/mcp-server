@@ -69,6 +69,25 @@ final class Agent implements AutoCloseable {
         }
     }
 
+    /**
+     * A case that needs a tool the bot did not offer at its handshake is skipped, not failed.
+     *
+     * <p>{@link #requires} asks the catalogue, and the catalogue runs ahead of the bots: a tool ships
+     * in the server first, and the bots that answer it follow in their own release. In between, the
+     * pinned bot images are the ones from before, the catalogue says the kind runs the tool, and the
+     * only thing that knows the bot never offered it is the server's refusal. So this asks by calling,
+     * with arguments that change nothing, and reads the refusal that names the handshake. Any other
+     * answer, refusal or not, is the bot's to give and the case's to judge.
+     */
+    void requiresOffered(String tool, Map<String, Object> probe) {
+        requires(tool);
+        McpSchema.CallToolResult answer = client.callTool(McpSchema.CallToolRequest.builder(tool).arguments(probe).build());
+
+        if (Boolean.TRUE.equals(answer.isError()) && text(answer).contains("was not offered at the handshake")) {
+            Assumptions.abort("the " + kind + " bot in this run predates " + tool + ": " + text(answer));
+        }
+    }
+
     /** The text an agent is shown, with the blob parts left out. */
     String call(String tool, Map<String, Object> args) {
         requires(tool);
