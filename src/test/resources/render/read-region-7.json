@@ -1,0 +1,15 @@
+{
+  "tool": "read-region",
+  "note": "written by hand: nothing in the palette, which is what an all-air box left out by includeAir comes back as",
+  "data": {
+    "from": { "x": 0, "y": 64, "z": 0 },
+    "to": { "x": 1, "y": 65, "z": 1 },
+    "size": { "x": 2, "y": 2, "z": 2 },
+    "blocks": 8,
+    "palette": [],
+    "runs": [],
+    "missing": 0,
+    "outside": 0
+  },
+  "text": "(0, 64, 0) to (1, 65, 1), 2 x 2 x 2, 8 blocks.\nNothing in it was counted, which is what a box holding nothing but air reads as when includeAir is false."
+}

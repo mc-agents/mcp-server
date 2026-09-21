@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "5.1.0",
+  "catalogVersion": "5.2.0",
   "protocol": 1,
   "tools": [
     {
@@ -189,6 +189,107 @@
         "additionalProperties": false
       },
       "wireSchemaHash": "sha256:7ffff72dca24dc8640f46a40863606eda6a1e09e3a98fc615b5c315937589fd2"
+    },
+    {
+      "name": "build-region",
+      "group": "region",
+      "description": "Set a WorldEdit selection over a box and run one operation on it, as a single call: //pos1, //pos2 and the operation, sent as the bot's own commands. Needs WorldEdit or FastAsyncWorldEdit on the server and the permission to run it; without the plugin the answer says so and names read-region as what reads the same box anyway. Arguments that cannot make a valid command are refused before the bot is touched. A large edit carries on after the command has been answered, so an answer that never arrives means the edit may still be running rather than that it failed, and verify-region is how to find out.",
+      "route": "orchestrate",
+      "kinds": [
+        "fabric",
+        "azalea"
+      ],
+      "exclusive": true,
+      "untrusted": true,
+      "readOnly": false,
+      "destructive": true,
+      "structured": false,
+      "needsWorld": true,
+      "defaultDeadlineMs": 60000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "from": {
+            "description": "One corner of the box, inclusive",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "to": {
+            "description": "The other corner, inclusive",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "operation": {
+            "description": "What to run over the selection",
+            "type": "string",
+            "enum": [
+              "set",
+              "replace",
+              "walls",
+              "faces",
+              "overlay",
+              "hollow",
+              "smooth",
+              "naturalize"
+            ]
+          },
+          "pattern": {
+            "description": "WorldEdit pattern, for example stone or 50%stone,50%cobblestone. Required by set, replace, walls, faces and overlay; optional for hollow, which fills with air without one; refused by smooth and naturalize, which take no pattern",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "mask": {
+            "description": "Which blocks replace changes, as a WorldEdit mask. Only replace takes one; without it replace changes everything that is not air",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "from",
+          "operation",
+          "to"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "can-craft",
@@ -6162,6 +6263,260 @@
       }
     },
     {
+      "name": "read-region",
+      "group": "region",
+      "description": "Read every block in a box at once: a palette, run-length-encoded runs, and a map of each layer a character to a block while the box is small enough to read as one. One call where a get-block-info per block would be thousands. The runs are ordered y ascending, then z ascending, then x ascending, and that order is binding -- it is not the order Minecraft's own iterators walk, and it is chosen so a horizontal layer stays contiguous: a 64x64 floor is one run rather than sixty-four. A palette entry is written the way every other tool here writes a block: with the minecraft namespace left off, as stone or oak_stairs, and any other namespace kept, as create:cogwheel. The blocks are the ones the client was sent, which a plugin can make different from the ones the server holds: a custom block (CraftEngine, ItemsAdder, Nexo) is usually sent as a vanilla block such as stone or a note block. A box spans at most 64 blocks on an axis and holds at most 32768. A part the client has no chunk for is counted in missing rather than failing the call, and a fabric bot holds only the chunks the server sent it, so it reports more missing than an azalea bot for the same box; the invariants hold on both kinds but that number does not, so do not compare the two.",
+      "route": "rpc",
+      "kinds": [
+        "fabric",
+        "azalea"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "readOnly": true,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 10000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "from": {
+            "description": "One corner of the box, inclusive",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "to": {
+            "description": "The other corner, inclusive",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "includeAir": {
+            "description": "Whether air counts (default: true). False leaves air out of the palette and out of the runs, for reading what a structure is made of rather than where it sits; the per-layer map is then not drawn, because the runs no longer line up with the box",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "description": "The lower corner, inclusive. The server settles the two corners it was given into a lower and an upper one before sending them, so this is the smaller x, y and z whichever corner the caller wrote first",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "to": {
+            "description": "The upper corner, inclusive, settled the same way",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "includeAir": {
+            "description": "Whether air counts (default: true)",
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "from",
+          "includeAir",
+          "to"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:54bc4372fa07b0cd7820d20fde7f7e0ae516a2852b6af39f5654f4f4730c2038",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "description": "The lower corner, whichever corner the caller gave first",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "to": {
+            "description": "The upper corner",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "size": {
+            "description": "How many blocks the box spans on each axis",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "blocks": {
+            "description": "How many blocks the box holds, which is size.x times size.y times size.z",
+            "type": "integer"
+          },
+          "palette": {
+            "description": "Block ids in order of first appearance, with the minecraft namespace left off -- stone, oak_stairs -- and any other namespace kept, as create:cogwheel",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "runs": {
+            "description": "Run-length encoded in y ascending, then z ascending, then x ascending; block indexes into palette",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "block": {
+                  "type": "integer"
+                },
+                "count": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "block",
+                "count"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "missing": {
+            "description": "Blocks the client holds no chunk for, 0 when the whole box was loaded. Loadedness is decided before airness: an unloaded chunk reads as void_air on a client, so the other order would count these as air, and as nothing at all when includeAir is false",
+            "type": "integer"
+          },
+          "outside": {
+            "description": "Blocks whose y is past the world's build height. Kept apart from missing rather than added to it: one is answered by flying closer, the other by moving the box",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "blocks",
+          "from",
+          "missing",
+          "outside",
+          "palette",
+          "runs",
+          "size",
+          "to"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "read-scoreboard",
       "group": "hud",
       "description": "Read the scoreboard the server draws on screen, which most servers use for stats and quest progress.",
@@ -9219,6 +9574,79 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     },
     {
+      "name": "verify-region",
+      "group": "region",
+      "description": "Ask WorldEdit what is in a box: //size and //distr over the same selection build-region sets, as a table of block, count and share. Needs WorldEdit or FastAsyncWorldEdit on the server. Holds the bot for the whole run, so another build-region or verify-region on the same bot is refused while this one is going: a player has one WorldEdit selection, and two of these interleaving their //pos1 and //pos2 would each measure the box the other selected. The call is read-only all the same -- what it claims is the bot's selection, not the world -- which is why it is not marked exclusive. read-region reads the same box straight from the client with no plugin at all, and is the one to reach for when the plugin is absent or when where the blocks sit matters as much as how many there are.",
+      "route": "orchestrate",
+      "kinds": [
+        "fabric",
+        "azalea"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "readOnly": true,
+      "structured": false,
+      "needsWorld": true,
+      "defaultDeadlineMs": 30000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "from": {
+            "description": "One corner of the box, inclusive",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "to": {
+            "description": "The other corner, inclusive",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "wait-for-action-bar",
       "group": "hud",
       "description": "Wait until the action bar shows text matching a regular expression. Returns straight away if it already says so.",
@@ -9977,5 +10405,5 @@
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
     }
   ],
-  "catalogHash": "sha256:e53efd45609c2d2dc7d0cddab7acb9d806319450648af9dcf79ce0aafdc5f32b"
+  "catalogHash": "sha256:69ac8781ae698bd6c03933b061ecd647ca3881fdf9318cb1082b7ffc7beee93b"
 }

@@ -173,6 +173,13 @@ property required, defaults filled, values clamped, coordinates floored, and ins
 objects, every element is normalised the same way. Two bots cannot hold different opinions about
 what `range` defaults to, because neither one decides.
 
+A pair of box corners is settled the same way, and it is the one field that arrives holding
+something other than what the caller wrote. `read-region` takes its two corners in either order;
+the server settles them into a lower and an upper one, so `from` is always the smaller x, y and z
+and `to` the larger. A bot may take `from` as the low corner outright, and one that normalises the
+pair again arrives at the box it already has. What it must not do is read `from` as the corner that
+was given first: for any caller who wrote the far corner first, that walks the region backwards.
+
 **3. The bot folds repeats; the server wakes waiters.** An action bar sent 20 times a second
 crosses the wire once a second. An `event` carrying a `seq` the server already has updates that
 entry in place and **does not wake anyone waiting** — which is the contract `addDistinct` has

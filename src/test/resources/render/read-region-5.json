@@ -1,0 +1,15 @@
+{
+  "tool": "read-region",
+  "note": "written by hand: the top half of the box is above the build height, which is not the same as unloaded",
+  "data": {
+    "from": { "x": 0, "y": 316, "z": 0 },
+    "to": { "x": 1, "y": 323, "z": 1 },
+    "size": { "x": 2, "y": 8, "z": 2 },
+    "blocks": 32,
+    "palette": ["air"],
+    "runs": [{ "block": 0, "count": 16 }],
+    "missing": 0,
+    "outside": 16
+  },
+  "text": "(0, 316, 0) to (1, 323, 1), 2 x 8 x 2, 32 blocks.\n  16 air (50%)\n16 of them are past the top or bottom of the world, where there is nothing to read.\nNo map: the runs spell out 16 of the 32 blocks, so where each one sits cannot be worked out. Read a box that is inside the world."
+}

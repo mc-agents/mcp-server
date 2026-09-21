@@ -1,0 +1,15 @@
+{
+  "tool": "read-region",
+  "note": "written by hand: includeAir false, so the runs no longer line up with the box and no map is drawn",
+  "data": {
+    "from": { "x": 0, "y": 64, "z": 0 },
+    "to": { "x": 3, "y": 65, "z": 3 },
+    "size": { "x": 4, "y": 2, "z": 4 },
+    "blocks": 32,
+    "palette": ["oak_planks"],
+    "runs": [{ "block": 0, "count": 16 }],
+    "missing": 0,
+    "outside": 0
+  },
+  "text": "(0, 64, 0) to (3, 65, 3), 4 x 2 x 4, 32 blocks.\n  16 oak_planks (50%)\nNo map: the runs spell out 16 of the 32 blocks, so where each one sits cannot be worked out. Read it again with includeAir true."
+}

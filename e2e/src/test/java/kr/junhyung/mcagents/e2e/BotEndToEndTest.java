@@ -3103,6 +3103,107 @@ class BotEndToEndTest {
     }
 
     /**
+     * The run order is the whole of what a map means, and nothing but a real client walking a real
+     * box can show that the bot walks it: y ascending, then z ascending, then x ascending. A
+     * renderer handed runs by hand draws whatever it was handed, so this is the half of read-region
+     * a unit test cannot reach.
+     *
+     * <p>Two layers, with the one gold block off centre on both horizontal axes, which is what tells
+     * the three mistakes apart. A bot that walked y the other way draws the floor where the air
+     * should be; one that walked z the other way puts the gold on the fourth row instead of the
+     * second; one that walked x the other way puts it in the second column instead of the fourth.
+     */
+    @Test
+    void aBuiltShapeReadsBackAsTheLayersItWasBuiltIn() {
+        agent.requires("read-region");
+        world.run("fill 24 -60 -4 28 -60 0 minecraft:stone");
+        world.run("setblock 27 -59 -3 minecraft:gold_block");
+        world.run("tp " + BotWorld.BOT + " 26 -59 4");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+
+        String read = agent.mustCall("read-region", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 24, "y", -60, "z", -4), "to", Map.of("x", 28, "y", -59, "z", 0)));
+        world.run("fill 24 -60 -4 28 -59 0 minecraft:air");
+
+        assertTrue(read.startsWith("(24, -60, -4) to (28, -59, 0), 5 x 2 x 5, 50 blocks."
+            + "\n  a  25 stone (50%)\n  .  24 air (48%)\n  b   1 gold_block (2%)"), read);
+        assertTrue(read.contains("\n  y=-60\n    aaaaa\n    aaaaa\n    aaaaa\n    aaaaa\n    aaaaa"
+            + "\n  y=-59\n    .....\n    ...b.\n    .....\n    .....\n    ....."), read);
+    }
+
+    /**
+     * Left without air the answer is what the build is made of and nothing about where it sits. The
+     * air is out of the palette and out of the runs, which leaves the runs no longer tiling the box,
+     * so the map goes too: drawn anyway, every block after the first gap would sit one place early,
+     * and a picture that is quietly shifted is worse than none.
+     */
+    @Test
+    void readingWithoutAirCountsTheBuildAndSaysWhyThereIsNoMap() {
+        agent.requires("read-region");
+        world.run("fill 24 -60 -4 28 -60 0 minecraft:stone");
+        world.run("setblock 27 -59 -3 minecraft:gold_block");
+        world.run("tp " + BotWorld.BOT + " 26 -59 4");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+
+        String read = agent.mustCall("read-region", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 24, "y", -60, "z", -4), "to", Map.of("x", 28, "y", -59, "z", 0),
+            "includeAir", false));
+        world.run("fill 24 -60 -4 28 -59 0 minecraft:air");
+
+        assertTrue(read.startsWith("(24, -60, -4) to (28, -59, 0), 5 x 2 x 5, 50 blocks."
+            + "\n  25 stone (50%)\n   1 gold_block (2%)"), read);
+        assertTrue(!read.contains("air (") && !read.contains("y=-60"), read);
+        assertTrue(read.contains("No map: the runs spell out 26 of the 50 blocks, so where each one sits"
+            + " cannot be worked out. Read it again with includeAir true."), read);
+    }
+
+    /**
+     * A box reaching past the top of the world is answered rather than refused, and what is past it
+     * is counted apart from what the client has not got. The two have different answers -- move the
+     * box, or fly nearer -- so a single number covering both would say neither, and this box is
+     * inside chunks the client holds, which is what makes the distinction visible at all.
+     */
+    @Test
+    void aBoxPastTheTopOfTheWorldCountsWhatIsOutsideItRatherThanRefusing() {
+        agent.requires("read-region");
+
+        String read = agent.mustCall("read-region", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 2, "y", 318, "z", 0), "to", Map.of("x", 3, "y", 321, "z", 1)));
+
+        assertTrue(read.startsWith("(2, 318, 0) to (3, 321, 1), 2 x 4 x 2, 16 blocks.\n  8 air (50%)"), read);
+        assertTrue(read.contains(
+            "\n8 of them are past the top or bottom of the world, where there is nothing to read."), read);
+        assertTrue(!read.contains("chunks this client has not got"), read);
+        assertTrue(read.contains("No map: the runs spell out 8 of the 16 blocks, so where each one sits"
+            + " cannot be worked out. Read a box that is inside the world."), read);
+    }
+
+    /**
+     * Both region tools are WorldEdit driven from the bot's own chat, and this server has no
+     * WorldEdit -- which is the case worth having, because an agent handed the server's raw "Unknown
+     * command" line has to already know that //pos1 is WorldEdit's before that line means anything.
+     * The selection is where both tools find out, so the edit is never sent at all, and the block in
+     * the middle of the box is what says so.
+     */
+    @Test
+    void neitherRegionToolPretendsToWorkWithoutWorldEdit() {
+        agent.requires("build-region", "verify-region");
+        Map<String, Integer> from = Map.of("x", 30, "y", -60, "z", -4);
+        Map<String, Integer> to = Map.of("x", 32, "y", -60, "z", -2);
+
+        String verified = agent.refusal("verify-region", Map.of("bot", BotWorld.BOT, "from", from, "to", to));
+        String built = agent.refusal("build-region", Map.of("bot", BotWorld.BOT, "from", from, "to", to,
+            "operation", "set", "pattern", "stone"));
+        String untouched = world.run("execute if block 31 -60 -3 minecraft:air");
+
+        assertTrue(verified.contains("verify-region needs WorldEdit or FastAsyncWorldEdit on the server"), verified);
+        assertTrue(built.contains("build-region needs WorldEdit or FastAsyncWorldEdit on the server"), built);
+        assertTrue(built.contains(
+            "read-region reads the same box out of the bot's own client and needs no plugin at all"), built);
+        assertTrue(untouched.startsWith("Test passed"), "the edit went out anyway: " + untouched);
+    }
+
+    /**
      * Being kicked mid-session is the one event whose reason an agent has to read, because it is
      * what tells a plugin under test that threw the bot out from a backend that went away under it.
      * One kind of bot reported the disconnect with no reason at all.

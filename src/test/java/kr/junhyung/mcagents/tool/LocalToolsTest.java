@@ -40,8 +40,11 @@ class LocalToolsTest {
     private final List<AutoCloseable> open = new ArrayList<>();
     private final Catalog catalog = Catalog.load();
     private final BotRegistry bots = new BotRegistry(8);
-    private final ToolDispatcher dispatcher = new ToolDispatcher(bots, new LocalTools(bots), new RemoteTools(catalog),
-            new Orchestration(bots, new BotProvisioner(null, null, null, 0, null, null)), new SimpleMeterRegistry());
+    private final RemoteTools remote = new RemoteTools(catalog);
+    private final ToolDispatcher dispatcher = new ToolDispatcher(bots, new LocalTools(bots), remote,
+            new Orchestration(bots, new BotProvisioner(null, null, null, 0, null, null),
+                    new RegionTools(bots, remote, catalog)),
+            new SimpleMeterRegistry());
 
     @AfterEach
     void stop() throws Exception {

@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.slf4j.Logger;
@@ -59,13 +60,23 @@ public class RemoteTools {
                             .formatted(bot.name(), state(bot)));
         }
 
-        Map<String, Object> wire = Normaliser.normalise(spec, arguments);
+        /*
+        A box is six numbers whose product decides how much the bot is asked to read, and a schema
+        can bound a number but not a product: a corner mistyped by a thousand is schema-valid and a
+        billion blocks. Region refuses it here, in the terms Normaliser refuses a value outside its
+        range, rather than after the round trip that would end in the same refusal -- and hands
+        back the corners it measured, because a guard that checks one object and forwards another
+        is only guarding the copy.
+        */
+        Map<String, Object> checked = "read-region".equals(spec.name())
+                ? Region.settle(spec.name(), arguments)
+                : arguments;
+
+        Map<String, Object> wire = Normaliser.normalise(spec, checked);
         int deadline = Normaliser.deadlineOf(spec, wire);
 
         if (spec.exclusive() && !claim(bot.name(), spec.name())) {
-            return ToolDispatcher.failure(
-                    "bot \"%s\" is already running %s. Wait for it or use another bot."
-                            .formatted(bot.name(), running(bot.name())));
+            return busyWith(bot);
         }
 
         try {
@@ -393,6 +404,31 @@ public class RemoteTools {
 
     private static String state(BotSession bot) {
         return bot.status() == null ? "unknown" : bot.status().state();
+    }
+
+    /**
+     * Hold a bot's exclusive claim across a run of calls.
+     *
+     * <p>A tool the server composes out of several {@code run-command} calls is exclusive as a
+     * whole and not one call at a time: two edits interleaving their //pos1 and //pos2 would each
+     * end up working on the box the other selected. The claim is the same one a single exclusive
+     * call takes, so a walk cannot start on top of an edit either.
+     */
+    McpSchema.CallToolResult exclusively(ToolSpec spec, BotSession bot,
+            Supplier<McpSchema.CallToolResult> body) {
+        if (!claim(bot.name(), spec.name())) {
+            return busyWith(bot);
+        }
+        try {
+            return body.get();
+        } finally {
+            release(bot.name(), spec.name());
+        }
+    }
+
+    private McpSchema.CallToolResult busyWith(BotSession bot) {
+        return ToolDispatcher.failure("bot \"%s\" is already running %s. Wait for it or use another bot."
+                .formatted(bot.name(), running(bot.name())));
     }
 
     private boolean claim(String bot, String tool) {

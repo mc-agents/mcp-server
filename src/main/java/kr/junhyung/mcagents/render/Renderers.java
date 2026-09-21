@@ -62,6 +62,7 @@ public final class Renderers {
         Map.entry("read-boss-bars", entry(BossBarsRenderer.View.class, new BossBarsRenderer())),
         Map.entry("read-displays", entry(DisplaysRenderer.View.class, new DisplaysRenderer())),
         Map.entry("read-player-list", entry(PlayerListRenderer.View.class, new PlayerListRenderer())),
+        Map.entry("read-region", entry(RegionRenderer.View.class, new RegionRenderer())),
         Map.entry("read-scoreboard", entry(ScoreboardRenderer.View.class, new ScoreboardRenderer())),
         Map.entry("read-stats", entry(StatsRenderer.View.class, new StatsRenderer())),
         Map.entry("read-trades", entry(TradesRenderer.View.class, new TradesRenderer())),

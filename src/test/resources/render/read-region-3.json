@@ -1,0 +1,15 @@
+{
+  "tool": "read-region",
+  "note": "written by hand: half the box is in chunks the client was never sent",
+  "data": {
+    "from": { "x": 100, "y": 64, "z": 100 },
+    "to": { "x": 103, "y": 64, "z": 103 },
+    "size": { "x": 4, "y": 1, "z": 4 },
+    "blocks": 16,
+    "palette": ["stone"],
+    "runs": [{ "block": 0, "count": 8 }],
+    "missing": 8,
+    "outside": 0
+  },
+  "text": "(100, 64, 100) to (103, 64, 103), 4 x 1 x 4, 16 blocks.\n  8 stone (50%)\n8 of them are in chunks this client has not got, so nothing above counts them. Fly the bot nearer and read the box again.\nNo map: the runs spell out 8 of the 16 blocks, so where each one sits cannot be worked out. Read a box this client holds whole."
+}

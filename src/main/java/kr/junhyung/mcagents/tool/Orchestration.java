@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Sending a bot into a world, and taking it back out.
+ * Sending a bot into a world, taking it back out, and the tools the server drives its session for.
  *
  * <p>A bot is a process that dials in on its own and then waits. Joining it to a server is a
  * message, not a launch, which is why this costs a second or two rather than the five to twenty a
@@ -31,6 +31,11 @@ import org.springframework.stereotype.Component;
  * <p>Every failure names the stage it reached. The server this replaces answered all of them with
  * "connection failed", which left you unable to tell a bot that never started from a server that
  * refused the login, and those have nothing to do with each other.
+ *
+ * <p>The route is called orchestrate because the server drives the session rather than forwarding
+ * one call, and a lifecycle is only one thing that means. The region tools are the other: a run of
+ * the bot's own commands, driven from here and answered from the server's feeds. They live in
+ * {@link RegionTools} because what they know is WorldEdit, which has nothing to do with joining.
  */
 @Component
 public class Orchestration {
@@ -58,17 +63,19 @@ public class Orchestration {
 
     private final BotRegistry bots;
     private final BotProvisioner provisioner;
+    private final RegionTools regions;
     private final Duration patience;
 
     @Autowired
-    public Orchestration(BotRegistry bots, BotProvisioner provisioner) {
-        this(bots, provisioner, JOIN_PATIENCE);
+    public Orchestration(BotRegistry bots, BotProvisioner provisioner, RegionTools regions) {
+        this(bots, provisioner, regions, JOIN_PATIENCE);
     }
 
-    Orchestration(BotRegistry bots, BotProvisioner provisioner, Duration patience) {
+    Orchestration(BotRegistry bots, BotProvisioner provisioner, RegionTools regions, Duration patience) {
         this.patience = patience;
         this.bots = bots;
         this.provisioner = provisioner;
+        this.regions = regions;
     }
 
     public McpSchema.CallToolResult call(ToolSpec spec, Map<String, Object> arguments) {
@@ -84,6 +91,8 @@ public class Orchestration {
                 case "join-server" -> join(spec, arguments, progress);
                 case "leave-server" -> leave(arguments);
                 case "restart-bot" -> restart(spec, arguments);
+                /* Not the bot's lifecycle but its session: a sequence of commands sent as the bot. */
+                case "build-region", "verify-region" -> regions.call(spec, arguments, progress);
                 default -> ToolDispatcher.failure("%s is not an orchestration tool".formatted(spec.name()));
             };
         } catch (JoinFailure | StillStarting e) {

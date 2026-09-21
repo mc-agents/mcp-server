@@ -2,13 +2,14 @@
 
 <!-- Rendered from catalog/catalog.json by ./gradlew renderToolReference. Edit the catalogue, not this page. -->
 
-Catalogue 5.1.0, 91 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
+Catalogue 5.2.0, 94 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
 
 Every tool but [`list-bots`](#list-bots), [`ping-server`](#ping-server), [`wait-for-server`](#wait-for-server) takes `bot`, the name given to join-server, which may be left out while exactly one bot is connected; it is not repeated below. A tool marked **fabric only** is one the headless kind of bot does not run. **Exclusive** means one call at a time on a bot, since two walks or two clicks at once would fight over the same body. **Untrusted** means the answer carries content the server did not write -- chat, item names, signs -- and is marked as data rather than instructions. **Read-only** means the call changes nothing in the game or on the server, which is what an MCP client's `readOnlyHint` approves without asking; **destructive** is the `destructiveHint`, for a call that removes something or runs with the bot's permissions. A tool that **needs a world** is refused while the bot is on a title or disconnected screen. The deadline is how long the server waits for the bot before giving the call up; a tool with a `timeoutMs` argument sets its own inside that.
 
 | Group | Tools |
 | --- | --- |
 | [world](#world) | [`activate-block`](#activate-block), [`attack-entity`](#attack-entity), [`fish`](#fish), [`interact-entity`](#interact-entity), [`use-held-item`](#use-held-item) |
+| [region](#region) | [`build-region`](#build-region), [`read-region`](#read-region), [`verify-region`](#verify-region) |
 | [crafting](#crafting) | [`can-craft`](#can-craft), [`craft-item`](#craft-item), [`get-recipe`](#get-recipe), [`list-recipes`](#list-recipes) |
 | [screen](#screen) | [`click-chat`](#click-chat), [`press-dialog-button`](#press-dialog-button), [`read-book`](#read-book), [`screenshot`](#screenshot), [`set-dialog-input`](#set-dialog-input), [`type-text`](#type-text) |
 | [slot](#slot) | [`click-slot`](#click-slot), [`drag-slots`](#drag-slots), [`drop-held-item`](#drop-held-item), [`hover-slot`](#hover-slot), [`select-bundle-item`](#select-bundle-item) |
@@ -88,6 +89,85 @@ Right-click with the item the bot is holding, optionally holding the button down
 | --- | --- | --- | --- | --- |
 | `offhand` | boolean | no | Use the off-hand item instead of the main hand (default: false), the same hand run-inputs useItem calls off-hand |  |
 | `holdMs` | integer | no | How long to keep the button down before releasing, in milliseconds, not ticks, for bows and the like (default: 0); press-input and run-inputs use holdTicks, 1 tick = 50ms | 0 to 60000 |
+
+## region
+
+### build-region
+
+*fabric and azalea · deadline 60s · exclusive · untrusted · destructive · the server drives the bot's session*
+
+Set a WorldEdit selection over a box and run one operation on it, as a single call: //pos1, //pos2 and the operation, sent as the bot's own commands. Needs WorldEdit or FastAsyncWorldEdit on the server and the permission to run it; without the plugin the answer says so and names read-region as what reads the same box anyway. Arguments that cannot make a valid command are refused before the bot is touched. A large edit carries on after the command has been answered, so an answer that never arrives means the edit may still be running rather than that it failed, and verify-region is how to find out.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `from` | object | yes | One corner of the box, inclusive |  |
+| `from.x` | integer | yes |  |  |
+| `from.y` | integer | yes |  |  |
+| `from.z` | integer | yes |  |  |
+| `to` | object | yes | The other corner, inclusive |  |
+| `to.x` | integer | yes |  |  |
+| `to.y` | integer | yes |  |  |
+| `to.z` | integer | yes |  |  |
+| `operation` | string: `set`, `replace`, `walls`, `faces`, `overlay`, `hollow`, `smooth`, `naturalize` | yes | What to run over the selection |  |
+| `pattern` | string | no | WorldEdit pattern, for example stone or 50%stone,50%cobblestone. Required by set, replace, walls, faces and overlay; optional for hollow, which fills with air without one; refused by smooth and naturalize, which take no pattern | at most 128 characters |
+| `mask` | string | no | Which blocks replace changes, as a WorldEdit mask. Only replace takes one; without it replace changes everything that is not air | at most 128 characters |
+
+### read-region
+
+*fabric and azalea · deadline 10s · read-only · needs a world · the bot answers*
+
+Read every block in a box at once: a palette, run-length-encoded runs, and a map of each layer a character to a block while the box is small enough to read as one. One call where a get-block-info per block would be thousands. The runs are ordered y ascending, then z ascending, then x ascending, and that order is binding -- it is not the order Minecraft's own iterators walk, and it is chosen so a horizontal layer stays contiguous: a 64x64 floor is one run rather than sixty-four. A palette entry is written the way every other tool here writes a block: with the minecraft namespace left off, as stone or oak_stairs, and any other namespace kept, as create:cogwheel. The blocks are the ones the client was sent, which a plugin can make different from the ones the server holds: a custom block (CraftEngine, ItemsAdder, Nexo) is usually sent as a vanilla block such as stone or a note block. A box spans at most 64 blocks on an axis and holds at most 32768. A part the client has no chunk for is counted in missing rather than failing the call, and a fabric bot holds only the chunks the server sent it, so it reports more missing than an azalea bot for the same box; the invariants hold on both kinds but that number does not, so do not compare the two.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `from` | object | yes | One corner of the box, inclusive |  |
+| `from.x` | integer | yes |  |  |
+| `from.y` | integer | yes |  |  |
+| `from.z` | integer | yes |  |  |
+| `to` | object | yes | The other corner, inclusive |  |
+| `to.x` | integer | yes |  |  |
+| `to.y` | integer | yes |  |  |
+| `to.z` | integer | yes |  |  |
+| `includeAir` | boolean | no | Whether air counts (default: true). False leaves air out of the palette and out of the runs, for reading what a structure is made of rather than where it sits; the per-layer map is then not drawn, because the runs no longer line up with the box |  |
+
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
+
+- `from` (object) -- The lower corner, whichever corner the caller gave first
+  - `x` (integer)
+  - `y` (integer)
+  - `z` (integer)
+- `to` (object) -- The upper corner
+  - `x` (integer)
+  - `y` (integer)
+  - `z` (integer)
+- `size` (object) -- How many blocks the box spans on each axis
+  - `x` (integer)
+  - `y` (integer)
+  - `z` (integer)
+- `blocks` (integer) -- How many blocks the box holds, which is size.x times size.y times size.z
+- `palette[]` (string) -- Block ids in order of first appearance, with the minecraft namespace left off -- stone, oak_stairs -- and any other namespace kept, as create:cogwheel
+- `runs[]` (object) -- Run-length encoded in y ascending, then z ascending, then x ascending; block indexes into palette
+  - `block` (integer)
+  - `count` (integer)
+- `missing` (integer) -- Blocks the client holds no chunk for, 0 when the whole box was loaded. Loadedness is decided before airness: an unloaded chunk reads as void_air on a client, so the other order would count these as air, and as nothing at all when includeAir is false
+- `outside` (integer) -- Blocks whose y is past the world's build height. Kept apart from missing rather than added to it: one is answered by flying closer, the other by moving the box
+
+### verify-region
+
+*fabric and azalea · deadline 30s · untrusted · read-only · the server drives the bot's session*
+
+Ask WorldEdit what is in a box: //size and //distr over the same selection build-region sets, as a table of block, count and share. Needs WorldEdit or FastAsyncWorldEdit on the server. Holds the bot for the whole run, so another build-region or verify-region on the same bot is refused while this one is going: a player has one WorldEdit selection, and two of these interleaving their //pos1 and //pos2 would each measure the box the other selected. The call is read-only all the same -- what it claims is the bot's selection, not the world -- which is why it is not marked exclusive. read-region reads the same box straight from the client with no plugin at all, and is the one to reach for when the plugin is absent or when where the blocks sit matters as much as how many there are.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `from` | object | yes | One corner of the box, inclusive |  |
+| `from.x` | integer | yes |  |  |
+| `from.y` | integer | yes |  |  |
+| `from.z` | integer | yes |  |  |
+| `to` | object | yes | The other corner, inclusive |  |
+| `to.x` | integer | yes |  |  |
+| `to.y` | integer | yes |  |  |
+| `to.z` | integer | yes |  |  |
 
 ## crafting
 

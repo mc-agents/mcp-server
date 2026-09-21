@@ -63,6 +63,9 @@ class RemoteToolsTest {
             call -> new Messages.Result(call.id(), true, "Ran /" + call.args().get("command") + ".", null, null, null, 1));
     private final AtomicInteger callsReceived = new AtomicInteger();
 
+    /** The last call as the bot received it, which is the only place to read what actually went out. */
+    private final AtomicReference<Messages.Call> received = new AtomicReference<>();
+
     private ServerSocket listener;
     private Socket botSide;
     private BotSession bot;
@@ -106,6 +109,7 @@ class RemoteToolsTest {
                 Messages.Call call = assertInstanceOf(Messages.Call.class,
                         mapper.readValue(frame.payload(), Messages.ToBot.class));
                 callsReceived.incrementAndGet();
+                received.set(call);
                 for (Runnable arrival = whileTheCommandRuns.poll(); arrival != null; arrival = whileTheCommandRuns.poll()) {
                     arrival.run();
                 }
@@ -197,7 +201,9 @@ class RemoteToolsTest {
         BotRegistry bots = new BotRegistry(2);
         bots.add(bot);
         return new ToolDispatcher(bots, new LocalTools(bots), remote,
-                new Orchestration(bots, new BotProvisioner(null, null, null, 0, null, null)), new SimpleMeterRegistry());
+                new Orchestration(bots, new BotProvisioner(null, null, null, 0, null, null),
+                        new RegionTools(bots, remote, catalog)),
+                new SimpleMeterRegistry());
     }
 
     private void botFailsWith(String errorClass, String code, String message, boolean retryable) {
@@ -227,6 +233,61 @@ class RemoteToolsTest {
         assertTrue(text(first).contains("does not implement \"get-position\" after all"), text(first));
         assertTrue(text(second).contains("does not implement \"get-position\""), text(second));
         assertEquals(1, callsReceived.get(), "the second call should have been refused without a round trip");
+    }
+
+    /**
+     * A box is bounded by the product of its sides, which the wire schema cannot state, so the
+     * server holds it. The point of holding it here is that nothing is sent: a corner mistyped by a
+     * thousand would otherwise have the bot walk a region for as long as its deadline allows before
+     * answering the same refusal.
+     */
+    @Test
+    void anOversizedRegionIsRefusedWithoutReachingTheBot() {
+        ToolSpec region = catalog.require("read-region");
+        bot.acceptCapabilities(List.of(new Messages.Capability(region.name(), region.wireSchemaHash())));
+
+        McpSchema.CallToolResult refused = dispatcher().call(region, Map.of("bot", "fab",
+                "from", Map.of("x", 0, "y", 64, "z", 0),
+                "to", Map.of("x", 0, "y", 64, "z", 1_000)));
+
+        assertTrue(refused.isError(), text(refused));
+        assertTrue(text(refused).contains("no axis may be more than 64"), text(refused));
+        assertEquals(0, callsReceived.get(), "an oversized box should never have been sent");
+    }
+
+    /**
+     * The box the limit was measured on has to be the box that goes out. Region coerces each
+     * coordinate and settles the corners into a lower and an upper one; the maps the caller wrote
+     * have had neither done to them, and Normaliser copies a nested object across without reading
+     * it. So the two could be different boxes: 2^32 + 10 is a whole number, measures here as 10,
+     * and used to reach the bot as itself.
+     */
+    @Test
+    void theBoxTheBotIsSentIsTheOneTheLimitWasMeasuredOn() {
+        ToolSpec region = catalog.require("read-region");
+        bot.acceptCapabilities(List.of(new Messages.Capability(region.name(), region.wireSchemaHash())));
+        answer.set(call -> new Messages.Result(call.id(), true, "read", aColumnOfStone(), null, null, 1));
+
+        McpSchema.CallToolResult read = dispatcher().call(region, Map.of("bot", "fab",
+                "from", Map.of("x", 4_294_967_306L, "y", 66, "z", 22),
+                "to", Map.of("x", 10, "y", 64, "z", 20)));
+
+        assertFalse(read.isError(), text(read));
+        assertEquals(Map.of("x", 10, "y", 64, "z", 20), received.get().args().get("from"));
+        assertEquals(Map.of("x", 10, "y", 66, "z", 22), received.get().args().get("to"));
+    }
+
+    /** What a bot answers read-region with, for a box of 1 x 3 x 3 that is stone all the way up. */
+    private static Map<String, Object> aColumnOfStone() {
+        return Map.of(
+                "from", Map.of("x", 10, "y", 64, "z", 20),
+                "to", Map.of("x", 10, "y", 66, "z", 22),
+                "size", Map.of("x", 1, "y", 3, "z", 3),
+                "blocks", 9,
+                "palette", List.of("stone"),
+                "runs", List.of(Map.of("block", 0, "count", 9)),
+                "missing", 0,
+                "outside", 0);
     }
 
     /**

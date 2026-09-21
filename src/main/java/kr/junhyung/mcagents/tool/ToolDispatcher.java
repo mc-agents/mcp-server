@@ -94,20 +94,32 @@ public class ToolDispatcher {
         kindCheck(spec, session);
 
         /*
-        A tool the bot did not report at handshake is absent, which is how one kind of bot ships a
-        tool before the other does. Sending it anyway spends a round trip to be told the same
-        thing, and the bot's answer arrives as "does not implement it after all", which reads like
-        something changed rather than like it was never there.
-
-        A wait is the exception: nothing of it reaches the bot, so there is nothing for the bot to
-        have offered. What it polls is a tool of its own, and that one is checked when it is called.
+        A wait is the exception to the offer check: nothing of it reaches the bot, so there is
+        nothing for the bot to have offered. What it polls is a tool of its own, and that one is
+        checked when it is called.
         */
-        if (spec.watches() == null && !session.supports(spec.name())) {
+        if (spec.watches() == null) {
+            offerCheck(spec, session);
+        }
+        return session;
+    }
+
+    /**
+     * A tool the bot did not report at handshake is absent, which is how one kind of bot ships a
+     * tool before the other does. Sending it anyway spends a round trip to be told the same thing,
+     * and the bot's answer arrives as "does not implement it after all", which reads like something
+     * changed rather than like it was never there.
+     *
+     * <p>Also the check a tool the server composes has to make for itself: build-region reaches the
+     * bot as run-command, so it is run-command that has to be on offer, and a bot without it should
+     * say so before any of the three commands is composed.
+     */
+    static void offerCheck(ToolSpec spec, BotSession session) {
+        if (!session.supports(spec.name())) {
             throw new IllegalStateException(
                     "bot \"%s\" (kind: %s) does not implement \"%s\". It was not offered at the handshake, so this kind of bot cannot run it yet. list-bots shows what else is connected."
                             .formatted(session.name(), session.kind(), spec.name()));
         }
-        return session;
     }
 
     /**

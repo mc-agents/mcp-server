@@ -1,0 +1,44 @@
+{
+  "tool": "read-region",
+  "note": "written by hand: the largest box a call takes, where the counts are the answer and a map would bury them",
+  "data": {
+    "from": {
+      "x": 0,
+      "y": 64,
+      "z": 0
+    },
+    "to": {
+      "x": 63,
+      "y": 71,
+      "z": 63
+    },
+    "size": {
+      "x": 64,
+      "y": 8,
+      "z": 64
+    },
+    "blocks": 32768,
+    "palette": [
+      "stone",
+      "dirt",
+      "grass_block"
+    ],
+    "runs": [
+      {
+        "block": 0,
+        "count": 16384
+      },
+      {
+        "block": 1,
+        "count": 12288
+      },
+      {
+        "block": 2,
+        "count": 4096
+      }
+    ],
+    "missing": 0,
+    "outside": 0
+  },
+  "text": "(0, 64, 0) to (63, 71, 63), 64 x 8 x 64, 32768 blocks.\n  16384 stone (50%)\n  12288 dirt (38%)\n   4096 grass_block (13%)\nNo map: 32768 blocks is more than the 4096 one is drawn for. Read it in boxes of that size or smaller."
+}

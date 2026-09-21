@@ -1,0 +1,21 @@
+{
+  "tool": "read-region",
+  "note": "written by hand: an arch three layers high, small enough that the shape is drawn",
+  "data": {
+    "from": { "x": 10, "y": 64, "z": 20 },
+    "to": { "x": 14, "y": 66, "z": 20 },
+    "size": { "x": 5, "y": 3, "z": 1 },
+    "blocks": 15,
+    "palette": ["stone", "air"],
+    "runs": [
+      { "block": 0, "count": 1 },
+      { "block": 1, "count": 3 },
+      { "block": 0, "count": 2 },
+      { "block": 1, "count": 3 },
+      { "block": 0, "count": 6 }
+    ],
+    "missing": 0,
+    "outside": 0
+  },
+  "text": "(10, 64, 20) to (14, 66, 20), 5 x 3 x 1, 15 blocks.\n  a  9 stone (60%)\n  .  6 air (40%)\nOne character a block, a layer at a time, y ascending, x to the right and z downwards:\n  y=64\n    a...a\n  y=65\n    a...a\n  y=66\n    aaaaa"
+}
