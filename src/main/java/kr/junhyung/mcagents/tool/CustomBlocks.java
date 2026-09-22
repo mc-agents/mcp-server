@@ -57,11 +57,23 @@ public class CustomBlocks {
 
     private static final Pattern INTERNAL_ID = Pattern.compile("craftengine:custom_\\d+");
 
-    /** How far a prefix is narrowed at most, which is longer than any block id with its state. */
+    /** How far a prefix is narrowed at most, which is longer than any block id. */
     private static final int MAX_PREFIX = 96;
 
-    /** What a block id is spelled in, and so what a prefix is narrowed by: a namespace, a colon, a path, a state. */
-    private static final String ID_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789_-.:/[]=,";
+    /** What a block's path is spelled in, and so what a namespace is narrowed by. */
+    private static final String PATH_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789_";
+
+    /** What WorldEdit completes a pattern with: every namespace in use, a colon after each. */
+    private static final String PATTERN_PREFIX = "//set ";
+
+    /** The namespaces WorldEdit lists that hold no custom block: the game's own, and CraftEngine's internal ids. */
+    private static final java.util.Set<String> RESERVED_NAMESPACES = java.util.Set.of("minecraft:", "craftengine:");
+
+    /** How long the first request is given, which decides whether the command is there at all. */
+    private static final int FIRST_PAGE_MS = 5_000;
+
+    /** How long a narrowing request is given: a prefix nothing matches is never answered, and there are many of those. */
+    private static final int NARROWING_PAGE_MS = 1_500;
 
     private static final JsonMapper MAPPER = JsonMapper.builder()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -175,14 +187,10 @@ public class CustomBlocks {
     private McpSchema.CallToolResult learned(ToolSpec spec, BotSession bot, String address, Region scratch, Progress progress) {
         long started = System.currentTimeMillis();
         long deadline = started + spec.defaultDeadlineMs();
-        List<String> names;
+        List<String> notes = new ArrayList<>();
+        List<String> names = names(bot, notes);
 
-        try {
-            names = names(bot, "", true);
-        } catch (IllegalStateException nothing) {
-            return ToolDispatcher.failure(nothing.getMessage());
-        }
-        if (names.isEmpty()) {
+        if (names == null || names.isEmpty()) {
             return ToolDispatcher.failure(
                     "the server completes nothing after \"%s\", so either CraftEngine is not on it or the bot may not run its debug commands (permission ce.command.debug.*, which op has)."
                             .formatted(NAMES_PREFIX.trim()));
@@ -203,7 +211,6 @@ public class CustomBlocks {
         int rowX = scratch == null ? (int) Math.floor(stood.x()) - ROW / 2 : scratch.minX();
         int placed = 0;
         int unseen = 0;
-        List<String> notes = new ArrayList<>();
 
         try {
             for (int batch = 0; batch < states.size(); batch += ROW) {
@@ -269,75 +276,119 @@ public class CustomBlocks {
     }
 
     /**
-     * Every name the server completes after the prefix.
+     * Every custom block state the server names, namespace by namespace.
      *
-     * <p>A server caps what one request completes -- a thousand, on the one this was written
-     * against -- and a page's own names say nothing about the names after its last one. So when a
-     * page is short of the total, the prefix is narrowed a character at a time through the whole
-     * alphabet a block id is spelled in, and each narrowing that still holds anything is asked for
-     * in turn. Nothing after the first page is allowed to fail quietly: a page that the bot could
-     * not get would be a dictionary with a letter of the alphabet missing from it.
+     * <p>The server's completion is a search, not a prefix: what is typed is matched anywhere in
+     * a name, and a thousand matches is the most it sends. So the names are asked for by namespace
+     * -- "default:" matches only at the start of a name -- and a namespace with more than one page
+     * is narrowed by the first character of the path, then the second, since "default:a" still
+     * matches only where the path begins. A prefix nothing matches is answered with nothing at
+     * all, which the bot reports as a timeout, and on a narrowing page that is what nothing means.
      *
-     * @param first whether this is the first request, whose failure means the command is not there
+     * @return the names, or null when the server does not complete the command at all
      */
-    private List<String> names(BotSession bot, String typed, boolean first) {
-        Page page = page(bot, typed, first);
+    private List<String> names(BotSession bot, List<String> notes) {
+        Page first = page(bot, "", FIRST_PAGE_MS);
+
+        if (first == null) {
+            return null;
+        }
+
+        List<String> namespaces = namespaces(bot, first.names, notes);
+        List<String> names = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+
+        for (String namespace : namespaces) {
+            for (String name : within(bot, namespace + ":")) {
+                if (seen.add(name)) {
+                    names.add(name);
+                }
+            }
+        }
+        return names;
+    }
+
+    /**
+     * The namespaces custom blocks are declared in: WorldEdit's pattern completion lists exactly
+     * those, with a colon after each, because CraftEngine hands it the list. Without WorldEdit the
+     * first page of names is all there is to read them off, and the answer says so.
+     */
+    private List<String> namespaces(BotSession bot, List<String> firstPage, List<String> notes) {
+        java.util.Set<String> namespaces = new java.util.LinkedHashSet<>();
+        Page patterns = completions(bot, PATTERN_PREFIX, "", FIRST_PAGE_MS);
+
+        if (patterns != null) {
+            for (String completion : patterns.names) {
+                if (completion.endsWith(":") && completion.length() > 1 && !RESERVED_NAMESPACES.contains(completion)) {
+                    namespaces.add(completion.substring(0, completion.length() - 1));
+                }
+            }
+        }
+        if (namespaces.isEmpty()) {
+            for (String name : firstPage) {
+                int colon = name.indexOf(':');
+                if (colon > 0) {
+                    namespaces.add(name.substring(0, colon));
+                }
+            }
+            notes.add("The namespaces were read off the first page of names, since the server has no WorldEdit to list them; a namespace whose every block sorts after that page was not learned.");
+        }
+        return new ArrayList<>(namespaces);
+    }
+
+    /** Every name under a prefix that matches at the start of a name, narrowed by a character while a page is short of the total. */
+    private List<String> within(BotSession bot, String prefix) {
+        Page page = page(bot, prefix, NARROWING_PAGE_MS);
 
         if (page == null) {
             return List.of();
         }
-        /*
-        Only what continues the prefix: a bot that answers every prefix with the same page -- the
-        fake one the sweep drives -- would otherwise be narrowed forever, and a name that does not
-        start with what was typed is not an answer to it. Past a block id's length there is nothing
-        left to narrow by either.
-        */
-        List<String> continuing = page.names.stream().filter(name -> name.startsWith(typed)).toList();
 
-        if (continuing.size() < page.names.size() || page.names.size() >= page.total || typed.length() >= MAX_PREFIX) {
+        List<String> continuing = page.names.stream().filter(name -> name.startsWith(prefix)).toList();
+
+        if (page.names.size() >= page.total || prefix.length() >= MAX_PREFIX) {
             return continuing;
         }
 
-        List<String> paged = new ArrayList<>();
+        List<String> narrowed = new ArrayList<>();
         java.util.Set<String> seen = new java.util.HashSet<>();
 
-        for (char next : ID_ALPHABET.toCharArray()) {
-            for (String name : names(bot, typed + next, false)) {
+        for (char next : PATH_ALPHABET.toCharArray()) {
+            for (String name : within(bot, prefix + next)) {
                 if (seen.add(name)) {
-                    paged.add(name);
+                    narrowed.add(name);
                 }
             }
         }
-        return paged;
+        return narrowed;
     }
 
     private record Page(int total, List<String> names) {}
 
-    private Page page(BotSession bot, String typed, boolean first) {
+    private Page page(BotSession bot, String typed, int timeoutMs) {
+        return completions(bot, NAMES_PREFIX, typed, timeoutMs);
+    }
+
+    /** One completion request, or null when the server answered nothing for it. */
+    private Page completions(BotSession bot, String command, String typed, int timeoutMs) {
         ToolSpec complete = catalog.require("complete-command");
 
         ToolDispatcher.offerCheck(complete, bot);
 
         Map<String, Object> arguments = new LinkedHashMap<>();
-        arguments.put("text", NAMES_PREFIX + typed);
+        arguments.put("text", command + typed);
         arguments.put("limit", COMPLETIONS);
+        arguments.put("timeoutMs", timeoutMs);
 
         Messages.Result result;
 
         try {
             result = remote.fetch(complete, bot, arguments).result();
         } catch (IllegalStateException unanswered) {
-            /* A server without the command answers no suggestions at all, which is the same nothing. */
-            if (first) {
-                return null;
-            }
-            throw new IllegalStateException("the server did not complete \"%s%s\": %s".formatted(NAMES_PREFIX, typed, unanswered.getMessage()));
+            return null;
         }
         if (!result.ok() || !(result.data() instanceof Map<?, ?> data)) {
-            if (first) {
-                return null;
-            }
-            throw new IllegalStateException("the server did not complete \"%s%s\": %s".formatted(NAMES_PREFIX, typed, result.text()));
+            return null;
         }
 
         int total = data.get("total") instanceof Number number ? number.intValue() : 0;

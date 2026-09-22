@@ -51,6 +51,7 @@ class CustomBlocksTest {
 
     @Test
     void everyCustomBlockStateIsLearnedFromWhatItLooksLikeAndWhatItIsFiledAs() {
+        played.worldEdit = true;
         played.customBlocks.put("2025summer:bar_table", "note_block[instrument=banjo,note=0,powered=false]");
         played.customBlocks.put("2025summer:bar_table[facing=east]", "note_block[instrument=banjo,note=1,powered=false]");
         played.customBlocks.put("2025summer:bar_table[facing=north]", "note_block[instrument=banjo,note=0,powered=false]");
@@ -78,6 +79,7 @@ class CustomBlocksTest {
 
     @Test
     void aRegionReadWhereTheBlocksAreLearnedNamesThemRatherThanTheirLooks() {
+        played.worldEdit = true;
         played.customBlocks.put("2025summer:bar_table[facing=east]", "note_block[instrument=banjo,note=1,powered=false]");
         customBlocks.learn(catalog.require("learn-custom-blocks"), played.bot, Map.of("bot", "fab"), Progress.NONE);
         played.world.put(PlayedWorld.key(1, 64, 1), "note_block[instrument=banjo,note=1,powered=false]");
@@ -91,12 +93,15 @@ class CustomBlocksTest {
     }
 
     /**
-     * A server completes at most a page at a time, and a page says nothing about the names after
-     * its last one: a dictionary learned from the first page alone was missing every block whose
-     * name sorted after it. The prefix is narrowed through the alphabet until every page is whole.
+     * A server completes at most a page at a time, and its completion is a search, not a prefix:
+     * a dictionary learned from the first page alone was missing every block after it. The names
+     * are asked for by namespace and narrowed by the path's first characters until every page is
+     * whole, with the namespaces read off WorldEdit's pattern completion.
      */
     @Test
     void moreCustomBlocksThanOnePageCompletesAreAllLearned() {
+        played.worldEdit = true;
+        played.customBlocks.put("few:one", "note_block[instrument=harp,note=24,powered=true]");
         for (int i = 0; i < 700; i++) {
             played.customBlocks.put("many:block_%03d".formatted(i),
                     "note_block[instrument=%s,note=%d,powered=%s]".formatted(i % 2 == 0 ? "harp" : "bass", i % 25, i % 50 < 25));
@@ -104,9 +109,21 @@ class CustomBlocksTest {
 
         String learned = text(customBlocks.learn(catalog.require("learn-custom-blocks"), played.bot, Map.of("bot", "fab"), Progress.NONE));
 
-        assertTrue(learned.startsWith("Learned 700 custom block state(s)"), learned);
-        assertEquals(700, customBlocks.of(played.bot).size());
-        assertEquals("many:block_699", customBlocks.of(played.bot).byInternal("craftengine:custom_799").id());
+        assertTrue(learned.startsWith("Learned 701 custom block state(s)"), learned);
+        assertEquals(701, customBlocks.of(played.bot).size());
+        assertEquals("many:block_699", customBlocks.of(played.bot).byInternal("craftengine:custom_800").id());
+        assertEquals("few:one", customBlocks.of(played.bot).byInternal("craftengine:custom_100").id());
+    }
+
+    /** Without WorldEdit to list the namespaces, the first page is what there is, and the answer says so. */
+    @Test
+    void withoutWorldEditTheNamespacesComeFromTheFirstPageAndTheAnswerSaysSo() {
+        played.customBlocks.put("2025summer:bar_table[facing=east]", "note_block[instrument=banjo,note=1,powered=false]");
+
+        String learned = text(customBlocks.learn(catalog.require("learn-custom-blocks"), played.bot, Map.of("bot", "fab"), Progress.NONE));
+
+        assertTrue(learned.startsWith("Learned 1 custom block state(s)"), learned);
+        assertTrue(learned.contains("The namespaces were read off the first page of names"), learned);
     }
 
     @Test

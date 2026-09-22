@@ -201,27 +201,43 @@ final class PlayedWorld implements AutoCloseable {
         return customBlocks.getOrDefault(block, block);
     }
 
-    /** What the played server completes: its custom blocks after the CraftEngine debug command, nothing else. */
+    /**
+     * What the played server completes, as CraftEngine's does: its custom blocks after the debug
+     * command, matched anywhere in the name and a thousand at most; and after a WorldEdit pattern,
+     * the namespaces in use with a colon after each. A prefix nothing matches is answered with
+     * nothing, as the real server answers it.
+     */
     private Messages.Result complete(Messages.Call call) {
         String text = String.valueOf(call.args().get("text"));
         int limit = call.args().get("limit") instanceof Number number ? number.intValue() : 60;
-        String prefix = "/craftengine debug get-block-internal-id ";
-        List<Map<String, Object>> completions = new ArrayList<>();
-        int total = 0;
+        String debug = "/craftengine debug get-block-internal-id ";
+        List<String> matching = new ArrayList<>();
 
-        if (text.startsWith(prefix)) {
-            String typed = text.substring(prefix.length());
+        if (text.startsWith(debug) && !customBlocks.isEmpty()) {
+            String typed = text.substring(debug.length());
             for (String id : customBlocks.keySet()) {
-                if (id.startsWith(typed)) {
-                    total++;
-                    if (completions.size() < limit) {
-                        Map<String, Object> one = new LinkedHashMap<>();
-                        one.put("name", id);
-                        one.put("tooltip", null);
-                        completions.add(one);
-                    }
+                if (id.contains(typed)) {
+                    matching.add(id);
                 }
             }
+        } else if (text.equals("//set ") && worldEdit) {
+            matching.add("minecraft:");
+            matching.add("craftengine:");
+            customBlocks.keySet().stream().map(id -> id.substring(0, id.indexOf(':') + 1)).distinct().forEach(matching::add);
+        }
+        if (matching.isEmpty()) {
+            return new Messages.Result(call.id(), false, "the server did not answer what completes " + text, null, null,
+                    new Messages.Failure("timeout", null, "no answer", true, null), 1);
+        }
+
+        int total = Math.min(matching.size(), 1000);
+        List<Map<String, Object>> completions = new ArrayList<>();
+
+        for (String name : matching.subList(0, Math.min(total, limit))) {
+            Map<String, Object> one = new LinkedHashMap<>();
+            one.put("name", name);
+            one.put("tooltip", null);
+            completions.add(one);
         }
 
         Map<String, Object> data = new LinkedHashMap<>();
