@@ -200,11 +200,14 @@ class RemoteToolsTest {
     private ToolDispatcher dispatcher() {
         BotRegistry bots = new BotRegistry(2);
         bots.add(bot);
+        Commands commands = new Commands(remote, catalog);
+        CustomBlocks customBlocks = new CustomBlocks(remote, commands, catalog);
+        RegionSurvey survey = new RegionSurvey(remote, commands, new RegionStore(), catalog, customBlocks);
+
         return new ToolDispatcher(bots, new LocalTools(bots, new StoredRegions(new RegionStore())), remote,
                 new Orchestration(bots, new BotProvisioner(null, null, null, 0, null, null),
-                        new RegionTools(bots, remote, new Commands(remote, catalog)),
-                        new RegionSurvey(remote, new Commands(remote, catalog), new RegionStore(), catalog)),
-                new RegionSurvey(remote, new Commands(remote, catalog), new RegionStore(), catalog),
+                        new RegionTools(bots, remote, commands), survey, customBlocks),
+                survey,
                 new SimpleMeterRegistry());
     }
 

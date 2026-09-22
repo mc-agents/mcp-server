@@ -57,9 +57,20 @@ public class RegionSurvey {
     /** How long a tile that was put down is given to reach the client before its readback is final. */
     static final int SETTLE_MS = 5_000;
 
-    /** What /fill says when it did nothing it was asked, apart from a refusal of the command itself. */
+    /** What /fill or //set says when it did nothing it was asked, apart from a refusal of the command itself. */
     private static final Pattern FILL_COMPLAINT = Pattern.compile(
-            "(too many blocks|not loaded|cannot be placed|unknown block|expected|incorrect argument)", Pattern.CASE_INSENSITIVE);
+            "(too many blocks|not loaded|cannot be placed|unknown block|expected|incorrect argument|outside allowed region|not permitted|does not exist)",
+            Pattern.CASE_INSENSITIVE);
+
+    /** What the server says when an edit has landed: the game's /fill, WorldEdit's //set, and FastAsyncWorldEdit's. */
+    private static final Pattern EDIT_DONE = Pattern.compile(
+            "(successfully filled|blocks have been changed|operation completed)", Pattern.CASE_INSENSITIVE);
+
+    /** How long //pos1 is given to be acknowledged, which is what decides that WorldEdit is there. */
+    static final int SELECTION_MS = 3_000;
+
+    /** How long a tile's edits are given to finish before it is read back, once the server has been answering. */
+    static final int EDITS_MS = 60_000;
 
     /** How many differing blocks a readback names before it only counts them. */
     private static final int NAMED_DIFFERENCES = 5;
@@ -75,12 +86,14 @@ public class RegionSurvey {
     private final Commands commands;
     private final RegionStore store;
     private final Catalog catalog;
+    private final CustomBlocks customBlocks;
 
-    public RegionSurvey(RemoteTools remote, Commands commands, RegionStore store, Catalog catalog) {
+    public RegionSurvey(RemoteTools remote, Commands commands, RegionStore store, Catalog catalog, CustomBlocks customBlocks) {
         this.remote = remote;
         this.commands = commands;
         this.store = store;
         this.catalog = catalog;
+        this.customBlocks = customBlocks;
     }
 
     /** read-region: one call when the box fits one, a walk when it does not, and a kept region either way. */
@@ -116,6 +129,7 @@ public class RegionSurvey {
 
         Snapshot kept = Snapshot.blank(store.fresh(), name, box, Instant.now(), origin(bot))
                 .with(box, view.palette(), view.runs());
+        kept = kept.withPalette(customBlocks.translate(bot, kept.palette()));
         List<String> evicted = store.keep(kept);
 
         return ToolDispatcher.text(RENDERER.render(kept.view(box, includeAir)) + "\n" + kept(kept, evicted, null));
@@ -166,6 +180,7 @@ public class RegionSurvey {
             restore(bot, walk);
         }
 
+        kept = kept.withPalette(customBlocks.translate(bot, kept.palette()));
         List<String> evicted = store.keep(kept);
         String body = RENDERER.render(kept.view(box, includeAir));
         String how = "read in %d tile(s) in %ds".formatted(done, (System.currentTimeMillis() - started) / 1_000);
@@ -180,6 +195,11 @@ public class RegionSurvey {
         Object at = arguments.get("at");
         boolean withAir = Boolean.TRUE.equals(arguments.get("pasteAir"));
         boolean verify = !Boolean.FALSE.equals(arguments.get("verify"));
+        String via = ToolDispatcher.stringArg(arguments, "via");
+
+        if (via != null && !Via.NAMES.contains(via)) {
+            throw new IllegalArgumentException("\"via\" is \"%s\", and it is one of %s".formatted(via, Via.NAMES));
+        }
 
         if (at instanceof Map<?, ?>) {
             Region corner = Region.corners(spec.name(), Map.of("from", at, "to", at));
@@ -190,11 +210,17 @@ public class RegionSurvey {
 
         Snapshot placed = source;
 
-        return remote.exclusively(spec, bot, () -> put(spec, bot, placed, withAir, verify, progress));
+        return remote.exclusively(spec, bot, () -> put(spec, bot, placed, withAir, verify, via == null ? "auto" : via, progress));
+    }
+
+    /** How a region is put down: WorldEdit's //set, the game's /fill, or whichever the server offers. */
+    private static final class Via {
+
+        static final List<String> NAMES = List.of("auto", "worldedit", "fill");
     }
 
     private McpSchema.CallToolResult put(ToolSpec spec, BotSession bot, Snapshot source, boolean withAir,
-            boolean verify, Progress progress) {
+            boolean verify, String via, Progress progress) {
         long started = System.currentTimeMillis();
         long deadline = started + PATIENCE_MS;
         Region box = source.box();
@@ -202,14 +228,34 @@ public class RegionSurvey {
         List<Region> tiles = tiles(box);
         List<String> notes = new ArrayList<>();
         List<String> differences = new ArrayList<>();
+        Tally tally = new Tally(bot.feed("chat").nextSeq());
         long differing = 0;
         long compared = 0;
         long blocks = 0;
-        int fills = 0;
-        int complaints = 0;
-        String complaint = null;
+        long custom = 0;
+        int sent = 0;
         int done = 0;
-        long mark = bot.feed("chat").nextSeq();
+        boolean worldEdit;
+
+        /*
+        Decided once, before anything is put down: a region that went half through one and half
+        through the other would be two edits with two ways of being undone.
+        */
+        try {
+            worldEdit = switch (via) {
+                case "worldedit" -> {
+                    if (!worldEditAnswers(bot, box)) {
+                        throw new IllegalStateException(
+                                "via is \"worldedit\", and //pos1 was not acknowledged: WorldEdit or FastAsyncWorldEdit is not on this server, or the bot may not run it.");
+                    }
+                    yield true;
+                }
+                case "fill" -> false;
+                default -> worldEditAnswers(bot, box);
+            };
+        } catch (IllegalStateException refused) {
+            return ToolDispatcher.failure(refused.getMessage());
+        }
 
         try {
             for (Region tile : tiles) {
@@ -227,48 +273,73 @@ public class RegionSurvey {
                 }
 
                 List<Mesh.Box> boxes = Mesh.boxes(source, tile, withAir);
+                int tileSent = 0;
 
                 for (Mesh.Box piece : boxes) {
-                    progress.report("tile %d of %d: /fill %d of %d".formatted(done + 1, tiles.size(), fills + 1, boxes.size()),
+                    String block = source.palette().get(piece.block());
+
+                    /* /fill places a vanilla block, and the look-alike of a custom block is not the custom block. */
+                    if (!worldEdit && CustomBlocks.isCustom(block)) {
+                        custom += piece.box().blocks();
+                        continue;
+                    }
+
+                    progress.report("tile %d of %d: %s %d of %d".formatted(done + 1, tiles.size(),
+                            worldEdit ? "//set" : "/fill", tileSent + 1, boxes.size()),
                             System.currentTimeMillis() - started, PATIENCE_MS);
 
-                    McpSchema.CallToolResult sent = commands.send(bot, fill(piece, source.palette().get(piece.block())));
+                    for (String command : worldEdit ? worldEditCommands(piece, block) : List.of(fill(piece, block))) {
+                        McpSchema.CallToolResult refusal = commands.send(bot, command);
 
-                    if (sent != null) {
-                        return sent;
+                        if (refusal != null) {
+                            return refusal;
+                        }
                     }
-                    fills++;
+                    sent++;
+                    tileSent++;
                     blocks += piece.box().blocks();
 
                     /*
-                    The first command is the one that says whether the bot may run /fill at all; the
+                    The first command is the one that says whether the bot may run it at all; the
                     rest are sent as fast as the bot answers and the server's complaints tallied as
                     they arrive, since the chat feed keeps two hundred lines and a wall is more.
                     */
-                    List<FeedEntry> said = fills == 1
-                            ? Commands.awaitChat(bot, mark, System.currentTimeMillis() + FIRST_FILL_MS, Progress.NONE, "the first /fill")
-                            : Commands.systemLines(bot, mark);
+                    List<FeedEntry> said = sent == 1
+                            ? Commands.awaitChat(bot, tally.mark, System.currentTimeMillis() + FIRST_FILL_MS, Progress.NONE,
+                                    worldEdit ? "the first //set" : "the first /fill")
+                            : Commands.systemLines(bot, tally.mark);
                     FeedEntry no = Commands.refused(said);
 
                     if (no != null) {
-                        return ToolDispatcher.failure(Trust.mark(
-                                "/fill came back as \"%s\". write-region puts a region down with the game's own /fill, which needs the permission to run it (op) on this server."
+                        return ToolDispatcher.failure(Trust.mark(worldEdit
+                                ? "//set came back as \"%s\". write-region puts a region down through WorldEdit when the server has it, which needs the permission to run it."
+                                        .formatted(no.rendered())
+                                : "/fill came back as \"%s\". write-region puts a region down with the game's own /fill, which needs the permission to run it (op) on this server."
                                         .formatted(no.rendered())));
                     }
-                    for (FeedEntry line : said) {
-                        if (FILL_COMPLAINT.matcher(line.rendered()).find()) {
-                            complaints++;
-                            complaint = complaint == null ? line.rendered() : complaint;
-                        }
+                    tally.take(said, bot);
+                }
+
+                /*
+                Every edit of the tile answered before it is read back: FastAsyncWorldEdit runs a
+                //set on a thread of its own and says so when it is done, and reading a tile back
+                under an edit still going up called the write wrong. Waited for only where the
+                server has been answering at all, so a server with command feedback off is not
+                waited on for nothing.
+                */
+                if (tileSent > 0 && tally.completed > 0) {
+                    long settled = System.currentTimeMillis() + EDITS_MS;
+                    while (tally.completed < sent && System.currentTimeMillis() < settled) {
+                        Commands.sleep(Commands.POLL_MS);
+                        tally.take(Commands.systemLines(bot, tally.mark), bot);
                     }
-                    mark = bot.feed("chat").nextSeq();
                 }
 
                 if (verify) {
                     progress.report("tile %d of %d: reading it back".formatted(done + 1, tiles.size()),
                             System.currentTimeMillis() - started, PATIENCE_MS);
 
-                    Readback back = readBack(spec, bot, source, tile, withAir);
+                    Readback back = readBack(spec, bot, source, tile, withAir, worldEdit);
 
                     compared += back.compared;
                     differing += back.differing;
@@ -287,12 +358,17 @@ public class RegionSurvey {
 
         List<String> out = new ArrayList<>();
 
-        out.add("Put region %s down over %s: %d blocks in %d /fill command(s) across %d tile(s) in %ds%s."
-                .formatted(source.id(), box, blocks, fills, done, (System.currentTimeMillis() - started) / 1_000,
+        out.add("Put region %s down over %s: %d blocks in %d %s across %d tile(s) in %ds%s."
+                .formatted(source.id(), box, blocks, sent, worldEdit ? "WorldEdit edit(s)" : "/fill command(s)", done,
+                        (System.currentTimeMillis() - started) / 1_000,
                         withAir ? ", air included" : ", air in the region left what was there"));
-        if (complaints > 0) {
+        if (custom > 0) {
+            out.add("%d of its blocks are custom blocks, which /fill cannot place -- it would put down the vanilla block they look like -- so they were left out. A server with WorldEdit places them; say via \"worldedit\" to insist on it."
+                    .formatted(custom));
+        }
+        if (tally.complaints > 0) {
             out.add(Trust.mark("The server complained about %d of them, the first being \"%s\"."
-                    .formatted(complaints, complaint)));
+                    .formatted(tally.complaints, tally.complaint)));
         }
         if (verify && compared > 0) {
             out.add(differing == 0
@@ -307,6 +383,54 @@ public class RegionSurvey {
         return ToolDispatcher.text(String.join("\n", out));
     }
 
+    /** What the server has said about the edits so far: how many it finished, and what it complained of. */
+    private static final class Tally {
+
+        long mark;
+        int completed;
+        int complaints;
+        String complaint;
+
+        Tally(long mark) {
+            this.mark = mark;
+        }
+
+        void take(List<FeedEntry> said, BotSession bot) {
+            for (FeedEntry line : said) {
+                if (EDIT_DONE.matcher(line.rendered()).find()) {
+                    completed++;
+                } else if (FILL_COMPLAINT.matcher(line.rendered()).find()) {
+                    complaints++;
+                    complaint = complaint == null ? line.rendered() : complaint;
+                }
+            }
+            mark = bot.feed("chat").nextSeq();
+        }
+    }
+
+    /**
+     * Whether WorldEdit is on the server and answers the bot: //pos1 is acknowledged on the tick,
+     * and a server without the plugin answers it as an unknown command.
+     */
+    private boolean worldEditAnswers(BotSession bot, Region box) {
+        long mark = bot.feed("chat").nextSeq();
+
+        if (commands.send(bot, "//pos1 " + box.lowerCorner()) != null) {
+            return false;
+        }
+
+        List<FeedEntry> said = Commands.awaitChat(bot, mark, System.currentTimeMillis() + SELECTION_MS, Progress.NONE, "//pos1");
+
+        return !said.isEmpty() && Commands.refused(said) == null;
+    }
+
+    /** One box as WorldEdit takes it: the two corners, then the pattern over the selection. */
+    static List<String> worldEditCommands(Mesh.Box piece, String block) {
+        Region box = piece.box();
+
+        return List.of("//pos1 " + box.lowerCorner(), "//pos2 " + box.upperCorner(), "//set " + block);
+    }
+
     private record Readback(long compared, long differing, List<String> differences, List<String> notes) {}
 
     /**
@@ -317,7 +441,8 @@ public class RegionSurvey {
      * called the write wrong. The tile is read again until nothing differs or the settling time is
      * up, and what is reported is the last reading: a difference that outlasts the wait is real.
      */
-    private Readback readBack(ToolSpec spec, BotSession bot, Snapshot source, Region tile, boolean withAir) {
+    private Readback readBack(ToolSpec spec, BotSession bot, Snapshot source, Region tile, boolean withAir,
+            boolean worldEdit) {
         long deadline = System.currentTimeMillis() + SETTLE_MS;
         Readback last;
 
@@ -346,8 +471,9 @@ public class RegionSurvey {
                 continue;
             }
 
+            /* Named as the region names them, so a custom block put down reads back as itself and not as its look. */
             Snapshot back = Snapshot.blank("", null, slab, Instant.now(), "")
-                    .with(slab, view.palette(), view.runs());
+                    .with(slab, customBlocks.translate(bot, view.palette()), view.runs());
 
             for (int y = slab.minY(); y <= slab.maxY(); y++) {
                 for (int z = slab.minZ(); z <= slab.maxZ(); z++) {

@@ -105,6 +105,14 @@ public final class Snapshot {
         return new Snapshot(id, name, box, palette, blocks, created, origin);
     }
 
+    /** The same blocks under other names, entry for entry: what a custom-block dictionary does to a palette. */
+    Snapshot withPalette(List<String> names) {
+        if (names.size() != palette.size()) {
+            throw new IllegalArgumentException("%d names for a palette of %d".formatted(names.size(), palette.size()));
+        }
+        return new Snapshot(id, name, box, names, blocks, created, origin);
+    }
+
     /** The palette index at a world position, or {@link #UNREAD}. */
     short at(int x, int y, int z) {
         return blocks[index(x, y, z)];

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import kr.junhyung.mcagents.tool.CustomBlocks;
 import kr.junhyung.mcagents.tool.RegionStore;
 import kr.junhyung.mcagents.tool.RegionSurvey;
 import kr.junhyung.mcagents.tool.Schematic;
@@ -34,9 +35,11 @@ public class RegionFiles {
     static final int MAX_UPLOAD_BYTES = 32 * 1024 * 1024;
 
     private final RegionStore store;
+    private final CustomBlocks customBlocks;
 
-    public RegionFiles(RegionStore store) {
+    public RegionFiles(RegionStore store, CustomBlocks customBlocks) {
         this.store = store;
+        this.customBlocks = customBlocks;
     }
 
     @GetMapping(value = "/regions/{id}.schem", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
@@ -48,7 +51,12 @@ public class RegionFiles {
                     .body("{\"error\":\"no region is kept as %s\"}".formatted(id).getBytes());
         }
 
-        byte[] file = Schematic.write(region, null);
+        /* A custom block as WorldEdit files it, when this server learned what the region's server calls them. */
+        CustomBlocks.Dictionary learned = customBlocks.of(region.origin());
+        byte[] file = Schematic.write(region, null, block -> {
+            CustomBlocks.Entry custom = learned == null ? null : learned.byId(block);
+            return custom == null || custom.internal() == null ? block : custom.internal();
+        });
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"%s.schem\"".formatted(id))

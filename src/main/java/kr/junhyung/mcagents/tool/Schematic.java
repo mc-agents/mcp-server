@@ -33,12 +33,20 @@ public final class Schematic {
     private Schematic() {}
 
     public static byte[] write(Snapshot snapshot, String mcVersion) throws IOException {
+        return write(snapshot, mcVersion, java.util.function.UnaryOperator.identity());
+    }
+
+    /**
+     * @param filed what a palette entry is written as: a custom block by the id WorldEdit files it
+     *              under, so the plugin's own schematic reader knows it, and anything else as itself
+     */
+    public static byte[] write(Snapshot snapshot, String mcVersion, java.util.function.UnaryOperator<String> filed) throws IOException {
         Region box = snapshot.box();
         Map<String, Object> palette = new LinkedHashMap<>();
         List<String> names = snapshot.palette();
 
         for (int entry = 0; entry < names.size(); entry++) {
-            palette.put(qualified(names.get(entry)), entry);
+            palette.putIfAbsent(qualified(filed.apply(names.get(entry))), entry);
         }
 
         int air = names.indexOf("air");

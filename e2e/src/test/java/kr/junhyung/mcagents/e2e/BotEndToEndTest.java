@@ -3238,10 +3238,54 @@ class BotEndToEndTest {
             "from", Map.of("x", 40, "y", -60, "z", -3), "to", Map.of("x", 44, "y", -58, "z", -3)));
         world.run("fill 40 -60 -3 44 -58 -3 minecraft:air");
 
+        /* The fixture has FastAsyncWorldEdit, so the region goes down through it unless told otherwise. */
         assertTrue(put.startsWith("Put region " + id + " down over (40, -60, -3) to (44, -58, -3), 5 x 3 x 1, 15 blocks:"
-            + " 9 blocks in 3 /fill command(s) across 1 tile(s)"), put);
+            + " 9 blocks in 3 WorldEdit edit(s) across 1 tile(s)"), put);
         assertTrue(put.contains("Read back: all 9 blocks are as the region has them."), put);
         assertTrue(read.contains("\n  y=-60\n    a...a\n  y=-59\n    a...a\n  y=-58\n    aaaaa"), read);
+    }
+
+    /**
+     * The same shape through the game's own /fill, which is what a server without WorldEdit gets:
+     * the mesh is the same three boxes, and the readback is the same nine blocks. The stairs face
+     * a way, which is the half of the palette that used to be lost -- a wall of them read back as
+     * one entry, and the orientation went with it.
+     */
+    @Test
+    void aDesignedShapeGoesDownThroughFillWhenAskedWithItsStatesWhole() {
+        agent.requires("import-region", "write-region");
+        agent.requiresOffered("read-region", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 0, "y", -60, "z", 0), "to", Map.of("x", 0, "y", -60, "z", 0)));
+        world.run("tp " + BotWorld.BOT + " 50 -59 2");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+
+        String imported = agent.mustCall("import-region", Map.of(
+            "at", Map.of("x", 50, "y", -60, "z", -3), "size", Map.of("x", 3, "y", 1, "z", 1),
+            "palette", List.of("oak_stairs[facing=east,half=bottom,shape=straight,waterlogged=false]", "stone",
+                "oak_stairs[facing=west,half=top,shape=straight,waterlogged=false]"),
+            "runs", List.of(Map.of("block", 0, "count", 1), Map.of("block", 1, "count", 1), Map.of("block", 2, "count", 1))));
+        String id = regionIdIn(imported);
+
+        String put = agent.mustCall("write-region", Map.of("bot", BotWorld.BOT, "region", id, "via", "fill"));
+        String read = agent.mustCall("read-region", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 50, "y", -60, "z", -3), "to", Map.of("x", 52, "y", -60, "z", -3)));
+        world.run("fill 50 -60 -3 52 -60 -3 minecraft:air");
+
+        assertTrue(put.contains("3 blocks in 3 /fill command(s)"), put);
+        assertTrue(put.contains("Read back: all 3 blocks are as the region has them."), put);
+        assertTrue(read.contains("1 oak_stairs[facing=east,half=bottom,shape=straight,waterlogged=false] (33%)"), read);
+        assertTrue(read.contains("1 oak_stairs[facing=west,half=top,shape=straight,waterlogged=false] (33%)"), read);
+        assertTrue(read.contains("\n  y=-60\n    abc"), read);
+    }
+
+    /** A server without CraftEngine has nothing to learn, and the tool says so before placing anything. */
+    @Test
+    void learningCustomBlocksWhereThereAreNoneIsSaidSo() {
+        agent.requires("learn-custom-blocks");
+
+        String learned = agent.refusal("learn-custom-blocks", Map.of("bot", BotWorld.BOT));
+
+        assertTrue(learned.contains("either CraftEngine is not on it"), learned);
     }
 
     /**

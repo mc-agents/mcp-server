@@ -33,7 +33,7 @@ EXPECTED_ERRORS = {
     "wait-for-action-bar", "wait-for-boss-bars", "wait-for-chat", "wait-for-dialog", "wait-for-displays",
     "wait-for-effect", "wait-for-item", "wait-for-player-list", "wait-for-scoreboard", "wait-for-title",
     "wait-for-toast", "ping-server", "wait-for-server", "build-region", "verify-region",
-    "show-region", "write-region",
+    "show-region", "write-region", "learn-custom-blocks",
 }
 
 
