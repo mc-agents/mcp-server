@@ -268,16 +268,19 @@ public class RegionTools {
         List<String> other = new ArrayList<>();
         List<String[]> rows = new ArrayList<>();
 
-        for (FeedEntry line : replies) {
-            Matcher row = DISTRIBUTION.matcher(line.rendered());
-            Matcher fawe = FAWE_DISTRIBUTION.matcher(line.rendered());
+        /* FAWE sends its whole column as one message with newlines in it, so an entry is lines, not a line. */
+        for (FeedEntry entry : replies) {
+            for (String line : entry.rendered().split("\n")) {
+                Matcher row = DISTRIBUTION.matcher(line);
+                Matcher fawe = FAWE_DISTRIBUTION.matcher(line);
 
-            if (row.matches()) {
-                rows.add(new String[] {row.group(3), row.group(1), row.group(2) + "%"});
-            } else if (fawe.matches()) {
-                rows.add(new String[] {fawe.group(3), fawe.group(2), fawe.group(1) + "%"});
-            } else {
-                other.add("  " + line.rendered());
+                if (row.matches()) {
+                    rows.add(new String[] {row.group(3), row.group(1), row.group(2) + "%"});
+                } else if (fawe.matches()) {
+                    rows.add(new String[] {fawe.group(3), fawe.group(2), fawe.group(1) + "%"});
+                } else {
+                    other.add("  " + line);
+                }
             }
         }
         if (rows.isEmpty()) {

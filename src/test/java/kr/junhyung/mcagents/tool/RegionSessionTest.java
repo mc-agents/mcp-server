@@ -294,15 +294,16 @@ class RegionSessionTest {
 
     /**
      * FastAsyncWorldEdit writes the same column the other way round -- the share first, then the
-     * count, then the block as a player sees it -- and its //size answers arrive after //distr's.
+     * count, then the block as a player sees it -- and as one message with the lines inside it.
      * The table is the same table, since what the two plugins are reporting is the same box.
      */
     @Test
     void verifyRegionReadsFastAsyncWorldEditsColumnToo() {
         selectionIsAcknowledged();
         saysAbout.put("//size", List.of("(FAWE) Type: cuboid", "(FAWE) # of blocks: 45"));
-        saysAbout.put("//distr", List.of("(FAWE) ------------- Block Distribution -------------",
-                "Total Block Count: 45", "66.667%  30  Stone", "33.333%  15  Air"));
+        /* One message, as FAWE sends the column: the lines are inside it. */
+        saysAbout.put("//distr", List.of("(FAWE) ------------- Block Distribution -------------\n"
+                + "Total Block Count: 45\n66.667%  30  Stone\n33.333%  15  Air"));
 
         String verified = text(call(impatient("verify-region"), box()));
 
