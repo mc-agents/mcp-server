@@ -19,7 +19,7 @@ KUBECTL := kubectl --context $(CONTEXT) -n $(NAMESPACE)
 HELM    := helm --kube-context $(CONTEXT) -n $(SYSTEM)
 
 CHARTS                 := oci://junhyung.cloud/mc-agents/charts
-OPERATOR_CHART_VERSION := 0.17.3
+OPERATOR_CHART_VERSION := 0.17.4
 
 # Loopback only. k3d binds 0.0.0.0 unless told otherwise, and the token is the only thing between
 # that port and a bot that runs commands as op.
