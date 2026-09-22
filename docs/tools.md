@@ -2,14 +2,14 @@
 
 <!-- Rendered from catalog/catalog.json by ./gradlew renderToolReference. Edit the catalogue, not this page. -->
 
-Catalogue 5.4.0, 99 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
+Catalogue 5.5.0, 100 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
 
 Every tool but [`list-bots`](#list-bots), [`ping-server`](#ping-server), [`wait-for-server`](#wait-for-server) takes `bot`, the name given to join-server, which may be left out while exactly one bot is connected; it is not repeated below. A tool marked **fabric only** is one the headless kind of bot does not run. **Exclusive** means one call at a time on a bot, since two walks or two clicks at once would fight over the same body. **Untrusted** means the answer carries content the server did not write -- chat, item names, signs -- and is marked as data rather than instructions. **Read-only** means the call changes nothing in the game or on the server, which is what an MCP client's `readOnlyHint` approves without asking; **destructive** is the `destructiveHint`, for a call that removes something or runs with the bot's permissions. A tool that **needs a world** is refused while the bot is on a title or disconnected screen. The deadline is how long the server waits for the bot before giving the call up; a tool with a `timeoutMs` argument sets its own inside that.
 
 | Group | Tools |
 | --- | --- |
 | [world](#world) | [`activate-block`](#activate-block), [`attack-entity`](#attack-entity), [`fish`](#fish), [`interact-entity`](#interact-entity), [`use-held-item`](#use-held-item) |
-| [region](#region) | [`build-region`](#build-region), [`import-region`](#import-region), [`learn-custom-blocks`](#learn-custom-blocks), [`list-regions`](#list-regions), [`read-region`](#read-region), [`show-region`](#show-region), [`verify-region`](#verify-region), [`write-region`](#write-region) |
+| [region](#region) | [`build-region`](#build-region), [`import-region`](#import-region), [`learn-custom-blocks`](#learn-custom-blocks), [`list-regions`](#list-regions), [`read-region`](#read-region), [`read-selection`](#read-selection), [`show-region`](#show-region), [`verify-region`](#verify-region), [`write-region`](#write-region) |
 | [crafting](#crafting) | [`can-craft`](#can-craft), [`craft-item`](#craft-item), [`get-recipe`](#get-recipe), [`list-recipes`](#list-recipes) |
 | [screen](#screen) | [`click-chat`](#click-chat), [`press-dialog-button`](#press-dialog-button), [`read-book`](#read-book), [`screenshot`](#screenshot), [`set-dialog-input`](#set-dialog-input), [`type-text`](#type-text) |
 | [slot](#slot) | [`click-slot`](#click-slot), [`drag-slots`](#drag-slots), [`drop-held-item`](#drop-held-item), [`hover-slot`](#hover-slot), [`select-bundle-item`](#select-bundle-item) |
@@ -195,6 +195,27 @@ The bot answers with a DTO the server renders into the text (see [bot-protocol.m
   - `count` (integer)
 - `missing` (integer) -- Blocks the client holds no chunk for, 0 when the whole box was loaded. Loadedness is decided before airness: an unloaded chunk reads as void_air on a client, so the other order would count these as air, and as nothing at all when includeAir is false
 - `outside` (integer) -- Blocks whose y is past the world's build height. Kept apart from missing rather than added to it: one is answered by flying closer, the other by moving the box
+
+### read-selection
+
+*fabric and azalea · deadline 5s · read-only · needs a world · the bot answers*
+
+Read the WorldEdit selection the server is holding for this bot, over the worldedit:cui plugin channel rather than out of chat. WorldEdit describes a selection to any client that draws one -- that channel is what the WorldEditCUI mod exists to receive -- so the bot announces itself on it and answers with the description that comes back: the selection as the plugin holds it, not a line the plugin printed. That makes it independent of the server's language and of how the plugin words its replies, and it works on a server that has turned the plugin's chat feedback off. points holds the corners the plugin named, index 0 for //pos1 and 1 for //pos2, and is empty when nothing is selected; volume is the number of blocks the plugin counts in the selection. supported is false when nothing came back within timeoutMs, which is a server without WorldEdit or FastAsyncWorldEdit, one whose WorldEdit does not send CUI, or a proxy that drops the channel; the selection is then unknown rather than empty, and reading //pos1's reply in chat is what is left. Setting a selection is still run-command with //pos1 and //pos2 -- this only reads one.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `timeoutMs` | integer | no | How long to wait for the server to describe the selection (default: 1000) | 100 to 30000 |
+
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
+
+- `supported` (boolean) -- The server described the selection. False means it said nothing on the channel within the wait, so the selection is unknown rather than empty
+- `shape` (string or null) -- The selector WorldEdit is using: cuboid for the default one, and polygon2d, ellipsoid, sphere, cylinder or convex for the others, whose corners this tool does not report
+- `points[]` (object) -- The corners the plugin named, in its own numbering; empty when nothing is selected
+  - `index` (integer) -- 0 for the corner //pos1 sets, 1 for //pos2
+  - `x` (integer)
+  - `y` (integer)
+  - `z` (integer)
+- `volume` (integer or null) -- Blocks in the selection as the plugin counts them, absent while it is incomplete
 
 ### show-region
 

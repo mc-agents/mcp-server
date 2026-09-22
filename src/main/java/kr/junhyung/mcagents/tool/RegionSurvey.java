@@ -12,6 +12,7 @@ import kr.junhyung.mcagents.catalog.Catalog;
 import kr.junhyung.mcagents.catalog.ToolSpec;
 import kr.junhyung.mcagents.protocol.Messages;
 import kr.junhyung.mcagents.render.RegionRenderer;
+import kr.junhyung.mcagents.render.SelectionRenderer;
 import kr.junhyung.mcagents.render.Text;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.DeserializationFeature;
@@ -83,6 +84,22 @@ public class RegionSurvey {
 
     /** How long one WorldEdit edit is given to say it finished before the next box's corners are set. */
     static final int EDIT_MS = 30_000;
+
+    /**
+     * How long WorldEdit is given to describe a selection over its CUI channel.
+     *
+     * <p>Short, because it is asked once a box and an answer comes on the tick. What it is not is
+     * how long the corners have to arrive: a description that shows the corner before last is asked
+     * for again until {@link #SELECTION_MS} is up.
+     */
+    static final int DESCRIBE_MS = 500;
+
+    /**
+     * Between two asks about the same selection. A plugin that has not handled the corners yet
+     * needs a tick to, and asking again as fast as the bot can answer would spend a round trip a
+     * millisecond to learn the same thing.
+     */
+    static final int DESCRIBE_AGAIN_MS = 50;
 
     /** How many differing blocks a readback names before it only counts them. */
     private static final int NAMED_DIFFERENCES = 5;
@@ -248,6 +265,7 @@ public class RegionSurvey {
         int sent = 0;
         int done = 0;
         boolean worldEdit;
+        boolean cui;
 
         /*
         Decided once, before anything is put down: a region that went half through one and half
@@ -268,6 +286,8 @@ public class RegionSurvey {
         } catch (IllegalStateException refused) {
             return ToolDispatcher.failure(refused.getMessage());
         }
+
+        cui = worldEdit && describes(bot);
 
         try {
             for (Region tile : tiles) {
@@ -304,7 +324,7 @@ public class RegionSurvey {
                     String pattern = block;
 
                     if (worldEdit) {
-                        McpSchema.CallToolResult refusal = edit(bot, piece, pattern, tally);
+                        McpSchema.CallToolResult refusal = edit(bot, piece, pattern, tally, cui);
 
                         if (refusal != null) {
                             return refusal;
@@ -384,6 +404,16 @@ public class RegionSurvey {
                 .formatted(source.id(), box, blocks, sent, worldEdit ? "WorldEdit edit(s)" : "/fill command(s)", done,
                         (System.currentTimeMillis() - started) / 1_000,
                         withAir ? ", air included" : ", air in the region left what was there"));
+        if (worldEdit) {
+            /*
+            Which way each box was selected, because the two cost different things and a caller
+            watching a write slow down is owed the reason: the channel is one round trip a box, and
+            chat is one a corner and only works while the plugin is printing its replies.
+            */
+            out.add(cui
+                    ? "Each box was selected over WorldEdit's CUI channel, which is what the plugin says it has selected."
+                    : "Each box was selected by reading what the plugin said in chat, since it describes no selection on its CUI channel. read-selection says so directly.");
+        }
         if (custom > 0) {
             out.add("%d of its blocks are custom blocks, which /fill cannot place -- it would put down the vanilla block they look like -- so they were left out. A server with WorldEdit places them; say via \"worldedit\" to insist on it."
                     .formatted(custom));
@@ -436,34 +466,23 @@ public class RegionSurvey {
     }
 
     /**
-     * One box through WorldEdit, a command at a time: each corner is sent once the one before it
-     * has been acknowledged, and the edit once both have, since the plugin handles commands on
-     * threads of its own and three sent within a tick ran in any order. The edit is then waited
-     * for, so the next box's corners cannot reach it first.
+     * One box through WorldEdit: the corners first, then the edit.
+     *
+     * <p>The two corners cannot simply be sent and the edit after them. The plugin handles commands
+     * on threads of its own, and three sent within a tick ran in any order -- a //set that took the
+     * box before it and wrote a wall of stone where the last box had been. So the edit waits until
+     * the selection is known to be this box's, and then for the edit itself to finish, so the next
+     * box's corners cannot reach the plugin while this one is still running.
      *
      * @return the failure to answer with, or null when the box went down
      */
-    private McpSchema.CallToolResult edit(BotSession bot, Mesh.Box piece, String pattern, Tally tally) {
-        for (String corner : List.of("//pos1 " + piece.box().lowerCorner(), "//pos2 " + piece.box().upperCorner())) {
-            long mark = bot.feed("chat").nextSeq();
-            McpSchema.CallToolResult refusal = commands.send(bot, corner);
+    private McpSchema.CallToolResult edit(BotSession bot, Mesh.Box piece, String pattern, Tally tally, boolean cui) {
+        McpSchema.CallToolResult unselected = cui
+                ? described(bot, piece.box())
+                : acknowledged(bot, piece.box(), tally);
 
-            if (refusal != null) {
-                return refusal;
-            }
-
-            FeedEntry acknowledged = Commands.awaitLine(bot, mark, System.currentTimeMillis() + SELECTION_MS, SELECTION_ANSWERED);
-
-            if (acknowledged == null) {
-                return ToolDispatcher.failure("WorldEdit did not acknowledge \"%s\" within %dms, so the edit was not sent."
-                        .formatted(corner, SELECTION_MS));
-            }
-            if (Commands.refused(List.of(acknowledged)) != null) {
-                return ToolDispatcher.failure(Trust.mark(
-                        "\"%s\" came back as \"%s\". write-region puts a region down through WorldEdit when the server has it, which needs the permission to run it."
-                                .formatted(corner, acknowledged.rendered())));
-            }
-            tally.take(List.of(acknowledged), bot);
+        if (unselected != null) {
+            return unselected;
         }
 
         long mark = bot.feed("chat").nextSeq();
@@ -485,6 +504,139 @@ public class RegionSurvey {
         tally.take(List.of(answered), bot);
 
         return null;
+    }
+
+    /**
+     * The corners of one box, each sent once the one before it was acknowledged in chat.
+     *
+     * <p>What this waits on is a line the plugin printed, so it costs a round trip a corner, breaks
+     * when a server is in another language or words its replies differently, and cannot work at all
+     * where the plugin's chat feedback is off. {@link #described} is the way round all three; this
+     * is what is left on a server that does not describe its selections.
+     *
+     * @return the failure to answer with, or null when the box is selected
+     */
+    private McpSchema.CallToolResult acknowledged(BotSession bot, Region box, Tally tally) {
+        for (String corner : List.of("//pos1 " + box.lowerCorner(), "//pos2 " + box.upperCorner())) {
+            long mark = bot.feed("chat").nextSeq();
+            McpSchema.CallToolResult refusal = commands.send(bot, corner);
+
+            if (refusal != null) {
+                return refusal;
+            }
+
+            FeedEntry acknowledged = Commands.awaitLine(bot, mark, System.currentTimeMillis() + SELECTION_MS, SELECTION_ANSWERED);
+
+            if (acknowledged == null) {
+                return ToolDispatcher.failure("WorldEdit did not acknowledge \"%s\" within %dms, so the edit was not sent."
+                        .formatted(corner, SELECTION_MS));
+            }
+            if (Commands.refused(List.of(acknowledged)) != null) {
+                return ToolDispatcher.failure(Trust.mark(
+                        "\"%s\" came back as \"%s\". write-region puts a region down through WorldEdit when the server has it, which needs the permission to run it."
+                                .formatted(corner, acknowledged.rendered())));
+            }
+            tally.take(List.of(acknowledged), bot);
+        }
+        return null;
+    }
+
+    /**
+     * The same corners, confirmed over WorldEdit's CUI channel instead.
+     *
+     * <p>Both commands go at once and the plugin is then asked what it has selected, until it names
+     * this box's corners or the wait is up. Asking is what makes that safe: a description that still
+     * shows the box before is the plugin not having handled the commands yet, and it is asked again
+     * rather than the edit being sent over a selection nobody has checked.
+     *
+     * @return the failure to answer with, or null when the box is selected
+     */
+    private McpSchema.CallToolResult described(BotSession bot, Region box) {
+        for (String corner : List.of("//pos1 " + box.lowerCorner(), "//pos2 " + box.upperCorner())) {
+            McpSchema.CallToolResult refusal = commands.send(bot, corner);
+
+            if (refusal != null) {
+                return refusal;
+            }
+        }
+
+        long deadline = System.currentTimeMillis() + SELECTION_MS;
+        SelectionRenderer.View selection;
+
+        do {
+            selection = selection(bot, DESCRIBE_MS);
+
+            if (selection != null && selects(selection, box)) {
+                return null;
+            }
+            Commands.sleep(DESCRIBE_AGAIN_MS);
+        } while (System.currentTimeMillis() < deadline);
+
+        return ToolDispatcher.failure(
+                "WorldEdit did not select %s within %dms -- it last described %s -- so the edit was not sent."
+                        .formatted(box, SELECTION_MS, describe(selection)));
+    }
+
+    /** Whether the selection the plugin described is this box, corner for corner. */
+    private static boolean selects(SelectionRenderer.View selection, Region box) {
+        return selection.supported()
+                && corner(selection, 0).equals(box.lowerCorner())
+                && corner(selection, 1).equals(box.upperCorner());
+    }
+
+    /** One corner as the commands that set it spell one, or the empty string when it is not set. */
+    private static String corner(SelectionRenderer.View selection, int index) {
+        if (selection.points() == null) {
+            return "";
+        }
+        return selection.points().stream()
+                .filter(point -> point.index() == index)
+                .findFirst()
+                .map(point -> "%d,%d,%d".formatted(point.x(), point.y(), point.z()))
+                .orElse("");
+    }
+
+    private static String describe(SelectionRenderer.View selection) {
+        if (selection == null || !selection.supported()) {
+            return "nothing";
+        }
+        String lower = corner(selection, 0);
+        String upper = corner(selection, 1);
+
+        return lower.isEmpty() || upper.isEmpty() ? "an incomplete selection" : lower + " to " + upper;
+    }
+
+    /**
+     * What WorldEdit says it has selected, over the channel it describes one on.
+     *
+     * <p>Null is a bot that could not be asked at all. A bot that asked and was not answered says
+     * so in the answer, as a selection nobody described.
+     */
+    private SelectionRenderer.View selection(BotSession bot, int waitMs) {
+        ToolSpec readSelection = catalog.require("read-selection");
+        Messages.Result result = remote.fetch(readSelection, bot, Map.of("timeoutMs", waitMs)).result();
+
+        if (!result.ok() || result.data() == null) {
+            return null;
+        }
+        return MAPPER.convertValue(result.data(), SelectionRenderer.View.class);
+    }
+
+    /**
+     * Whether the selection can be read over the channel rather than out of chat: the bot offers
+     * the tool, and this server answers on it.
+     *
+     * <p>Asked once a write and not once a box, since neither the plugin nor the bot changes in the
+     * middle of one, and the answer decides how every box in it is put down.
+     */
+    private boolean describes(BotSession bot) {
+        if (!bot.supports("read-selection")) {
+            return false;
+        }
+
+        SelectionRenderer.View selection = selection(bot, SELECTION_MS);
+
+        return selection != null && selection.supported();
     }
 
     /**

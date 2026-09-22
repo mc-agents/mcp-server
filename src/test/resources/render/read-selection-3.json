@@ -1,0 +1,11 @@
+{
+  "tool": "read-selection",
+  "note": "the shape with no corners, which is what //sel leaves behind",
+  "data": {
+    "supported": true,
+    "shape": "cuboid",
+    "points": [],
+    "volume": null
+  },
+  "text": "Nothing is selected."
+}

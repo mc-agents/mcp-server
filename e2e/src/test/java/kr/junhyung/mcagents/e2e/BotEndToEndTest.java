@@ -3182,6 +3182,59 @@ class BotEndToEndTest {
     }
 
     /**
+     * The selection read off the channel WorldEdit describes it on, and not out of chat. The
+     * corners are set with the plugin's own commands and then asked for: what comes back is what
+     * the plugin holds, which is the whole point -- nothing here reads a line the plugin printed,
+     * so nothing here depends on the server's language or on its chat feedback being on.
+     */
+    @Test
+    void theSelectionIsReadFromTheChannelWorldEditDescribesItOn() {
+        agent.requiresOffered("read-selection", Map.of("bot", BotWorld.BOT));
+        agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "//sel cuboid"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String cleared = agent.call("read-selection", Map.of("bot", BotWorld.BOT));
+
+        agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "//pos1 60,-60,-4"));
+        agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "//pos2 62,-59,-2"));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+
+        String selected = agent.call("read-selection", Map.of("bot", BotWorld.BOT));
+
+        agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "//sel cuboid"));
+
+        assertEquals("Nothing is selected.", cleared);
+        assertTrue(selected.startsWith("The selection is a cuboid from (60, -60, -4) to (62, -59, -2)"), selected);
+        assertTrue(selected.contains("18 blocks"), selected);
+    }
+
+    /**
+     * A region put down with every box confirmed on that channel. The commands sent are the ones
+     * the chat-driven path sends; what the answer names is which of the two said the corners had
+     * landed, and on this fixture it is the channel.
+     */
+    @Test
+    void aRegionGoesDownWithEveryBoxConfirmedOnTheChannel() {
+        agent.requires("import-region", "write-region");
+        agent.requiresOffered("read-selection", Map.of("bot", BotWorld.BOT));
+        world.run("tp " + BotWorld.BOT + " 60 -59 2");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+
+        String imported = agent.mustCall("import-region", Map.of(
+            "at", Map.of("x", 60, "y", -60, "z", -3), "size", Map.of("x", 3, "y", 1, "z", 1), "name", "channelled",
+            "palette", List.of("stone"), "runs", List.of(Map.of("block", 0, "count", 3))));
+        String id = regionIdIn(imported);
+
+        String put = agent.mustCall("write-region", Map.of("bot", BotWorld.BOT, "region", id));
+
+        world.run("fill 60 -60 -3 62 -60 -3 minecraft:air");
+        agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "//sel cuboid"));
+
+        assertTrue(put.contains("Each box was selected over WorldEdit's CUI channel"), put);
+        assertTrue(put.contains("Read back: all 3 blocks are as the region has them."), put);
+    }
+
+    /**
      * The whole of building through WorldEdit, on a server that has it: an edit is one call, what it
      * did is measured by the plugin and read back by the bot, and the two agree with each other and
      * with the world. FastAsyncWorldEdit is in the fixture for this, because the refusal without a

@@ -199,6 +199,67 @@ class RegionSurveyTest {
         assertTrue(put.contains("Read back: all 16 blocks are as the region has them."), put);
     }
 
+    /**
+     * With the selection readable on WorldEdit's CUI channel, that is what the corners are confirmed
+     * on. The same commands are sent; what changes is that the edit waits for the plugin to say
+     * what it has selected instead of for a line it printed, and the answer says which it was.
+     */
+    @Test
+    void whereTheSelectionIsDescribedTheChannelConfirmsItRatherThanChat() {
+        played.worldEdit = true;
+        played.cui = true;
+        Region box = new Region(0, 64, 0, 3, 64, 3);
+        store.keep(Snapshot.blank("r-cui0", null, box, Instant.EPOCH, "import-region")
+                .with(box, List.of("stone"), List.of(new RegionRenderer.View.Run(0, 16))));
+
+        String put = text(survey.write(catalog.require("write-region"), bot, Map.of("bot", "fab", "region", "r-cui0"), Progress.NONE));
+
+        assertEquals(List.of("//pos1 0,64,0", "//pos1 0,64,0", "//pos2 3,64,3", "//set stone"),
+                played.ran.stream().filter(command -> command.startsWith("//")).toList());
+        assertTrue(put.contains("Each box was selected over WorldEdit's CUI channel"), put);
+        assertTrue(put.contains("Read back: all 16 blocks are as the region has them."), put);
+    }
+
+    /**
+     * The reason the channel is read at all. FastAsyncWorldEdit answers //pos1 on the tick and moves
+     * the corner on a thread of its own, so a driver that takes the acknowledgement for the corner
+     * sends the next //set over the box before it -- which is how a wall of stone once landed where
+     * the previous box had been. Asking the plugin what it has selected is what makes that
+     * impossible: the edit does not go until the corners are this box's.
+     */
+    @Test
+    void aCornerThePluginMovesLateIsWaitedForRatherThanEditedOver() {
+        played.worldEdit = true;
+        played.cui = true;
+        played.selectionLagMs = 120;
+        Region box = new Region(0, 64, 0, 3, 64, 3);
+        store.keep(Snapshot.blank("r-cui1", null, box, Instant.EPOCH, "import-region")
+                .with(box, List.of("stone", "2025summer:bar_table[facing=east]"),
+                        List.of(new RegionRenderer.View.Run(0, 15), new RegionRenderer.View.Run(1, 1))));
+
+        String put = text(survey.write(catalog.require("write-region"), bot, Map.of("bot", "fab", "region", "r-cui1"), Progress.NONE));
+
+        assertTrue(put.contains("16 blocks in 3 WorldEdit edit(s)"), put);
+        assertTrue(put.contains("Read back: all 16 blocks are as the region has them."), put);
+    }
+
+    /**
+     * A bot that offers read-selection against a server that describes nothing falls back to chat,
+     * and the answer says which of the two it used so that a write nobody watched can be explained.
+     */
+    @Test
+    void aServerThatDescribesNoSelectionIsDrivenFromChatAndSaysSo() {
+        played.worldEdit = true;
+        Region box = new Region(0, 64, 0, 0, 64, 0);
+        store.keep(Snapshot.blank("r-cui2", null, box, Instant.EPOCH, "import-region")
+                .with(box, List.of("stone"), List.of(new RegionRenderer.View.Run(0, 1))));
+
+        String put = text(survey.write(catalog.require("write-region"), bot, Map.of("bot", "fab", "region", "r-cui2"), Progress.NONE));
+
+        assertTrue(put.contains("selected by reading what the plugin said in chat"), put);
+        assertTrue(put.contains("Read back: all 1 blocks are as the region has them."), put);
+    }
+
     /** Without WorldEdit, /fill is what there is, and a custom block is left out rather than faked. */
     @Test
     void withoutWorldEditACustomBlockIsLeftOutAndSaidSo() {

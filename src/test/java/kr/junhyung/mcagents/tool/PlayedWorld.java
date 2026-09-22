@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import kr.junhyung.mcagents.bot.BotLink;
 import kr.junhyung.mcagents.bot.BotRegistry;
@@ -66,6 +67,15 @@ final class PlayedWorld implements AutoCloseable {
     /** Whether the played server has WorldEdit: answers the selection and //set, or knows neither. */
     volatile boolean worldEdit;
 
+    /** Whether its WorldEdit describes the selection on the CUI channel, which read-selection reads. */
+    volatile boolean cui;
+
+    /**
+     * How long the played plugin takes to move a corner, as one that handles commands on threads of
+     * its own does. Zero is the corner landing while the command is being answered.
+     */
+    volatile long selectionLagMs;
+
     /** The played server's CraftEngine custom blocks: what each is called, and the vanilla state it looks like. */
     final Map<String, String> customBlocks = new LinkedHashMap<>();
 
@@ -87,7 +97,8 @@ final class PlayedWorld implements AutoCloseable {
                 new Messages.Capability("run-command", catalog.require("run-command").wireSchemaHash()),
                 new Messages.Capability("read-region", catalog.require("read-region").wireSchemaHash()),
                 new Messages.Capability("get-position", catalog.require("get-position").wireSchemaHash()),
-                new Messages.Capability("complete-command", catalog.require("complete-command").wireSchemaHash())));
+                new Messages.Capability("complete-command", catalog.require("complete-command").wireSchemaHash()),
+                new Messages.Capability("read-selection", catalog.require("read-selection").wireSchemaHash())));
         bots.add(bot);
 
         Thread.ofVirtual().start(() -> link.pump(new BotLink.Sink() {
@@ -116,6 +127,7 @@ final class PlayedWorld implements AutoCloseable {
                     case "run-command" -> command(call);
                     case "read-region" -> read(call);
                     case "complete-command" -> complete(call);
+                    case "read-selection" -> described(call);
                     case "get-position" -> new Messages.Result(call.id(), true, "here",
                             Map.of("position", Map.of("x", standX, "y", 64, "z", standZ)), null, null, 1);
                     default -> new Messages.Result(call.id(), false, "no such tool", null, null,
@@ -143,10 +155,10 @@ final class PlayedWorld implements AutoCloseable {
             standZ = (int) Double.parseDouble(words[3]);
             says("system", "Teleported fab to " + words[1] + ", " + words[2] + ", " + words[3]);
         } else if (worldEdit && "//pos1".equals(words[0])) {
-            selection[0] = words[1];
+            select(0, words[1]);
             says("system", "First position set to (" + words[1].replace(",", ", ") + ").");
         } else if (worldEdit && "//pos2".equals(words[0])) {
-            selection[1] = words[1];
+            select(1, words[1]);
             says("system", "Second position set to (" + words[1].replace(",", ", ") + ").");
         } else if (worldEdit && "//set".equals(words[0])) {
             /*
@@ -204,6 +216,45 @@ final class PlayedWorld implements AutoCloseable {
             return index >= 0 && index < ids.size() ? customBlocks.get(ids.get(index)) : block;
         }
         return customBlocks.getOrDefault(block, block);
+    }
+
+    /**
+     * A corner moving, as the plugin moves one: at once, or on a thread of its own a moment after
+     * it answered the command, which is what a driver that does not check the selection walks into.
+     */
+    private void select(int index, String corner) {
+        if (selectionLagMs <= 0) {
+            selection[index] = corner;
+            return;
+        }
+        timers.schedule(() -> selection[index] = corner, selectionLagMs, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * What a bot answers read-selection with: the selection as the plugin has it, or nothing at all
+     * where the plugin does not describe one.
+     */
+    private Messages.Result described(Messages.Call call) {
+        if (!worldEdit || !cui) {
+            return new Messages.Result(call.id(), true, "no selection was described",
+                    Map.of("supported", false, "points", List.of()), null, null, 1);
+        }
+
+        List<Map<String, Object>> points = new ArrayList<>();
+
+        for (int index = 0; index < selection.length; index++) {
+            String corner = selection[index];
+
+            if (corner == null) {
+                continue;
+            }
+
+            int[] at = corners(corner);
+
+            points.add(Map.of("index", index, "x", at[0], "y", at[1], "z", at[2]));
+        }
+        return new Messages.Result(call.id(), true, "selection described",
+                Map.of("supported", true, "shape", "cuboid", "points", points), null, null, 1);
     }
 
     /**

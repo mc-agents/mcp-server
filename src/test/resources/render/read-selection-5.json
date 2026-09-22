@@ -1,0 +1,11 @@
+{
+  "tool": "read-selection",
+  "note": "a selector WorldEdit's own //pos commands do not set, whose corners do not come through as points",
+  "data": {
+    "supported": true,
+    "shape": "polygon2d",
+    "points": [],
+    "volume": null
+  },
+  "text": "Nothing is selected, and the selector is a polygon2d."
+}

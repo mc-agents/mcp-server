@@ -1,0 +1,11 @@
+{
+  "tool": "read-selection",
+  "note": "a server that never answered on the channel",
+  "data": {
+    "supported": false,
+    "shape": null,
+    "points": [],
+    "volume": null
+  },
+  "text": "The server did not describe a selection. It sends nothing on WorldEdit's CUI channel, so it has no WorldEdit or FastAsyncWorldEdit, its WorldEdit does not send CUI, or a proxy in front of it drops the channel. What //pos1 says in chat is what is left to read."
+}

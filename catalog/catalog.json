@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "5.4.0",
+  "catalogVersion": "5.5.0",
   "protocol": 1,
   "tools": [
     {
@@ -6845,6 +6845,113 @@
       }
     },
     {
+      "name": "read-selection",
+      "group": "region",
+      "description": "Read the WorldEdit selection the server is holding for this bot, over the worldedit:cui plugin channel rather than out of chat. WorldEdit describes a selection to any client that draws one -- that channel is what the WorldEditCUI mod exists to receive -- so the bot announces itself on it and answers with the description that comes back: the selection as the plugin holds it, not a line the plugin printed. That makes it independent of the server's language and of how the plugin words its replies, and it works on a server that has turned the plugin's chat feedback off. points holds the corners the plugin named, index 0 for //pos1 and 1 for //pos2, and is empty when nothing is selected; volume is the number of blocks the plugin counts in the selection. supported is false when nothing came back within timeoutMs, which is a server without WorldEdit or FastAsyncWorldEdit, one whose WorldEdit does not send CUI, or a proxy that drops the channel; the selection is then unknown rather than empty, and reading //pos1's reply in chat is what is left. Setting a selection is still run-command with //pos1 and //pos2 -- this only reads one.",
+      "route": "rpc",
+      "kinds": [
+        "fabric",
+        "azalea"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "readOnly": true,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "How long to wait for the server to describe the selection (default: 1000)",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 30000
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "timeoutMs": {
+            "description": "How long to wait for the server to describe the selection (default: 1000)",
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 30000,
+            "default": 1000
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "timeoutMs"
+        ]
+      },
+      "wireSchemaHash": "sha256:fdfc3dcc79f31ce86ad38fd73fcb20981e2ff38f74827fa3b99f2965ca809fdc",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "supported": {
+            "description": "The server described the selection. False means it said nothing on the channel within the wait, so the selection is unknown rather than empty",
+            "type": "boolean"
+          },
+          "shape": {
+            "description": "The selector WorldEdit is using: cuboid for the default one, and polygon2d, ellipsoid, sphere, cylinder or convex for the others, whose corners this tool does not report",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "points": {
+            "description": "The corners the plugin named, in its own numbering; empty when nothing is selected",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "index": {
+                  "description": "0 for the corner //pos1 sets, 1 for //pos2",
+                  "type": "integer"
+                },
+                "x": {
+                  "type": "integer"
+                },
+                "y": {
+                  "type": "integer"
+                },
+                "z": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "index",
+                "x",
+                "y",
+                "z"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "volume": {
+            "description": "Blocks in the selection as the plugin counts them, absent while it is incomplete",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "points",
+          "supported"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "read-stats",
       "group": "hud",
       "description": "Read the bot's statistics as the server counts them: kills per mob, blocks mined, items crafted and used, distance walked, time played, deaths. The client only holds the statistics it was last sent, so this asks the server and reads its answer, never an older copy. Without type or target the general statistics (minecraft:custom) are listed, with how many of each other type are nonzero; a kill or mining quest is checked with both, such as type minecraft:killed and target minecraft:zombie. Distances are kept in centimetres and times in ticks, and those are shown in their unit as well.",
@@ -10742,5 +10849,5 @@
       }
     }
   ],
-  "catalogHash": "sha256:3fcdef32f40e3f72b744958903513fa4450f6b3ff034b3659e935f7d5b7f89f1"
+  "catalogHash": "sha256:2e3984973ae926b4a12622c0f4095e8484c51f5780abfbebe618bceb8199cf1a"
 }

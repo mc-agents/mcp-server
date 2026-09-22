@@ -1,0 +1,14 @@
+{
+  "tool": "read-selection",
+  "note": "a whole cuboid, as FastAsyncWorldEdit describes one after //pos1 and //pos2",
+  "data": {
+    "supported": true,
+    "shape": "cuboid",
+    "points": [
+      {"index": 0, "x": 12, "y": 64, "z": -30},
+      {"index": 1, "x": 14, "y": 66, "z": -28}
+    ],
+    "volume": 27
+  },
+  "text": "The selection is a cuboid from (12, 64, -30) to (14, 66, -28): 27 blocks."
+}
