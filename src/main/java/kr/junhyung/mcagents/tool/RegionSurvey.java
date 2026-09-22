@@ -66,6 +66,15 @@ public class RegionSurvey {
     private static final Pattern EDIT_DONE = Pattern.compile(
             "(successfully filled|blocks have been changed|operation completed)", Pattern.CASE_INSENSITIVE);
 
+    /** What WorldEdit says to a corner: set, or already where it was asked to be. */
+    private static final Pattern SELECTION_ANSWERED = Pattern.compile(
+            "(position set|position already set|unknown command|permission|not allowed)", Pattern.CASE_INSENSITIVE);
+
+    /** What WorldEdit says to //set, one way or the other. */
+    private static final Pattern EDIT_ANSWERED = Pattern.compile(
+            "(operation completed|blocks have been changed|outside allowed region|invalid value|does not match|unknown command|permission|not allowed|too many)",
+            Pattern.CASE_INSENSITIVE);
+
     /** How long //pos1 is given to be acknowledged, which is what decides that WorldEdit is there. */
     static final int SELECTION_MS = 3_000;
 
@@ -302,33 +311,26 @@ public class RegionSurvey {
                         pattern = learned.byId(block).internal();
                     }
 
-                    for (String command : worldEdit ? worldEditCommands(piece, pattern) : List.of(fill(piece, block))) {
-                        McpSchema.CallToolResult refusal = commands.send(bot, command);
+                    if (worldEdit) {
+                        McpSchema.CallToolResult refusal = edit(bot, piece, pattern, tally);
 
                         if (refusal != null) {
                             return refusal;
                         }
+                        sent++;
+                        tileSent++;
+                        blocks += piece.box().blocks();
+                        continue;
+                    }
+
+                    McpSchema.CallToolResult refusal = commands.send(bot, fill(piece, block));
+
+                    if (refusal != null) {
+                        return refusal;
                     }
                     sent++;
                     tileSent++;
                     blocks += piece.box().blocks();
-
-                    /*
-                    WorldEdit's edit reads the selection when it runs, not when it was asked for, and
-                    FastAsyncWorldEdit runs it on a thread of its own: two boxes sent back to back had
-                    the first //set take the second's corners and both boxes came out as the second
-                    block. So the edit is waited for before the corners move on. The game's /fill
-                    carries its own corners and needs no such wait.
-                    */
-                    if (worldEdit) {
-                        long finished = System.currentTimeMillis() + EDIT_MS;
-                        while (tally.completed < sent && System.currentTimeMillis() < finished) {
-                            tally.take(Commands.systemLines(bot, tally.mark), bot);
-                            if (tally.completed < sent) {
-                                Commands.sleep(Commands.POLL_MS / 4);
-                            }
-                        }
-                    }
 
                     /*
                     The first command is the one that says whether the bot may run it at all; the
@@ -336,16 +338,13 @@ public class RegionSurvey {
                     they arrive, since the chat feed keeps two hundred lines and a wall is more.
                     */
                     List<FeedEntry> said = sent == 1
-                            ? Commands.awaitChat(bot, tally.mark, System.currentTimeMillis() + FIRST_FILL_MS, Progress.NONE,
-                                    worldEdit ? "the first //set" : "the first /fill")
+                            ? Commands.awaitChat(bot, tally.mark, System.currentTimeMillis() + FIRST_FILL_MS, Progress.NONE, "the first /fill")
                             : Commands.systemLines(bot, tally.mark);
                     FeedEntry no = Commands.refused(said);
 
                     if (no != null) {
-                        return ToolDispatcher.failure(Trust.mark(worldEdit
-                                ? "//set came back as \"%s\". write-region puts a region down through WorldEdit when the server has it, which needs the permission to run it."
-                                        .formatted(no.rendered())
-                                : "/fill came back as \"%s\". write-region puts a region down with the game's own /fill, which needs the permission to run it (op) on this server."
+                        return ToolDispatcher.failure(Trust.mark(
+                                "/fill came back as \"%s\". write-region puts a region down with the game's own /fill, which needs the permission to run it (op) on this server."
                                         .formatted(no.rendered())));
                     }
                     tally.take(said, bot);
@@ -445,6 +444,58 @@ public class RegionSurvey {
     }
 
     /**
+     * One box through WorldEdit, a command at a time: each corner is sent once the one before it
+     * has been acknowledged, and the edit once both have, since the plugin handles commands on
+     * threads of its own and three sent within a tick ran in any order. The edit is then waited
+     * for, so the next box's corners cannot reach it first.
+     *
+     * @return the failure to answer with, or null when the box went down
+     */
+    private McpSchema.CallToolResult edit(BotSession bot, Mesh.Box piece, String pattern, Tally tally) {
+        for (String corner : List.of("//pos1 " + piece.box().lowerCorner(), "//pos2 " + piece.box().upperCorner())) {
+            long mark = bot.feed("chat").nextSeq();
+            McpSchema.CallToolResult refusal = commands.send(bot, corner);
+
+            if (refusal != null) {
+                return refusal;
+            }
+
+            FeedEntry acknowledged = Commands.awaitLine(bot, mark, System.currentTimeMillis() + SELECTION_MS, SELECTION_ANSWERED);
+
+            if (acknowledged == null) {
+                return ToolDispatcher.failure("WorldEdit did not acknowledge \"%s\" within %dms, so the edit was not sent."
+                        .formatted(corner, SELECTION_MS));
+            }
+            if (Commands.refused(List.of(acknowledged)) != null) {
+                return ToolDispatcher.failure(Trust.mark(
+                        "\"%s\" came back as \"%s\". write-region puts a region down through WorldEdit when the server has it, which needs the permission to run it."
+                                .formatted(corner, acknowledged.rendered())));
+            }
+            tally.take(List.of(acknowledged), bot);
+        }
+
+        long mark = bot.feed("chat").nextSeq();
+        McpSchema.CallToolResult refusal = commands.send(bot, "//set " + pattern);
+
+        if (refusal != null) {
+            return refusal;
+        }
+
+        FeedEntry answered = Commands.awaitLine(bot, mark, System.currentTimeMillis() + EDIT_MS, EDIT_ANSWERED);
+
+        if (answered == null) {
+            return ToolDispatcher.failure("WorldEdit did not answer \"//set %s\" within %dms; the edit may still be running, and verify-region says what is in the box now."
+                    .formatted(pattern, EDIT_MS));
+        }
+        if (Commands.refused(List.of(answered)) != null) {
+            return ToolDispatcher.failure(Trust.mark("\"//set %s\" came back as \"%s\".".formatted(pattern, answered.rendered())));
+        }
+        tally.take(List.of(answered), bot);
+
+        return null;
+    }
+
+    /**
      * Whether WorldEdit is on the server and answers the bot: //pos1 is acknowledged on the tick,
      * and a server without the plugin answers it as an unknown command.
      */
@@ -458,13 +509,6 @@ public class RegionSurvey {
         List<FeedEntry> said = Commands.awaitChat(bot, mark, System.currentTimeMillis() + SELECTION_MS, Progress.NONE, "//pos1");
 
         return !said.isEmpty() && Commands.refused(said) == null;
-    }
-
-    /** One box as WorldEdit takes it: the two corners, then the pattern over the selection. */
-    static List<String> worldEditCommands(Mesh.Box piece, String block) {
-        Region box = piece.box();
-
-        return List.of("//pos1 " + box.lowerCorner(), "//pos2 " + box.upperCorner(), "//set " + block);
     }
 
     private record Readback(long compared, long differing, List<String> differences, List<String> notes) {}

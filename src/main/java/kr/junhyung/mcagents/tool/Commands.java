@@ -105,6 +105,28 @@ public class Commands {
         return systemLines(bot, since);
     }
 
+    /**
+     * The first line after a mark that says one thing, or null when the deadline passes first.
+     *
+     * <p>For a command whose next command must not go out until this one has run: FastAsyncWorldEdit
+     * handles commands on threads of its own, and //pos1, //pos2 and //set sent within a tick ran
+     * in whatever order the threads got to them, with the edit taking the corners of the box before.
+     * Its acknowledgement is the one thing that says a command has run.
+     */
+    static FeedEntry awaitLine(BotSession bot, long since, long deadline, Pattern said) {
+        while (true) {
+            for (FeedEntry line : systemLines(bot, since)) {
+                if (said.matcher(line.rendered()).find()) {
+                    return line;
+                }
+            }
+            if (System.currentTimeMillis() >= deadline) {
+                return null;
+            }
+            sleep(POLL_MS / 4);
+        }
+    }
+
     /** What the server itself said after a mark, which is the only thing a composed tool decides from. */
     static List<FeedEntry> systemLines(BotSession bot, long since) {
         return bot.feed("chat").since(since).stream().filter(line -> SYSTEM.equals(line.source())).toList();
