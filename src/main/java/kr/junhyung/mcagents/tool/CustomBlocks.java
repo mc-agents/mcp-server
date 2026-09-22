@@ -57,6 +57,9 @@ public class CustomBlocks {
 
     private static final Pattern INTERNAL_ID = Pattern.compile("craftengine:custom_\\d+");
 
+    /** How far a prefix is narrowed at most, which is longer than any block id with its state. */
+    private static final int MAX_PREFIX = 96;
+
     /** What a block id is spelled in, and so what a prefix is narrowed by: a namespace, a colon, a path, a state. */
     private static final String ID_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789_-.:/[]=,";
 
@@ -283,8 +286,16 @@ public class CustomBlocks {
         if (page == null) {
             return List.of();
         }
-        if (page.names.size() >= page.total) {
-            return page.names;
+        /*
+        Only what continues the prefix: a bot that answers every prefix with the same page -- the
+        fake one the sweep drives -- would otherwise be narrowed forever, and a name that does not
+        start with what was typed is not an answer to it. Past a block id's length there is nothing
+        left to narrow by either.
+        */
+        List<String> continuing = page.names.stream().filter(name -> name.startsWith(typed)).toList();
+
+        if (continuing.size() < page.names.size() || page.names.size() >= page.total || typed.length() >= MAX_PREFIX) {
+            return continuing;
         }
 
         List<String> paged = new ArrayList<>();
