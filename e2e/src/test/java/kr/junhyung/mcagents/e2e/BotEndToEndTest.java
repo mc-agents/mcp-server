@@ -3190,7 +3190,8 @@ class BotEndToEndTest {
     @Test
     void theSelectionIsReadFromTheChannelWorldEditDescribesItOn() {
         agent.requiresOffered("read-selection", Map.of("bot", BotWorld.BOT));
-        agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "//sel cuboid"));
+        /* //desel and not //sel cuboid: naming the selector the session already has leaves its corners where they were. */
+        agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "//desel"));
         agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
 
         String cleared = agent.call("read-selection", Map.of("bot", BotWorld.BOT));
@@ -3201,7 +3202,7 @@ class BotEndToEndTest {
 
         String selected = agent.call("read-selection", Map.of("bot", BotWorld.BOT));
 
-        agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "//sel cuboid"));
+        agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "//desel"));
 
         assertEquals("Nothing is selected.", cleared);
         assertTrue(selected.startsWith("The selection is a cuboid from (60, -60, -4) to (62, -59, -2)"), selected);
@@ -3228,7 +3229,7 @@ class BotEndToEndTest {
         String put = agent.mustCall("write-region", Map.of("bot", BotWorld.BOT, "region", id));
 
         world.run("fill 60 -60 -3 62 -60 -3 minecraft:air");
-        agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "//sel cuboid"));
+        agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "//desel"));
 
         assertTrue(put.contains("Each box was selected over WorldEdit's CUI channel"), put);
         assertTrue(put.contains("Read back: all 3 blocks are as the region has them."), put);
