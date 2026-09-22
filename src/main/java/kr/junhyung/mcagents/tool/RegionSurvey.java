@@ -99,15 +99,19 @@ public class RegionSurvey {
     private McpSchema.CallToolResult once(ToolSpec spec, BotSession bot, Region box, String name, boolean includeAir) {
         RegionRenderer.View view = tile(spec, bot, box);
         long unread = (long) view.missing() + view.outside();
+        long spelled = view.runs().stream().mapToLong(RegionRenderer.View.Run::count).sum();
 
-        if (unread > 0) {
-            /*
-            Answered as read, and not kept: a run stream with a gap in it says nothing about where
-            the blocks after the gap sit, so there is no box to keep. What the bot said stands, in
-            the shape it always had, with its own reasons for the gap.
-            */
+        /*
+        Answered as read, and not kept: a run stream with a gap in it says nothing about where the
+        blocks after the gap sit, so there is no box to keep. What the bot said stands, in the shape
+        it always had, with its own reasons for the gap -- and a bot whose runs do not add up to the
+        box at all is answered the same way, since the renderer says what is wrong with them.
+        */
+        if (unread > 0 || spelled != box.blocks()) {
             return ToolDispatcher.text(RENDERER.render(includeAir ? view : withoutAir(view))
-                    + "\nNot kept as a region: %d of its blocks were not read.".formatted(unread));
+                    + (unread > 0
+                            ? "\nNot kept as a region: %d of its blocks were not read.".formatted(unread)
+                            : "\nNot kept as a region: the runs spell out %d of its %d blocks.".formatted(spelled, box.blocks())));
         }
 
         Snapshot kept = Snapshot.blank(store.fresh(), name, box, Instant.now(), origin(bot))

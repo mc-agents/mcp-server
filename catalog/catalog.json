@@ -10619,7 +10619,7 @@
     {
       "name": "write-region",
       "group": "region",
-      "description": "Put a kept region down in the world, block for block, with the game's own /fill: the region is cut into the fewest boxes of one block each and one /fill is sent a box, so a floor is one command and a checkerboard is one a block. Needs no plugin, but needs the permission to run /fill and /tp (op), and the bot is teleported tile by tile so the server has the chunks loaded, then put back. By default the region goes back exactly where it was read; give at to put its lower corner somewhere else. Air in the region leaves what is there unless pasteAir is true, in which case it clears. Block entities (a chest's contents, a sign's text) are not carried, since the region does not hold them. Afterwards every tile is read back and compared with the region unless verify is false, and the answer counts the blocks that differ and names the first few. A region comes from read-region, from import-region, or from POST /regions with a schematic file. Thousands of commands take minutes; the call reports progress.",
+      "description": "Put a kept region down in the world, block for block, with the game's own /fill: the region is cut into the fewest boxes of one block each and one /fill is sent a box, so a floor is one command and a checkerboard is one a block. Needs no plugin, but needs the permission to run /fill and /tp (op), and the bot is teleported tile by tile so the server has the chunks loaded, then put back. /fill is the game's own command, so WorldEdit's region restrictions do not confine it: on a server that fences a bot in with them, this tool is the way past the fence, and refusing the bot /fill is what keeps it out. By default the region goes back exactly where it was read; give at to put its lower corner somewhere else. Air in the region leaves what is there unless pasteAir is true, in which case it clears. Block entities (a chest's contents, a sign's text) are not carried, since the region does not hold them. Afterwards every tile is read back and compared with the region unless verify is false, and the answer counts the blocks that differ and names the first few. A region comes from read-region, from import-region, or from POST /regions with a schematic file. Thousands of commands take minutes; the call reports progress.",
       "route": "orchestrate",
       "kinds": [
         "fabric",
@@ -10683,5 +10683,5 @@
       }
     }
   ],
-  "catalogHash": "sha256:3ebb0279ba8b03721ec2a1abf5aa9754f6b35731d081661a85239a256badc7f5"
+  "catalogHash": "sha256:6529cd5f39aebec43eb2535ab6258479ab7bc3323a25565bd07d93cf1b183b46"
 }
