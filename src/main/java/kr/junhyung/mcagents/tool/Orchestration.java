@@ -216,9 +216,21 @@ public class Orchestration {
                 "Bot \"%s\" left %s and is linked and idle.".formatted(bot.name(), before.address()));
     }
 
-    /** Give back the bot's MinecraftBot, when there is a cluster and this server is the one that asked for it. */
+    /**
+     * Give back the bot's MinecraftBot, when there is a cluster and this server is the one that
+     * asked for it, and forget its session at once.
+     *
+     * <p>The pod takes a moment to go, and its link stayed open for that moment: a join-server
+     * sent right after a leave-server found the session still linked, put the bot back in the
+     * world, and answered "on the server" for a bot whose pod was being killed and was gone
+     * seconds later. A given-back bot is not one to reuse, so the session goes with the object.
+     */
     private boolean released(String name) {
-        return provisioner.available() && provisioner.release(name);
+        if (!provisioner.available() || !provisioner.release(name)) {
+            return false;
+        }
+        bots.remove(name, "the bot was given back");
+        return true;
     }
 
     /**

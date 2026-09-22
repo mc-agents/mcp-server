@@ -31,6 +31,9 @@ public class BotProvisioner {
 
     private static final String REQUESTED_BY = GROUP + "/requested-by";
 
+    /** How long a given-back object is waited for before the one asked for is made; a pod stops within it. */
+    private static final int GONE_TIMEOUT_MS = 45_000;
+
     private static final CustomResourceDefinitionContext BOTS = new CustomResourceDefinitionContext.Builder()
             .withGroup(GROUP)
             .withVersion("v1alpha1")
@@ -80,7 +83,7 @@ public class BotProvisioner {
      * @return true when this call created it, false when it was already there
      */
     public boolean request(String name, String kind, String minecraftVersion, String owner) {
-        GenericKubernetesResource existing = find(name);
+        GenericKubernetesResource existing = awaitGone(find(name));
         if (existing != null && !dialsElsewhere(existing)) {
             log.info("bot \"{}\" is already declared; waiting for it rather than making another", name);
             return false;
@@ -183,6 +186,27 @@ public class BotProvisioner {
         client.genericKubernetesResources(BOTS).inNamespace(namespace).resource(existing).delete();
         log.info("gave back the bot named \"{}\" (MinecraftBot \"{}\")", name, existing.getMetadata().getName());
         return true;
+    }
+
+    /**
+     * An object on its way out, waited for, so the one asked for next is not the one being
+     * deleted. A join right after a leave found the given-back object still there, and waited on
+     * it as if it were the bot it had asked for, which it never became.
+     */
+    private GenericKubernetesResource awaitGone(GenericKubernetesResource existing) {
+        long deadline = System.currentTimeMillis() + GONE_TIMEOUT_MS;
+        GenericKubernetesResource seen = existing;
+
+        while (seen != null && seen.getMetadata().getDeletionTimestamp() != null && System.currentTimeMillis() < deadline) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return seen;
+            }
+            seen = find(BotResourceName.declared(seen.getMetadata().getName(), specBotName(seen)));
+        }
+        return seen;
     }
 
     /**

@@ -121,6 +121,22 @@ class OrchestrationTest {
         assertTrue(left.contains("is not in a world, and the bot it was running on was given back"), left);
     }
 
+    /**
+     * The session of a given-back bot goes with it, so a join right after the leave does not find
+     * it still linked and put a dying pod back in the world; it asks the cluster again instead.
+     */
+    @Test
+    void aGivenBackBotIsForgottenSoTheNextJoinAsksForANewOne() throws IOException {
+        cluster.declared.add("Qa_Bot1");
+        linked("Qa_Bot1");
+
+        orchestration.call(catalog.get("leave-server"), Map.of("bot", "Qa_Bot1"));
+
+        assertEquals(List.of("Qa_Bot1"), cluster.released);
+        assertEquals(0, bots.size());
+        assertThrows(IllegalArgumentException.class, () -> bots.resolve("Qa_Bot1"));
+    }
+
     @Test
     void aBotThatNeverLinkedIsGivenBackByName() {
         cluster.declared.add("qa-stuck-1");
