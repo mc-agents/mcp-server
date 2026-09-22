@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "5.2.0",
+  "catalogVersion": "5.3.0",
   "protocol": 1,
   "tools": [
     {
@@ -3455,6 +3455,117 @@
       }
     },
     {
+      "name": "import-region",
+      "group": "region",
+      "description": "Keep a region you spell out yourself, in the encoding read-region answers with: a palette of block ids and runs of {block, count} that walk the box y ascending, then z ascending, then x ascending, and have to spell out size.x times size.y times size.z blocks exactly. This is how a shape you designed, rather than one WorldEdit has a command for, gets into the world: import it, then write-region puts it down. The box is placed with its lower corner at and may hold at most 32768 blocks; a larger design comes in as a schematic through POST /regions instead. The answer draws it when it is small enough and quotes the id. Needs no bot.",
+      "route": "local",
+      "kinds": [
+        "fabric",
+        "azalea"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "readOnly": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "at": {
+            "description": "Where the region's lower corner is; write-region puts it there unless told otherwise",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "size": {
+            "description": "How many blocks the box spans on each axis, each at least 1",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "palette": {
+            "description": "Block ids the runs index into, as stone, oak_stairs[facing=north] or create:cogwheel",
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4096,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          },
+          "runs": {
+            "description": "Run-length encoded blocks, y then z then x ascending; block indexes into palette",
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32768,
+            "items": {
+              "type": "object",
+              "properties": {
+                "block": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "block",
+                "count"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "name": {
+            "description": "What to call it, for list-regions; optional",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "at",
+          "size",
+          "palette",
+          "runs"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "interact-entity",
       "group": "world",
       "description": "Right-click an entity, walking to it first when out of reach. This is what opens an NPC dialogue. Say which entity with exactly one of name, label, id or crosshair; none, or more than one, is refused. A label is text floating in the world: a text_display, or an invisible armor stand showing its name. The entity under a label is the one a player could click whose feet are no higher than the label and at most 3 blocks below it, and at most 1 block from it horizontally; of several, the one nearest the label.",
@@ -3971,6 +4082,28 @@
           "stoppedAt",
           "tableInReach"
         ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list-regions",
+      "group": "region",
+      "description": "List the regions this server is keeping: id, name, box, how many kinds of block, where each came from and how old it is, oldest first. The store holds 16777216 blocks at once and lets the oldest go when a new read needs the room, and everything in it is lost when the server restarts. Needs no bot.",
+      "route": "local",
+      "kinds": [
+        "fabric",
+        "azalea"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "readOnly": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {},
+        "required": [],
         "additionalProperties": false
       }
     },
@@ -6265,7 +6398,7 @@
     {
       "name": "read-region",
       "group": "region",
-      "description": "Read every block in a box at once: a palette, run-length-encoded runs, and a map of each layer a character to a block while the box is small enough to read as one. One call where a get-block-info per block would be thousands. The runs are ordered y ascending, then z ascending, then x ascending, and that order is binding -- it is not the order Minecraft's own iterators walk, and it is chosen so a horizontal layer stays contiguous: a 64x64 floor is one run rather than sixty-four. A palette entry is written the way every other tool here writes a block: with the minecraft namespace left off, as stone or oak_stairs, and any other namespace kept, as create:cogwheel. The blocks are the ones the client was sent, which a plugin can make different from the ones the server holds: a custom block (CraftEngine, ItemsAdder, Nexo) is usually sent as a vanilla block such as stone or a note block. A box spans at most 64 blocks on an axis and holds at most 32768. A part the client has no chunk for is counted in missing rather than failing the call, and a fabric bot holds only the chunks the server sent it, so it reports more missing than an azalea bot for the same box; the invariants hold on both kinds but that number does not, so do not compare the two.",
+      "description": "Read every block in a box: a palette, run-length-encoded runs, and a map of each layer a character to a block while the box is small enough to read as one. One call where a get-block-info per block would be thousands. Every box read is also kept on this server under an id the answer quotes, so show-region can draw any window of it later, write-region can put it down again, and GET /regions/<id>.schem downloads it as a Sponge schematic; the id is lost when the server restarts or when newer reads push it out. A box of at most 64 blocks a side and 32768 blocks is read in one call from where the bot stands, and a part the client has no chunk for is counted in missing rather than failing the call. A box up to 512 blocks a side and 4194304 blocks is walked instead: cut into tiles, the bot teleported with /tp to each tile it does not already hold, and the tiles read and assembled -- which needs the permission to run /tp (op), takes a second or two a tile, and moves the bot, which is put back where it stood afterwards; a walked box is answered with its palette and counts and the id, not a map, since show-region draws windows of it. The runs are ordered y ascending, then z ascending, then x ascending, and that order is binding -- it is not the order Minecraft's own iterators walk, and it is chosen so a horizontal layer stays contiguous: a 64x64 floor is one run rather than sixty-four. A palette entry is written the way every other tool here writes a block: with the minecraft namespace left off, as stone or oak_stairs, and any other namespace kept, as create:cogwheel. The blocks are the ones the client was sent, which a plugin can make different from the ones the server holds: a custom block (CraftEngine, ItemsAdder, Nexo) is usually sent as a vanilla block such as stone or a note block. A fabric bot holds only the chunks the server sent it, so it reports more missing than an azalea bot for the same one-call box; the invariants hold on both kinds but that number does not, so do not compare the two.",
       "route": "rpc",
       "kinds": [
         "fabric",
@@ -6330,6 +6463,12 @@
           "includeAir": {
             "description": "Whether air counts (default: true). False leaves air out of the palette and out of the runs, for reading what a structure is made of rather than where it sits; the per-layer map is then not drawn, because the runs no longer line up with the box",
             "type": "boolean"
+          },
+          "name": {
+            "description": "What to call the kept region, for list-regions; optional",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
           }
         },
         "required": [
@@ -9232,6 +9371,79 @@
       "wireSchemaHash": "sha256:f2f7d5bf9fae762bd098393230fd01c27e1a6f1ef5b03851883addb71161ed20"
     },
     {
+      "name": "show-region",
+      "group": "region",
+      "description": "Draw a window of a kept region: its palette with counts and a map of each layer a character to a block, the same picture read-region draws for a small box. A window holds at most 4096 blocks, which is one 64x64 layer or a few smaller ones, so a large region is looked at a layer or a room at a time. The corners are world coordinates inside the region; omitted, the whole region is the window, which works while it is small enough. Needs no bot.",
+      "route": "local",
+      "kinds": [
+        "fabric",
+        "azalea"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "readOnly": true,
+      "structured": false,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "region": {
+            "description": "The id of a kept region",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "from": {
+            "description": "One corner of the window, inclusive",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "to": {
+            "description": "The other corner, inclusive",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "region"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "smelt-item",
       "group": "smelting",
       "description": "Load a furnace, blast furnace or smoker with fuel and input, then optionally wait for the output.",
@@ -10403,7 +10615,73 @@
         "additionalProperties": false
       },
       "wireSchemaHash": "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec"
+    },
+    {
+      "name": "write-region",
+      "group": "region",
+      "description": "Put a kept region down in the world, block for block, with the game's own /fill: the region is cut into the fewest boxes of one block each and one /fill is sent a box, so a floor is one command and a checkerboard is one a block. Needs no plugin, but needs the permission to run /fill and /tp (op), and the bot is teleported tile by tile so the server has the chunks loaded, then put back. By default the region goes back exactly where it was read; give at to put its lower corner somewhere else. Air in the region leaves what is there unless pasteAir is true, in which case it clears. Block entities (a chest's contents, a sign's text) are not carried, since the region does not hold them. Afterwards every tile is read back and compared with the region unless verify is false, and the answer counts the blocks that differ and names the first few. A region comes from read-region, from import-region, or from POST /regions with a schematic file. Thousands of commands take minutes; the call reports progress.",
+      "route": "orchestrate",
+      "kinds": [
+        "fabric",
+        "azalea"
+      ],
+      "exclusive": true,
+      "untrusted": true,
+      "readOnly": false,
+      "destructive": true,
+      "structured": false,
+      "needsWorld": true,
+      "defaultDeadlineMs": 600000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "region": {
+            "description": "The id of a kept region, as read-region, import-region, list-regions or POST /regions gave it",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "at": {
+            "description": "Where the region's lower corner goes; omitted, the region goes back where it came from",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "pasteAir": {
+            "description": "Whether air in the region is put down too, clearing what is there (default: false, so air leaves what is there)",
+            "type": "boolean"
+          },
+          "verify": {
+            "description": "Whether to read every tile back afterwards and compare it with the region (default: true)",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "region"
+        ],
+        "additionalProperties": false
+      }
     }
   ],
-  "catalogHash": "sha256:69ac8781ae698bd6c03933b061ecd647ca3881fdf9318cb1082b7ffc7beee93b"
+  "catalogHash": "sha256:3ebb0279ba8b03721ec2a1abf5aa9754f6b35731d081661a85239a256badc7f5"
 }

@@ -200,9 +200,11 @@ class RemoteToolsTest {
     private ToolDispatcher dispatcher() {
         BotRegistry bots = new BotRegistry(2);
         bots.add(bot);
-        return new ToolDispatcher(bots, new LocalTools(bots), remote,
+        return new ToolDispatcher(bots, new LocalTools(bots, new StoredRegions(new RegionStore())), remote,
                 new Orchestration(bots, new BotProvisioner(null, null, null, 0, null, null),
-                        new RegionTools(bots, remote, catalog)),
+                        new RegionTools(bots, remote, new Commands(remote, catalog)),
+                        new RegionSurvey(remote, new Commands(remote, catalog), new RegionStore(), catalog)),
+                new RegionSurvey(remote, new Commands(remote, catalog), new RegionStore(), catalog),
                 new SimpleMeterRegistry());
     }
 
@@ -251,7 +253,7 @@ class RemoteToolsTest {
                 "to", Map.of("x", 0, "y", 64, "z", 1_000)));
 
         assertTrue(refused.isError(), text(refused));
-        assertTrue(text(refused).contains("no axis may be more than 64"), text(refused));
+        assertTrue(text(refused).contains("no axis may be more than 512"), text(refused));
         assertEquals(0, callsReceived.get(), "an oversized box should never have been sent");
     }
 

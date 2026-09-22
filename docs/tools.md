@@ -2,14 +2,14 @@
 
 <!-- Rendered from catalog/catalog.json by ./gradlew renderToolReference. Edit the catalogue, not this page. -->
 
-Catalogue 5.2.0, 94 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
+Catalogue 5.3.0, 98 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
 
 Every tool but [`list-bots`](#list-bots), [`ping-server`](#ping-server), [`wait-for-server`](#wait-for-server) takes `bot`, the name given to join-server, which may be left out while exactly one bot is connected; it is not repeated below. A tool marked **fabric only** is one the headless kind of bot does not run. **Exclusive** means one call at a time on a bot, since two walks or two clicks at once would fight over the same body. **Untrusted** means the answer carries content the server did not write -- chat, item names, signs -- and is marked as data rather than instructions. **Read-only** means the call changes nothing in the game or on the server, which is what an MCP client's `readOnlyHint` approves without asking; **destructive** is the `destructiveHint`, for a call that removes something or runs with the bot's permissions. A tool that **needs a world** is refused while the bot is on a title or disconnected screen. The deadline is how long the server waits for the bot before giving the call up; a tool with a `timeoutMs` argument sets its own inside that.
 
 | Group | Tools |
 | --- | --- |
 | [world](#world) | [`activate-block`](#activate-block), [`attack-entity`](#attack-entity), [`fish`](#fish), [`interact-entity`](#interact-entity), [`use-held-item`](#use-held-item) |
-| [region](#region) | [`build-region`](#build-region), [`read-region`](#read-region), [`verify-region`](#verify-region) |
+| [region](#region) | [`build-region`](#build-region), [`import-region`](#import-region), [`list-regions`](#list-regions), [`read-region`](#read-region), [`show-region`](#show-region), [`verify-region`](#verify-region), [`write-region`](#write-region) |
 | [crafting](#crafting) | [`can-craft`](#can-craft), [`craft-item`](#craft-item), [`get-recipe`](#get-recipe), [`list-recipes`](#list-recipes) |
 | [screen](#screen) | [`click-chat`](#click-chat), [`press-dialog-button`](#press-dialog-button), [`read-book`](#read-book), [`screenshot`](#screenshot), [`set-dialog-input`](#set-dialog-input), [`type-text`](#type-text) |
 | [slot](#slot) | [`click-slot`](#click-slot), [`drag-slots`](#drag-slots), [`drop-held-item`](#drop-held-item), [`hover-slot`](#hover-slot), [`select-bundle-item`](#select-bundle-item) |
@@ -112,11 +112,41 @@ Set a WorldEdit selection over a box and run one operation on it, as a single ca
 | `pattern` | string | no | WorldEdit pattern, for example stone or 50%stone,50%cobblestone. Required by set, replace, walls, faces and overlay; optional for hollow, which fills with air without one; refused by smooth and naturalize, which take no pattern | at most 128 characters |
 | `mask` | string | no | Which blocks replace changes, as a WorldEdit mask. Only replace takes one; without it replace changes everything that is not air | at most 128 characters |
 
+### import-region
+
+*fabric and azalea · deadline 5s · read-only · the server answers from what it holds*
+
+Keep a region you spell out yourself, in the encoding read-region answers with: a palette of block ids and runs of {block, count} that walk the box y ascending, then z ascending, then x ascending, and have to spell out size.x times size.y times size.z blocks exactly. This is how a shape you designed, rather than one WorldEdit has a command for, gets into the world: import it, then write-region puts it down. The box is placed with its lower corner at and may hold at most 32768 blocks; a larger design comes in as a schematic through POST /regions instead. The answer draws it when it is small enough and quotes the id. Needs no bot.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `at` | object | yes | Where the region's lower corner is; write-region puts it there unless told otherwise |  |
+| `at.x` | integer | yes |  |  |
+| `at.y` | integer | yes |  |  |
+| `at.z` | integer | yes |  |  |
+| `size` | object | yes | How many blocks the box spans on each axis, each at least 1 |  |
+| `size.x` | integer | yes |  |  |
+| `size.y` | integer | yes |  |  |
+| `size.z` | integer | yes |  |  |
+| `palette` | array of string | yes | Block ids the runs index into, as stone, oak_stairs[facing=north] or create:cogwheel | 1 to 4096 items |
+| `runs` | array of object | yes | Run-length encoded blocks, y then z then x ascending; block indexes into palette | 1 to 32768 items |
+| `runs[].block` | integer | yes |  | at least 0 |
+| `runs[].count` | integer | yes |  | at least 1 |
+| `name` | string | no | What to call it, for list-regions; optional | at most 64 characters |
+
+### list-regions
+
+*fabric and azalea · deadline 5s · read-only · the server answers from what it holds*
+
+List the regions this server is keeping: id, name, box, how many kinds of block, where each came from and how old it is, oldest first. The store holds 16777216 blocks at once and lets the oldest go when a new read needs the room, and everything in it is lost when the server restarts. Needs no bot.
+
+No arguments.
+
 ### read-region
 
 *fabric and azalea · deadline 10s · read-only · needs a world · the bot answers*
 
-Read every block in a box at once: a palette, run-length-encoded runs, and a map of each layer a character to a block while the box is small enough to read as one. One call where a get-block-info per block would be thousands. The runs are ordered y ascending, then z ascending, then x ascending, and that order is binding -- it is not the order Minecraft's own iterators walk, and it is chosen so a horizontal layer stays contiguous: a 64x64 floor is one run rather than sixty-four. A palette entry is written the way every other tool here writes a block: with the minecraft namespace left off, as stone or oak_stairs, and any other namespace kept, as create:cogwheel. The blocks are the ones the client was sent, which a plugin can make different from the ones the server holds: a custom block (CraftEngine, ItemsAdder, Nexo) is usually sent as a vanilla block such as stone or a note block. A box spans at most 64 blocks on an axis and holds at most 32768. A part the client has no chunk for is counted in missing rather than failing the call, and a fabric bot holds only the chunks the server sent it, so it reports more missing than an azalea bot for the same box; the invariants hold on both kinds but that number does not, so do not compare the two.
+Read every block in a box: a palette, run-length-encoded runs, and a map of each layer a character to a block while the box is small enough to read as one. One call where a get-block-info per block would be thousands. Every box read is also kept on this server under an id the answer quotes, so show-region can draw any window of it later, write-region can put it down again, and GET /regions/<id>.schem downloads it as a Sponge schematic; the id is lost when the server restarts or when newer reads push it out. A box of at most 64 blocks a side and 32768 blocks is read in one call from where the bot stands, and a part the client has no chunk for is counted in missing rather than failing the call. A box up to 512 blocks a side and 4194304 blocks is walked instead: cut into tiles, the bot teleported with /tp to each tile it does not already hold, and the tiles read and assembled -- which needs the permission to run /tp (op), takes a second or two a tile, and moves the bot, which is put back where it stood afterwards; a walked box is answered with its palette and counts and the id, not a map, since show-region draws windows of it. The runs are ordered y ascending, then z ascending, then x ascending, and that order is binding -- it is not the order Minecraft's own iterators walk, and it is chosen so a horizontal layer stays contiguous: a 64x64 floor is one run rather than sixty-four. A palette entry is written the way every other tool here writes a block: with the minecraft namespace left off, as stone or oak_stairs, and any other namespace kept, as create:cogwheel. The blocks are the ones the client was sent, which a plugin can make different from the ones the server holds: a custom block (CraftEngine, ItemsAdder, Nexo) is usually sent as a vanilla block such as stone or a note block. A fabric bot holds only the chunks the server sent it, so it reports more missing than an azalea bot for the same one-call box; the invariants hold on both kinds but that number does not, so do not compare the two.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
@@ -129,6 +159,7 @@ Read every block in a box at once: a palette, run-length-encoded runs, and a map
 | `to.y` | integer | yes |  |  |
 | `to.z` | integer | yes |  |  |
 | `includeAir` | boolean | no | Whether air counts (default: true). False leaves air out of the palette and out of the runs, for reading what a structure is made of rather than where it sits; the per-layer map is then not drawn, because the runs no longer line up with the box |  |
+| `name` | string | no | What to call the kept region, for list-regions; optional | at most 64 characters |
 
 The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 
@@ -152,6 +183,24 @@ The bot answers with a DTO the server renders into the text (see [bot-protocol.m
 - `missing` (integer) -- Blocks the client holds no chunk for, 0 when the whole box was loaded. Loadedness is decided before airness: an unloaded chunk reads as void_air on a client, so the other order would count these as air, and as nothing at all when includeAir is false
 - `outside` (integer) -- Blocks whose y is past the world's build height. Kept apart from missing rather than added to it: one is answered by flying closer, the other by moving the box
 
+### show-region
+
+*fabric and azalea · deadline 5s · read-only · the server answers from what it holds*
+
+Draw a window of a kept region: its palette with counts and a map of each layer a character to a block, the same picture read-region draws for a small box. A window holds at most 4096 blocks, which is one 64x64 layer or a few smaller ones, so a large region is looked at a layer or a room at a time. The corners are world coordinates inside the region; omitted, the whole region is the window, which works while it is small enough. Needs no bot.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `region` | string | yes | The id of a kept region | at most 64 characters |
+| `from` | object | no | One corner of the window, inclusive |  |
+| `from.x` | integer | yes |  |  |
+| `from.y` | integer | yes |  |  |
+| `from.z` | integer | yes |  |  |
+| `to` | object | no | The other corner, inclusive |  |
+| `to.x` | integer | yes |  |  |
+| `to.y` | integer | yes |  |  |
+| `to.z` | integer | yes |  |  |
+
 ### verify-region
 
 *fabric and azalea · deadline 30s · untrusted · read-only · the server drives the bot's session*
@@ -168,6 +217,22 @@ Ask WorldEdit what is in a box: //size and //distr over the same selection build
 | `to.x` | integer | yes |  |  |
 | `to.y` | integer | yes |  |  |
 | `to.z` | integer | yes |  |  |
+
+### write-region
+
+*fabric and azalea · deadline 600s · exclusive · untrusted · destructive · the server drives the bot's session*
+
+Put a kept region down in the world, block for block, with the game's own /fill: the region is cut into the fewest boxes of one block each and one /fill is sent a box, so a floor is one command and a checkerboard is one a block. Needs no plugin, but needs the permission to run /fill and /tp (op), and the bot is teleported tile by tile so the server has the chunks loaded, then put back. By default the region goes back exactly where it was read; give at to put its lower corner somewhere else. Air in the region leaves what is there unless pasteAir is true, in which case it clears. Block entities (a chest's contents, a sign's text) are not carried, since the region does not hold them. Afterwards every tile is read back and compared with the region unless verify is false, and the answer counts the blocks that differ and names the first few. A region comes from read-region, from import-region, or from POST /regions with a schematic file. Thousands of commands take minutes; the call reports progress.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `region` | string | yes | The id of a kept region, as read-region, import-region, list-regions or POST /regions gave it | at most 64 characters |
+| `at` | object | no | Where the region's lower corner goes; omitted, the region goes back where it came from |  |
+| `at.x` | integer | yes |  |  |
+| `at.y` | integer | yes |  |  |
+| `at.z` | integer | yes |  |  |
+| `pasteAir` | boolean | no | Whether air in the region is put down too, clearing what is there (default: false, so air leaves what is there) |  |
+| `verify` | boolean | no | Whether to read every tile back afterwards and compare it with the region (default: true) |  |
 
 ## crafting
 

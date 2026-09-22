@@ -33,6 +33,9 @@ final class BotWorld implements AutoCloseable {
 
     private static final String FIXTURE = "mcagents";
     private static final String SERVER_ALIAS = "paper";
+
+    /** The FastAsyncWorldEdit build that supports the Minecraft version the fixture runs. */
+    private static final String FAWE_VERSION = "2.15.4";
     private static final int MC_PORT = 25565;
 
     /** Boot, world generation and a datapack. Slow the first time an image is pulled. */
@@ -72,6 +75,12 @@ final class BotWorld implements AutoCloseable {
             .withEnv("VIEW_DISTANCE", "6")
             .withEnv("MEMORY", "2G")
             .withEnv("RCON_CMDS_STARTUP", "op " + BOT + "\ndifficulty peaceful\nweather clear 1000000")
+            /*
+            FastAsyncWorldEdit, pinned, for the tools that drive it. The image fetches it from Modrinth
+            at start; a version that says it supports this Minecraft version is the one to pin, since
+            the image's own resolution picks the newest and a newer one may have moved on.
+            */
+            .withEnv("MODRINTH_PROJECTS", "fastasyncworldedit:" + FAWE_VERSION)
             /*
             The image copies it into the world's datapack directory before the server starts, which
             is the only way it lands there owned by the user the server runs as. Mounting it

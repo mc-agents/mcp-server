@@ -4,13 +4,11 @@ import io.modelcontextprotocol.spec.McpSchema;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import kr.junhyung.mcagents.bot.BotRegistry;
 import kr.junhyung.mcagents.bot.BotSession;
 import kr.junhyung.mcagents.bot.FeedEntry;
-import kr.junhyung.mcagents.catalog.Catalog;
 import kr.junhyung.mcagents.catalog.ToolSpec;
 import org.springframework.stereotype.Component;
 
@@ -41,27 +39,20 @@ public class RegionTools {
      */
     private static final int SELECTION_MS = 3_000;
 
-    /** Between two looks at the chat feed. A tick is 50ms and nothing arrives faster than that. */
-    private static final int POLL_MS = 200;
-
-    /** {@link FeedEntry#source()} for a line the server produced; a player's line carries their name. */
-    private static final String SYSTEM = "system";
-
-    /* Paper answers "Unknown command. Type "/help" for help."; vanilla "Unknown or incomplete command". */
-    private static final Pattern NO_SUCH_COMMAND =
-            Pattern.compile("unknown (or incomplete )?command", Pattern.CASE_INSENSITIVE);
-
-    /** What //distr writes a line of: a count, a share in brackets, and the block. */
+    /** What WorldEdit's //distr writes a line of: a count, a share in brackets, and the block. */
     private static final Pattern DISTRIBUTION = Pattern.compile("^\\s*(\\d+)\\s+\\(([0-9.]+)%\\)\\s+(\\S+)\\s*$");
+
+    /** The same line as FastAsyncWorldEdit writes it: the share first, then the count, then the block's display name. */
+    private static final Pattern FAWE_DISTRIBUTION = Pattern.compile("^\\s*([0-9.]+)%\\s+(\\d+)\\s+(.+?)\\s*$");
 
     private final BotRegistry bots;
     private final RemoteTools remote;
-    private final Catalog catalog;
+    private final Commands commands;
 
-    public RegionTools(BotRegistry bots, RemoteTools remote, Catalog catalog) {
+    public RegionTools(BotRegistry bots, RemoteTools remote, Commands commands) {
         this.bots = bots;
         this.remote = remote;
-        this.catalog = catalog;
+        this.commands = commands;
     }
 
     /** The arguments arrive bounded, because {@link Orchestration} holds the catalogue's limits for them. */
@@ -178,13 +169,13 @@ public class RegionTools {
         }
 
         long said = bot.feed("chat").nextSeq();
-        McpSchema.CallToolResult sent = send(bot, operation);
+        McpSchema.CallToolResult sent = commands.send(bot, operation);
 
         if (sent != null) {
             return sent;
         }
 
-        List<FeedEntry> replies = awaitChat(bot, said, deadline, progress, operation);
+        List<FeedEntry> replies = Commands.awaitChat(bot, said, deadline, progress, operation);
 
         if (replies.isEmpty()) {
             return ToolDispatcher.text(
@@ -206,14 +197,14 @@ public class RegionTools {
         long said = bot.feed("chat").nextSeq();
 
         for (String command : List.of("//size", "//distr")) {
-            McpSchema.CallToolResult sent = send(bot, command);
+            McpSchema.CallToolResult sent = commands.send(bot, command);
 
             if (sent != null) {
                 return sent;
             }
         }
 
-        List<FeedEntry> replies = awaitChat(bot, said, deadline, progress, "//size and //distr");
+        List<FeedEntry> replies = Commands.awaitChat(bot, said, deadline, progress, "//size and //distr");
 
         if (replies.isEmpty()) {
             return ToolDispatcher.failure(
@@ -235,14 +226,14 @@ public class RegionTools {
         long from = bot.feed("chat").nextSeq();
 
         for (String command : List.of("//pos1 " + box.lowerCorner(), "//pos2 " + box.upperCorner())) {
-            McpSchema.CallToolResult sent = send(bot, command);
+            McpSchema.CallToolResult sent = commands.send(bot, command);
 
             if (sent != null) {
                 return sent;
             }
         }
 
-        List<FeedEntry> acknowledged = awaitChat(bot, from,
+        List<FeedEntry> acknowledged = Commands.awaitChat(bot, from,
                 System.currentTimeMillis() + SELECTION_MS, Progress.NONE, "the selection");
 
         if (acknowledged.isEmpty()) {
@@ -251,8 +242,7 @@ public class RegionTools {
                             .formatted(SELECTION_MS)));
         }
 
-        FeedEntry unknown = acknowledged.stream().filter(line -> NO_SUCH_COMMAND.matcher(line.rendered()).find())
-                .findFirst().orElse(null);
+        FeedEntry unknown = Commands.unknownCommand(acknowledged);
 
         if (unknown != null) {
             return ToolDispatcher.failure(Trust.mark(absent(spec,
@@ -268,66 +258,6 @@ public class RegionTools {
     }
 
     /**
-     * One command, through the tool the bot already has.
-     *
-     * <p>{@code call} and not {@code compose}: compose collects the chat itself over a window of
-     * its own, which would both cut this collection short and hand back a sentence to take apart
-     * again. The chat is read here instead, from one mark taken before the first command.
-     *
-     * @return the bot's own refusal, which is the actionable one and is not rewrapped, or null
-     */
-    private McpSchema.CallToolResult send(BotSession bot, String command) {
-        ToolSpec runCommand = catalog.require("run-command");
-
-        ToolDispatcher.offerCheck(runCommand, bot);
-
-        McpSchema.CallToolResult sent = remote.call(runCommand, bot, Map.of("command", command));
-
-        return Boolean.TRUE.equals(sent.isError()) ? sent : null;
-    }
-
-    /**
-     * What the server said after a mark, once it has stopped saying it.
-     *
-     * <p>Returning the first line would cut every multi-line answer in half: //size is six lines
-     * and //distr one per kind of block. So the feed is watched until a poll adds nothing, which
-     * is also what lets a //set that takes ten seconds be waited out without a fixed guess at how
-     * long an edit takes.
-     */
-    private static List<FeedEntry> awaitChat(BotSession bot, long since, long deadline, Progress progress,
-            String waitingFor) {
-        long started = System.currentTimeMillis();
-        int seen = 0;
-
-        while (System.currentTimeMillis() < deadline) {
-            List<FeedEntry> lines = systemLines(bot, since);
-
-            if (!lines.isEmpty() && lines.size() == seen) {
-                return lines;
-            }
-            seen = lines.size();
-            progress.report("waiting for WorldEdit to answer %s (%d line(s) so far)".formatted(waitingFor, seen),
-                    System.currentTimeMillis() - started, deadline - started);
-            sleep(POLL_MS);
-        }
-        return systemLines(bot, since);
-    }
-
-    /**
-     * What the server itself said after a mark, which is the only thing either tool decides from.
-     *
-     * <p>WorldEdit answers as the server and those lines are marked {@code system}; a line a player
-     * typed carries that player's name instead. Reading the feed whole handed a player both
-     * decisions made here: a chat line arriving inside the selection window passes for the
-     * acknowledgement that says the plugin is installed, and one arriving during an edit is
-     * collected and shown as WorldEdit's own answer. Whoever is on the server also decides when a
-     * poll stops adding lines, so an edit could be waited out by someone talking through it.
-     */
-    private static List<FeedEntry> systemLines(BotSession bot, long since) {
-        return bot.feed("chat").since(since).stream().filter(line -> SYSTEM.equals(line.source())).toList();
-    }
-
-    /**
      * //distr as columns, with everything else above it as it arrived.
      *
      * <p>Only the shape //distr writes is taken apart, and a line that is not that shape is kept
@@ -340,9 +270,12 @@ public class RegionTools {
 
         for (FeedEntry line : replies) {
             Matcher row = DISTRIBUTION.matcher(line.rendered());
+            Matcher fawe = FAWE_DISTRIBUTION.matcher(line.rendered());
 
             if (row.matches()) {
                 rows.add(new String[] {row.group(3), row.group(1), row.group(2) + "%"});
+            } else if (fawe.matches()) {
+                rows.add(new String[] {fawe.group(3), fawe.group(2), fawe.group(1) + "%"});
             } else {
                 other.add("  " + line.rendered());
             }
@@ -366,13 +299,5 @@ public class RegionTools {
 
     private static String lines(List<FeedEntry> replies) {
         return replies.stream().map(line -> "  " + line.rendered()).reduce((a, b) -> a + "\n" + b).orElse("");
-    }
-
-    private static void sleep(int millis) {
-        try {
-            TimeUnit.MILLISECONDS.sleep(millis);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 }

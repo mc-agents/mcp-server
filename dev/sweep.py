@@ -20,16 +20,20 @@ SAMPLES = {
     "match": "[Accept]", "slots": [0, 1], "steps": [{"press": "jump"}], "item": "1", "trade": "1",
     "primary": "speed", "value": True,
     "from": {"x": 0, "y": 64, "z": 0}, "to": {"x": 3, "y": 66, "z": 3}, "operation": "set",
+    "region": "r-0000", "at": {"x": 0, "y": 64, "z": 0}, "size": {"x": 2, "y": 1, "z": 1},
+    "palette": ["stone"], "runs": [{"block": 0, "count": 2}],
 }
 
 # The errors the world is allowed to answer with. The wait-for tools are asked for a pattern that
 # never arrives, the two that talk to a Minecraft server directly have none to talk to in CI, and
 # the two that drive WorldEdit find none behind the fake bot, which is the refusal they are meant
-# to give. Anything else that errors is a tool the server refused, and the sweep exists to notice that.
+# to give, and the two that take a region id are given one nobody kept. Anything else that errors is
+# a tool the server refused, and the sweep exists to notice that.
 EXPECTED_ERRORS = {
     "wait-for-action-bar", "wait-for-boss-bars", "wait-for-chat", "wait-for-dialog", "wait-for-displays",
     "wait-for-effect", "wait-for-item", "wait-for-player-list", "wait-for-scoreboard", "wait-for-title",
     "wait-for-toast", "ping-server", "wait-for-server", "build-region", "verify-region",
+    "show-region", "write-region",
 }
 
 

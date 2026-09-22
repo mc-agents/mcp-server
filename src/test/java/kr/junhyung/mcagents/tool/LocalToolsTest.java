@@ -41,9 +41,11 @@ class LocalToolsTest {
     private final Catalog catalog = Catalog.load();
     private final BotRegistry bots = new BotRegistry(8);
     private final RemoteTools remote = new RemoteTools(catalog);
-    private final ToolDispatcher dispatcher = new ToolDispatcher(bots, new LocalTools(bots), remote,
+    private final ToolDispatcher dispatcher = new ToolDispatcher(bots, new LocalTools(bots, new StoredRegions(new RegionStore())), remote,
             new Orchestration(bots, new BotProvisioner(null, null, null, 0, null, null),
-                    new RegionTools(bots, remote, catalog)),
+                    new RegionTools(bots, remote, new Commands(remote, catalog)),
+                    new RegionSurvey(remote, new Commands(remote, catalog), new RegionStore(), catalog)),
+            new RegionSurvey(remote, new Commands(remote, catalog), new RegionStore(), catalog),
             new SimpleMeterRegistry());
 
     @AfterEach

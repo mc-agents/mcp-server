@@ -23,21 +23,55 @@ record Region(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
     static final int MAX_SPAN = 64;
 
     static Region of(String tool, Map<String, Object> arguments) {
+        return corners(tool, arguments).bounded(tool, MAX_SPAN, MAX_BLOCKS);
+    }
+
+    /** The box as given, settled but not yet measured against any limit. */
+    static Region corners(String tool, Map<String, Object> arguments) {
         int[] from = corner(tool, arguments, "from");
         int[] to = corner(tool, arguments, "to");
-        Region box = new Region(
+
+        return new Region(
                 Math.min(from[0], to[0]), Math.min(from[1], to[1]), Math.min(from[2], to[2]),
                 Math.max(from[0], to[0]), Math.max(from[1], to[1]), Math.max(from[2], to[2]));
+    }
 
-        if (box.sizeX() > MAX_SPAN || box.sizeY() > MAX_SPAN || box.sizeZ() > MAX_SPAN) {
+    Region bounded(String tool, int span, long blocks) {
+        if (sizeX() > span || sizeY() > span || sizeZ() > span) {
             throw new IllegalArgumentException("\"%s\" spans %s, and no axis may be more than %d blocks"
-                    .formatted(tool, box.extent(), MAX_SPAN));
+                    .formatted(tool, extent(), span));
         }
-        if (box.blocks() > MAX_BLOCKS) {
+        if (blocks() > blocks) {
             throw new IllegalArgumentException("\"%s\" holds %d blocks, and the most it takes is %d"
-                    .formatted(tool, box.blocks(), MAX_BLOCKS));
+                    .formatted(tool, blocks(), blocks));
         }
-        return box;
+        return this;
+    }
+
+    /** Whether one call to the bot reads it, which is what {@link #of} refuses otherwise. */
+    boolean fitsOneCall() {
+        return sizeX() <= MAX_SPAN && sizeY() <= MAX_SPAN && sizeZ() <= MAX_SPAN && blocks() <= MAX_BLOCKS;
+    }
+
+    Map<String, Object> corners() {
+        Map<String, Object> corners = new LinkedHashMap<>();
+
+        corners.put("from", point(minX, minY, minZ));
+        corners.put("to", point(maxX, maxY, maxZ));
+
+        return corners;
+    }
+
+    /** The part of this box that is inside another, or null when they do not meet. */
+    Region clip(Region other) {
+        Region met = new Region(Math.max(minX, other.minX), Math.max(minY, other.minY), Math.max(minZ, other.minZ),
+                Math.min(maxX, other.maxX), Math.min(maxY, other.maxY), Math.min(maxZ, other.maxZ));
+
+        return met.minX > met.maxX || met.minY > met.maxY || met.minZ > met.maxZ ? null : met;
+    }
+
+    boolean contains(int x, int y, int z) {
+        return x >= minX && x <= maxX && y >= minY && y <= maxY && z >= minZ && z <= maxZ;
     }
 
     /**
@@ -54,8 +88,7 @@ record Region(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
         Region box = of(tool, arguments);
         Map<String, Object> settled = new LinkedHashMap<>(arguments);
 
-        settled.put("from", point(box.minX, box.minY, box.minZ));
-        settled.put("to", point(box.maxX, box.maxY, box.maxZ));
+        settled.putAll(box.corners());
 
         return settled;
     }

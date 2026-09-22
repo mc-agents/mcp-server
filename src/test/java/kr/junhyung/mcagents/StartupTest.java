@@ -326,5 +326,67 @@ class StartupTest {
             assertEquals(HttpStatus.OK, from.apply("http://localhost:5173"));
             assertEquals(HttpStatus.FORBIDDEN, from.apply("https://qa.example:8443"));
         }
+
+        /**
+         * A region goes out as a file and comes back as one, behind the same token as the tools:
+         * uploaded, it is listed under its new id; downloaded, it is the schematic that was uploaded.
+         * The token is the whole reason the files live on the MCP server rather than on a tool.
+         */
+        @Test
+        void aRegionFileIsUploadedAndDownloadedBehindTheToken() throws IOException {
+            kr.junhyung.mcagents.tool.Snapshot region = kr.junhyung.mcagents.tool.Schematic.read(
+                    aFloor(), "r-test", "floor", 1_000, java.time.Instant.EPOCH, "test");
+            byte[] file = kr.junhyung.mcagents.tool.Schematic.write(region, "26.1.2");
+            RestClient client = RestClient.create();
+
+            HttpStatusCode refused = client.post().uri("http://localhost:%d/regions".formatted(port)).body(file)
+                    .exchange((sent, received) -> received.getStatusCode(), false);
+            assertEquals(HttpStatus.UNAUTHORIZED, refused);
+
+            Map<?, ?> kept = client.post().uri("http://localhost:%d/regions?name=hall".formatted(port))
+                    .header("Authorization", "Bearer letmein").body(file)
+                    .retrieve().body(Map.class);
+            String id = String.valueOf(kept.get("id"));
+
+            assertTrue(id.startsWith("r-"), id);
+            assertEquals(4, ((Number) kept.get("blocks")).intValue());
+
+            byte[] back = client.get().uri("http://localhost:%d/regions/%s.schem".formatted(port, id))
+                    .header("Authorization", "Bearer letmein").retrieve().body(byte[].class);
+            kr.junhyung.mcagents.tool.Snapshot read = kr.junhyung.mcagents.tool.Schematic.read(
+                    back, "r-back", null, 1_000, java.time.Instant.EPOCH, "test");
+
+            assertEquals("hall", read.name());
+            assertEquals(region.palette(), read.palette());
+            assertEquals("stone", read.blockAt(1, 0, 1));
+
+            HttpStatusCode unknown = client.get().uri("http://localhost:%d/regions/r-none.schem".formatted(port))
+                    .header("Authorization", "Bearer letmein")
+                    .exchange((sent, received) -> received.getStatusCode(), false);
+            assertEquals(HttpStatus.NOT_FOUND, unknown);
+
+            HttpStatusCode notASchematic = client.post().uri("http://localhost:%d/regions".formatted(port))
+                    .header("Authorization", "Bearer letmein").body(new byte[] {1, 2, 3})
+                    .exchange((sent, received) -> received.getStatusCode(), false);
+            assertEquals(HttpStatus.BAD_REQUEST, notASchematic);
+        }
+
+        /** A 2x1x2 floor of stone with one corner of air, as a version 3 schematic. */
+        private static byte[] aFloor() throws IOException {
+            Map<String, Object> palette = new java.util.LinkedHashMap<>();
+            palette.put("minecraft:stone", 0);
+            palette.put("minecraft:air", 1);
+            Map<String, Object> blocks = new java.util.LinkedHashMap<>();
+            blocks.put("Palette", palette);
+            blocks.put("Data", new byte[] {0, 1, 0, 0});
+            Map<String, Object> schematic = new java.util.LinkedHashMap<>();
+            schematic.put("Version", 3);
+            schematic.put("DataVersion", 4790);
+            schematic.put("Width", (short) 2);
+            schematic.put("Height", (short) 1);
+            schematic.put("Length", (short) 2);
+            schematic.put("Blocks", blocks);
+            return kr.junhyung.mcagents.schem.Nbt.write(new kr.junhyung.mcagents.schem.Nbt.Root("", Map.of("Schematic", schematic)));
+        }
     }
 }

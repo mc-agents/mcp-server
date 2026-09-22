@@ -28,7 +28,7 @@ public final class RegionRenderer implements Renderer<RegionRenderer.View> {
      * agent takes in at once. The whole 32768 a call may ask for is eight times that, and at that
      * size the counts are the answer and the picture is what buries them.
      */
-    static final int DRAWABLE_BLOCKS = 4_096;
+    public static final int DRAWABLE_BLOCKS = 4_096;
 
     /** One character a palette entry, in palette order. */
     private static final String LEGEND = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -136,7 +136,7 @@ public final class RegionRenderer implements Renderer<RegionRenderer.View> {
         return (int) palette.stream().filter(block -> !isAir(block)).count();
     }
 
-    private static boolean isAir(String block) {
+    public static boolean isAir(String block) {
         return AIR.contains(block.startsWith(VANILLA) ? block.substring(VANILLA.length()) : block);
     }
 

@@ -49,6 +49,9 @@ spec:
             - { name: SPAWN_MONSTERS, value: "FALSE" }
             - { name: VIEW_DISTANCE, value: "6" }
             - { name: MEMORY, value: 2G }
+            # FastAsyncWorldEdit, pinned to a build that says it supports this Minecraft version, for
+            # the tools that drive it. The image fetches it from Modrinth when the pod starts.
+            - { name: MODRINTH_PROJECTS, value: "fastasyncworldedit:2.15.4" }
             - name: RCON_CMDS_STARTUP
               value: |-
                 difficulty peaceful

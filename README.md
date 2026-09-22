@@ -61,8 +61,8 @@ unset:
 
 | variable | meaning | default |
 | --- | --- | --- |
-| `MCP_AUTH_TOKEN` | The bearer token `/mcp` requires. Blank leaves it open | |
-| `MCP_PORT` | The HTTP port: `/mcp` and `/actuator` | `3000` |
+| `MCP_AUTH_TOKEN` | The bearer token `/mcp` and `/regions` require. Blank leaves them open | |
+| `MCP_PORT` | The HTTP port: `/mcp`, `/regions` and `/actuator` | `3000` |
 | `MCP_BIND_HOST` | The address that port binds | `127.0.0.1` without a token, `0.0.0.0` with one |
 | `MCP_ALLOWED_ORIGINS` | Browser origins `/mcp` accepts beside localhost, comma separated | none |
 | `BOT_LINK_PORT` | Where bots dial in | `8765` |
@@ -89,6 +89,13 @@ native runner per architecture and joins the two into a manifest list.
 
 Agents connect to `/mcp`; bots dial in on `:8765`. Every tool in the catalogue is in `tools/list` before any
 bot has linked, because an MCP client reads that list once when its session opens.
+
+`/regions` is the one thing beside `/mcp` behind the token. A box `read-region` reads is kept in
+memory under an id, and `GET /regions/<id>.schem` downloads it as a Sponge schematic while
+`POST /regions` (the file as the body, `?name=` optional) keeps one and answers with its id, which
+`write-region` then puts down. The store holds sixteen million blocks and lets the oldest go; a
+restart empties it. A file is the shape a region takes between servers, or between a person's
+WorldEdit and an agent, and a tool call is the wrong size for it either way.
 
 [`dev/`](dev/README.md) has a fake bot that speaks the whole protocol, a sweep that calls every
 tool, and a one-liner for calling one by hand. None of them needs a Minecraft client.

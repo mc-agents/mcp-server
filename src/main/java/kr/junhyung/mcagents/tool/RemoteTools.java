@@ -54,8 +54,31 @@ public class RemoteTools {
 
     private McpSchema.CallToolResult call(ToolSpec spec, BotSession bot, Map<String, Object> arguments,
             boolean mark) {
+        Exchange exchange;
+
+        try {
+            exchange = fetch(spec, bot, arguments);
+        } catch (IllegalStateException refused) {
+            return ToolDispatcher.failure(refused.getMessage());
+        }
+        return present(spec, bot, exchange.result(), arguments, exchange.deadline(), mark);
+    }
+
+    /** A bot's answer as it sent it, and how long it was given. */
+    record Exchange(Messages.Result result, int deadline) {}
+
+    /**
+     * The bot's answer as it sent it, for a tool the server reads the data of rather than the words.
+     *
+     * <p>A survey assembles a box from tile after tile of read-region, and what it wants from each
+     * is the palette and the runs, not the sentence {@link #present} would make of them. Everything
+     * that guards a call still happens here -- the world check, the box check, the bounds, the
+     * claim -- and what would have been a failure to answer with is thrown, since a caller of this
+     * is composing an answer of its own.
+     */
+    Exchange fetch(ToolSpec spec, BotSession bot, Map<String, Object> arguments) {
         if (spec.needsWorld() && !bot.isReady()) {
-            return ToolDispatcher.failure(
+            throw new IllegalStateException(
                     "bot \"%s\" is not in a world. Its state is %s. Use get-bot-status to see why."
                             .formatted(bot.name(), state(bot)));
         }
@@ -76,22 +99,21 @@ public class RemoteTools {
         int deadline = Normaliser.deadlineOf(spec, wire);
 
         if (spec.exclusive() && !claim(bot.name(), spec.name())) {
-            return busyWith(bot);
+            throw new IllegalStateException(busyWith(bot));
         }
 
         try {
             bot.touch();
-            Messages.Result result = bot.link().call(spec.name(), wire, deadline)
-                    .get(deadline + 5_000L, TimeUnit.MILLISECONDS);
-            return present(spec, bot, result, arguments, deadline, mark);
+            return new Exchange(bot.link().call(spec.name(), wire, deadline)
+                    .get(deadline + 5_000L, TimeUnit.MILLISECONDS), deadline);
         } catch (TimeoutException e) {
-            return ToolDispatcher.failure(
+            throw new IllegalStateException(
                     "%s did not finish within %dms and the bot did not say why.".formatted(spec.name(), deadline));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return ToolDispatcher.failure("the call was interrupted");
+            throw new IllegalStateException("the call was interrupted");
         } catch (ExecutionException e) {
-            return ToolDispatcher.failure("%s failed: %s".formatted(spec.name(), e.getCause()));
+            throw new IllegalStateException("%s failed: %s".formatted(spec.name(), e.getCause()));
         } finally {
             if (spec.exclusive()) {
                 release(bot.name(), spec.name());
@@ -417,7 +439,7 @@ public class RemoteTools {
     McpSchema.CallToolResult exclusively(ToolSpec spec, BotSession bot,
             Supplier<McpSchema.CallToolResult> body) {
         if (!claim(bot.name(), spec.name())) {
-            return busyWith(bot);
+            return ToolDispatcher.failure(busyWith(bot));
         }
         try {
             return body.get();
@@ -426,9 +448,9 @@ public class RemoteTools {
         }
     }
 
-    private McpSchema.CallToolResult busyWith(BotSession bot) {
-        return ToolDispatcher.failure("bot \"%s\" is already running %s. Wait for it or use another bot."
-                .formatted(bot.name(), running(bot.name())));
+    private String busyWith(BotSession bot) {
+        return "bot \"%s\" is already running %s. Wait for it or use another bot."
+                .formatted(bot.name(), running(bot.name()));
     }
 
     private boolean claim(String bot, String tool) {

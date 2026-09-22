@@ -50,9 +50,11 @@ public class LocalTools {
             Map.entry("wait-for-toast", "toast"));
 
     private final BotRegistry bots;
+    private final StoredRegions regions;
 
-    public LocalTools(BotRegistry bots) {
+    public LocalTools(BotRegistry bots, StoredRegions regions) {
         this.bots = bots;
+        this.regions = regions;
     }
 
     public McpSchema.CallToolResult call(ToolSpec spec, Map<String, Object> arguments) {
@@ -75,6 +77,7 @@ public class LocalTools {
             case "detect-gamemode" -> gameMode(arguments);
             case "ping-server" -> ping(arguments);
             case "wait-for-server" -> waitForServer(spec, arguments, progress);
+            case "list-regions", "show-region", "import-region" -> regions.call(spec, arguments);
             default -> ToolDispatcher.failure("%s is not wired up yet".formatted(spec.name()));
         };
     }

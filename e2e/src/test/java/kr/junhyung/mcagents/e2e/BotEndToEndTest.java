@@ -3182,28 +3182,107 @@ class BotEndToEndTest {
     }
 
     /**
-     * Both region tools are WorldEdit driven from the bot's own chat, and this server has no
-     * WorldEdit -- which is the case worth having, because an agent handed the server's raw "Unknown
-     * command" line has to already know that //pos1 is WorldEdit's before that line means anything.
-     * The selection is where both tools find out, so the edit is never sent at all, and the block in
-     * the middle of the box is what says so.
+     * The whole of building through WorldEdit, on a server that has it: an edit is one call, what it
+     * did is measured by the plugin and read back by the bot, and the two agree with each other and
+     * with the world. FastAsyncWorldEdit is in the fixture for this, because the refusal without a
+     * plugin is a sentence the unit tests already prove and the edit itself is not.
      */
     @Test
-    void neitherRegionToolPretendsToWorkWithoutWorldEdit() {
+    void anEditIsMadeThroughWorldEditMeasuredAndReadBack() {
         agent.requires("build-region", "verify-region");
+        agent.requiresOffered("read-region", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 0, "y", -60, "z", 0), "to", Map.of("x", 0, "y", -60, "z", 0)));
+        world.run("tp " + BotWorld.BOT + " 31 -59 2");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
         Map<String, Integer> from = Map.of("x", 30, "y", -60, "z", -4);
-        Map<String, Integer> to = Map.of("x", 32, "y", -60, "z", -2);
+        Map<String, Integer> to = Map.of("x", 32, "y", -59, "z", -2);
 
-        String verified = agent.refusal("verify-region", Map.of("bot", BotWorld.BOT, "from", from, "to", to));
-        String built = agent.refusal("build-region", Map.of("bot", BotWorld.BOT, "from", from, "to", to,
-            "operation", "set", "pattern", "stone"));
-        String untouched = world.run("execute if block 31 -60 -3 minecraft:air");
+        String built = agent.mustCall("build-region", Map.of("bot", BotWorld.BOT, "from", from, "to", to,
+            "operation", "set", "pattern", "gold_block"));
+        String verified = agent.mustCall("verify-region", Map.of("bot", BotWorld.BOT, "from", from, "to", to));
+        String read = agent.mustCall("read-region", Map.of("bot", BotWorld.BOT, "from", from, "to", to));
+        world.run("fill 30 -60 -4 32 -59 -2 minecraft:air");
 
-        assertTrue(verified.contains("verify-region needs WorldEdit or FastAsyncWorldEdit on the server"), verified);
-        assertTrue(built.contains("build-region needs WorldEdit or FastAsyncWorldEdit on the server"), built);
-        assertTrue(built.contains(
-            "read-region reads the same box out of the bot's own client and needs no plugin at all"), built);
-        assertTrue(untouched.startsWith("Test passed"), "the edit went out anyway: " + untouched);
+        assertTrue(built.startsWith("Ran //set gold_block over (30, -60, -4) to (32, -59, -2), 3 x 2 x 3, 18 blocks."), built);
+        assertTrue(built.contains("WorldEdit replied"), built);
+        /* FAWE names the block as a player sees it, WorldEdit as an id; the count and the share are the same. */
+        assertTrue(verified.contains("Block of Gold") || verified.contains("gold_block"), verified);
+        assertTrue(verified.contains("  18  ") && verified.contains("100"), verified);
+        assertTrue(read.startsWith("(30, -60, -4) to (32, -59, -2), 3 x 2 x 3, 18 blocks.\n  a  18 gold_block (100%)"), read);
+        assertTrue(read.contains("Kept as region r-"), read);
+    }
+
+    /**
+     * A shape the agent designed, and not one WorldEdit has a command for, reaches the world: spelled
+     * out as runs, kept, put down with /fill, and read back as the layers it was designed in. The
+     * arch has a hole in it, which is what tells a mesh that put down boxes from one that put down
+     * the bounding box.
+     */
+    @Test
+    void aDesignedShapeIsImportedPutDownAndReadBackAsItsLayers() {
+        agent.requires("import-region", "write-region");
+        agent.requiresOffered("read-region", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 0, "y", -60, "z", 0), "to", Map.of("x", 0, "y", -60, "z", 0)));
+        world.run("tp " + BotWorld.BOT + " 40 -59 2");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+
+        String imported = agent.mustCall("import-region", Map.of(
+            "at", Map.of("x", 40, "y", -60, "z", -3), "size", Map.of("x", 5, "y", 3, "z", 1), "name", "arch",
+            "palette", List.of("stone", "air"),
+            "runs", List.of(Map.of("block", 0, "count", 1), Map.of("block", 1, "count", 3), Map.of("block", 0, "count", 2),
+                Map.of("block", 1, "count", 3), Map.of("block", 0, "count", 6))));
+        String id = regionIdIn(imported);
+
+        String put = agent.mustCall("write-region", Map.of("bot", BotWorld.BOT, "region", id));
+        String read = agent.mustCall("read-region", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 40, "y", -60, "z", -3), "to", Map.of("x", 44, "y", -58, "z", -3)));
+        world.run("fill 40 -60 -3 44 -58 -3 minecraft:air");
+
+        assertTrue(put.startsWith("Put region " + id + " down over (40, -60, -3) to (44, -58, -3), 5 x 3 x 1, 15 blocks:"
+            + " 9 blocks in 3 /fill command(s) across 1 tile(s)"), put);
+        assertTrue(put.contains("Read back: all 9 blocks are as the region has them."), put);
+        assertTrue(read.contains("\n  y=-60\n    a...a\n  y=-59\n    a...a\n  y=-58\n    aaaaa"), read);
+    }
+
+    /**
+     * A box wider than one call is read by walking: the bot is teleported to each tile, the tiles
+     * are laid into one region, and the bot is put back. The floor is far enough away that the client
+     * holds none of it before the walk, which is what makes the teleports necessary rather than
+     * skipped, and the window drawn afterwards is the proof the tiles landed where they belong.
+     */
+    @Test
+    void aBoxPastOneCallIsWalkedKeptAndDrawnByTheWindow() {
+        agent.requires("show-region");
+        agent.requiresOffered("read-region", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 0, "y", -60, "z", 0), "to", Map.of("x", 0, "y", -60, "z", 0)));
+        world.run("tp " + BotWorld.BOT + " 26 -59 4");
+        world.run("fill 300 -60 300 369 -60 369 minecraft:stone");
+        world.run("setblock 365 -60 305 minecraft:gold_block");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+
+        String read = agent.mustCall("read-region", Map.of("bot", BotWorld.BOT, "name", "yard",
+            "from", Map.of("x", 300, "y", -60, "z", 300), "to", Map.of("x", 369, "y", -59, "z", 369)));
+        String id = regionIdIn(read);
+        String corner = agent.mustCall("show-region", Map.of("region", id,
+            "from", Map.of("x", 364, "y", -60, "z", 304), "to", Map.of("x", 366, "y", -59, "z", 306)));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+        String position = agent.mustCall("get-position", Map.of("bot", BotWorld.BOT));
+        world.run("fill 300 -60 300 369 -60 369 minecraft:air");
+
+        assertTrue(read.startsWith("(300, -60, 300) to (369, -59, 369), 70 x 2 x 70, 9800 blocks.\n"
+            + "  4900 air (50%)\n  4899 stone (50%)\n     1 gold_block (0%)"), read);
+        assertTrue(read.contains("No map: 9800 blocks is more than the 4096 one is drawn for."), read);
+        assertTrue(read.contains("Kept as region " + id + " (\"yard\"), read in 4 tile(s) in "), read);
+        assertTrue(!read.contains("unread"), read);
+        assertTrue(corner.contains("\n  y=-60\n    aaa\n    aba\n    aaa\n  y=-59\n    ...\n    ...\n    ..."), corner);
+        assertTrue(position.startsWith("Position: (26, "), "the bot was not put back: " + position);
+    }
+
+    private static String regionIdIn(String answer) {
+        java.util.regex.Matcher id = java.util.regex.Pattern.compile("Kept as region (r-[0-9a-f]{4})").matcher(answer);
+
+        assertTrue(id.find(), "no region id in: " + answer);
+        return id.group(1);
     }
 
     /**

@@ -64,18 +64,21 @@ public class Orchestration {
     private final BotRegistry bots;
     private final BotProvisioner provisioner;
     private final RegionTools regions;
+    private final RegionSurvey survey;
     private final Duration patience;
 
     @Autowired
-    public Orchestration(BotRegistry bots, BotProvisioner provisioner, RegionTools regions) {
-        this(bots, provisioner, regions, JOIN_PATIENCE);
+    public Orchestration(BotRegistry bots, BotProvisioner provisioner, RegionTools regions, RegionSurvey survey) {
+        this(bots, provisioner, regions, survey, JOIN_PATIENCE);
     }
 
-    Orchestration(BotRegistry bots, BotProvisioner provisioner, RegionTools regions, Duration patience) {
+    Orchestration(BotRegistry bots, BotProvisioner provisioner, RegionTools regions, RegionSurvey survey,
+            Duration patience) {
         this.patience = patience;
         this.bots = bots;
         this.provisioner = provisioner;
         this.regions = regions;
+        this.survey = survey;
     }
 
     public McpSchema.CallToolResult call(ToolSpec spec, Map<String, Object> arguments) {
@@ -93,11 +96,21 @@ public class Orchestration {
                 case "restart-bot" -> restart(spec, arguments);
                 /* Not the bot's lifecycle but its session: a sequence of commands sent as the bot. */
                 case "build-region", "verify-region" -> regions.call(spec, arguments, progress);
+                case "write-region" -> survey.write(spec, resolve(spec, arguments), arguments, progress);
                 default -> ToolDispatcher.failure("%s is not an orchestration tool".formatted(spec.name()));
             };
         } catch (JoinFailure | StillStarting e) {
             return ToolDispatcher.failure(e.getMessage());
         }
+    }
+
+    /** The bot a session tool drives, refused first when it cannot run what the tool sends. */
+    private BotSession resolve(ToolSpec spec, Map<String, Object> arguments) {
+        BotSession bot = bots.resolve(ToolDispatcher.stringArg(arguments, "bot"));
+
+        ToolDispatcher.kindCheck(spec, bot);
+
+        return bot;
     }
 
     private McpSchema.CallToolResult join(ToolSpec spec, Map<String, Object> arguments, Progress progress) {

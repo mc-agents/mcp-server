@@ -143,8 +143,8 @@ public class Wiring {
     }
 
     /**
-     * Nothing but the MCP endpoint is behind the token. A readiness probe cannot carry one, and
-     * there is nothing behind a probe worth reaching.
+     * The MCP endpoint and the region files are behind the token; nothing else is. A readiness
+     * probe cannot carry one, and there is nothing behind a probe worth reaching.
      */
     @Bean
     public FilterRegistrationBean<Filter> mcpAuth(
@@ -152,7 +152,7 @@ public class Wiring {
         FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>();
 
         if (token.isBlank()) {
-            log.warn("MCP_AUTH_TOKEN is not set, so /mcp is open to anything that can reach it");
+            log.warn("MCP_AUTH_TOKEN is not set, so /mcp and /regions are open to anything that can reach them");
             /*
             Disabled, but still carrying a filter: Spring asks every registration to describe
             itself while the context starts, and a description is built from the filter. Leaving
@@ -164,7 +164,7 @@ public class Wiring {
         }
 
         registration.setFilter(new BearerTokenFilter(token));
-        registration.addUrlPatterns("/mcp", "/mcp/*");
+        registration.addUrlPatterns("/mcp", "/mcp/*", "/regions", "/regions/*");
         return registration;
     }
 

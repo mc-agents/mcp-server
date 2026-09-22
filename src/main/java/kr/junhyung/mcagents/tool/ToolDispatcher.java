@@ -28,14 +28,16 @@ public class ToolDispatcher {
     private final LocalTools local;
     private final RemoteTools remote;
     private final Orchestration orchestration;
+    private final RegionSurvey survey;
     private final MeterRegistry meters;
 
     public ToolDispatcher(BotRegistry bots, LocalTools local, RemoteTools remote,
-            Orchestration orchestration, MeterRegistry meters) {
+            Orchestration orchestration, RegionSurvey survey, MeterRegistry meters) {
         this.bots = bots;
         this.local = local;
         this.remote = remote;
         this.orchestration = orchestration;
+        this.survey = survey;
         this.meters = meters;
     }
 
@@ -72,7 +74,15 @@ public class ToolDispatcher {
         try {
             return switch (spec.route()) {
                 case LOCAL -> local.call(spec, arguments, progress);
-                case RPC -> remote.call(spec, resolve(spec, arguments), arguments);
+                /*
+                read-region is the bot's tool on the wire and the server's at the endpoint: what a
+                bot answers is one box that fits one call, and what an agent asks for may be a town,
+                which the survey reads as many of those. The catalogue keeps the route the bots
+                compile against; where the call lands here is the one place that knows both.
+                */
+                case RPC -> "read-region".equals(spec.name())
+                        ? survey.read(spec, resolve(spec, arguments), arguments, progress)
+                        : remote.call(spec, resolve(spec, arguments), arguments);
                 case COMPOSE -> remote.compose(spec, resolve(spec, arguments), arguments, progress);
                 case ORCHESTRATE -> orchestration.call(spec, arguments, progress);
             };
