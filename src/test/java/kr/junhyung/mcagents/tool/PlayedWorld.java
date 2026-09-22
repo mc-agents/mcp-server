@@ -77,9 +77,10 @@ final class PlayedWorld implements AutoCloseable {
     volatile long selectionLagMs;
 
     /**
-     * Whether the played server passes the plugin's chat on. A live one does not: it runs every
-     * WorldEdit command and says nothing about any of them, which is the case the channel exists
-     * for and the one a driver reading chat cannot tell from having no WorldEdit at all.
+     * Whether the played bot hears the chat the server sends. A live server holds one in a
+     * cinematic whose packet handler drops every system chat that is not an overlay: the commands
+     * all run and none of them answers, which is the case the channel exists for and the one a
+     * driver reading chat cannot tell from having no WorldEdit at all.
      */
     volatile boolean silent;
 
@@ -377,7 +378,7 @@ final class PlayedWorld implements AutoCloseable {
 
     /** One chat line, from the server itself or from whoever the source names. */
     void says(String source, String line) {
-        /* A server that runs every command and passes none of the plugin's words on. */
+        /* A bot whose connection drops system chat: every command runs, none of them is heard. */
         if (silent) {
             return;
         }

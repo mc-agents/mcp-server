@@ -248,11 +248,11 @@ class RegionSurveyTest {
     }
 
     /**
-     * The case the channel is there for, and a live server is one: WorldEdit runs every command and
-     * the server passes none of its words on. Judged by chat alone that is a server without
-     * WorldEdit, and the region went down through /fill -- which cannot place a custom block at
-     * all, so the block was silently left out. The channel says WorldEdit is there, and the block
-     * that appears says the edit is over.
+     * The case the channel is there for, and a live server makes one: a bot held in a cinematic
+     * whose packet handler drops system chat runs every command and hears none of them. Judged by
+     * chat alone that is a server without WorldEdit, and the region went down through /fill --
+     * which cannot place a custom block at all, so the block was silently left out. The channel
+     * says WorldEdit is there, and the block that appears says the edit is over.
      */
     @Test
     void aServerThatRunsWorldEditWithoutSayingSoStillGoesThroughIt() {

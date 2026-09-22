@@ -88,8 +88,8 @@ public class RegionSurvey {
     /**
      * How long the server is given to say an edit is over before the block itself is read instead.
      *
-     * <p>Short, because it is what a server that will never say it costs a box. A server that does
-     * say it says it well inside this, so nothing is read back there at all.
+     * <p>Short, because it is what a bot that will never hear it costs a box. One that does hear it
+     * hears it well inside this, so nothing is read back there at all.
      */
     static final int EDIT_QUIET_MS = 300;
 
@@ -281,10 +281,11 @@ public class RegionSurvey {
         */
         /*
         Asked before //pos1 is: a server that describes a selection on the channel has WorldEdit,
-        and saying so is the only evidence there is on a server that answers no WorldEdit command
-        in chat. One such is live, and every region written to it went down through /fill -- which
-        cannot place a custom block at all -- because the acknowledgement it was judged by never
-        came.
+        and saying so is the only evidence there is while a bot receives no chat. A live server
+        holds one in a cinematic that drops every system chat packet it is not an overlay, so the
+        commands all ran and none of them answered -- and every region written during it went down
+        through /fill, which cannot place a custom block at all, because the acknowledgement it was
+        judged by never arrived.
         */
         cui = !"fill".equals(via) && bot.supports("read-selection") && describes(bot);
 
@@ -514,11 +515,10 @@ public class RegionSurvey {
      * Waiting out one edit, so that the next box's corners cannot reach the plugin while this one
      * still has to read them.
      *
-     * <p>The plugin's own word for it when the server passes that on. When it does not -- and a
-     * real one does not, with a live server answering no WorldEdit command in chat at all while
-     * running every one of them -- the block is the word: a corner of the box that has become what
-     * was asked for is the plugin having read the selection and written it, which is the whole of
-     * what the acknowledgement promised.
+     * <p>The plugin's own word for it while the bot can hear it. A bot that cannot -- one held in
+     * a cinematic that drops system chat, which a live server puts them in -- has the block
+     * instead: a corner of the box that has become what was asked for is the plugin having read
+     * the selection and written it, which is the whole of what the acknowledgement promised.
      *
      * @return the failure to answer with, or null when the edit is over
      */
