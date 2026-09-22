@@ -262,10 +262,16 @@ public class CustomBlocks {
         arguments.put("text", NAMES_PREFIX + typed);
         arguments.put("limit", COMPLETIONS);
 
-        Messages.Result result = remote.fetch(complete, bot, arguments).result();
+        Messages.Result result;
 
+        try {
+            result = remote.fetch(complete, bot, arguments).result();
+        } catch (IllegalStateException unanswered) {
+            /* A server without the command answers no suggestions at all, which is the same nothing. */
+            return List.of();
+        }
         if (!result.ok() || !(result.data() instanceof Map<?, ?> data)) {
-            throw new IllegalStateException("complete-command failed: " + (result.text() == null ? "no reason" : result.text()));
+            return List.of();
         }
 
         int total = data.get("total") instanceof Number number ? number.intValue() : 0;
