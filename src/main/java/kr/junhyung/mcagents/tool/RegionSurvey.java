@@ -291,7 +291,18 @@ public class RegionSurvey {
                             worldEdit ? "//set" : "/fill", tileSent + 1, boxes.size()),
                             System.currentTimeMillis() - started, PATIENCE_MS);
 
-                    for (String command : worldEdit ? worldEditCommands(piece, block) : List.of(fill(piece, block))) {
+                    /*
+                    A custom block by the id WorldEdit files it under, when that is known: the name
+                    with its state is a pattern too, but a name without one -- a block with a single
+                    state -- is not, and the internal id is what the plugin registered either way.
+                    */
+                    String pattern = block;
+                    CustomBlocks.Dictionary learned = customBlocks.of(bot);
+                    if (worldEdit && learned != null && learned.byId(block) != null && learned.byId(block).internal() != null) {
+                        pattern = learned.byId(block).internal();
+                    }
+
+                    for (String command : worldEdit ? worldEditCommands(piece, pattern) : List.of(fill(piece, block))) {
                         McpSchema.CallToolResult refusal = commands.send(bot, command);
 
                         if (refusal != null) {
@@ -415,6 +426,11 @@ public class RegionSurvey {
             this.mark = mark;
         }
 
+        /**
+         * The mark moves to just past the last line taken, not to the feed's next sequence: a line
+         * that lands between the read and the mark would otherwise never be seen, and the one that
+         * says an edit finished landed there often enough that every edit was waited out in full.
+         */
         void take(List<FeedEntry> said, BotSession bot) {
             for (FeedEntry line : said) {
                 if (EDIT_DONE.matcher(line.rendered()).find()) {
@@ -423,8 +439,8 @@ public class RegionSurvey {
                     complaints++;
                     complaint = complaint == null ? line.rendered() : complaint;
                 }
+                mark = Math.max(mark, line.seq() + 1);
             }
-            mark = bot.feed("chat").nextSeq();
         }
     }
 

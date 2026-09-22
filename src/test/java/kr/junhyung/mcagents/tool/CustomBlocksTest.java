@@ -115,6 +115,29 @@ class CustomBlocksTest {
         assertEquals("few:one", customBlocks.of(played.bot).byInternal("craftengine:custom_100").id());
     }
 
+    /**
+     * Put down through WorldEdit, a learned custom block goes by the id the plugin filed it under:
+     * a name with its state is a pattern too, but a single-state block's bare name is not one.
+     */
+    @Test
+    void aLearnedCustomBlockIsPutDownByTheIdWorldEditFilesItUnder() {
+        played.worldEdit = true;
+        played.customBlocks.put("city_road:road_line_1", "note_block[instrument=bell,note=2,powered=false]");
+        customBlocks.learn(catalog.require("learn-custom-blocks"), played.bot, Map.of("bot", "fab"), Progress.NONE);
+        Region box = new Region(0, 64, 0, 0, 64, 0);
+        RegionStore store = new RegionStore();
+        RemoteTools remote = new RemoteTools(catalog);
+        Commands commands = new Commands(remote, catalog);
+        RegionSurvey writing = new RegionSurvey(remote, commands, store, catalog, customBlocks);
+        store.keep(Snapshot.blank("r-cb01", null, box, java.time.Instant.EPOCH, "import-region")
+                .with(box, List.of("city_road:road_line_1"), List.of(new kr.junhyung.mcagents.render.RegionRenderer.View.Run(0, 1))));
+
+        String put = text(writing.write(catalog.require("write-region"), played.bot, Map.of("bot", "fab", "region", "r-cb01"), Progress.NONE));
+
+        assertTrue(played.ran.contains("//set craftengine:custom_100"), String.join("\n", played.ran));
+        assertTrue(put.contains("Read back: all 1 blocks are as the region has them."), put);
+    }
+
     /** Without WorldEdit to list the namespaces, the first page is what there is, and the answer says so. */
     @Test
     void withoutWorldEditTheNamespacesComeFromTheFirstPageAndTheAnswerSaysSo() {

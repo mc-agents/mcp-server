@@ -196,8 +196,13 @@ final class PlayedWorld implements AutoCloseable {
         return new Messages.Result(call.id(), true, "Ran /" + command + ".", null, null, null, 1);
     }
 
-    /** A custom block placed by name lands as the vanilla state it looks like; anything else lands as itself. */
+    /** A custom block placed by name or by its filed id lands as the vanilla state it looks like; anything else lands as itself. */
     private String looksLike(String block) {
+        if (block.startsWith("craftengine:custom_")) {
+            int index = Integer.parseInt(block.substring("craftengine:custom_".length())) - 100;
+            List<String> ids = new ArrayList<>(customBlocks.keySet());
+            return index >= 0 && index < ids.size() ? customBlocks.get(ids.get(index)) : block;
+        }
         return customBlocks.getOrDefault(block, block);
     }
 
