@@ -89,6 +89,11 @@ public final class BotLink implements AutoCloseable {
         this.in = new BufferedInputStream(socket.getInputStream());
     }
 
+    /** Where the bot dialled in from: the address of its pod, which a pod on its way out keeps to the end. */
+    public String remoteHost() {
+        return socket.getInetAddress() == null ? "" : socket.getInetAddress().getHostAddress();
+    }
+
     public Messages.Hello hello() {
         return hello;
     }

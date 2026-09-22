@@ -337,9 +337,6 @@ public class Orchestration {
 
         boolean created = provisioner.request(name, kind, mcVersion, ToolDispatcher.stringArg(arguments, "owner"));
 
-        /* Asked for anew, so the hello that follows is the bot wanted and not the one given back. */
-        bots.expect(name);
-
         try {
             return awaitLink(name, kind, progress);
         } catch (JoinFailure never) {

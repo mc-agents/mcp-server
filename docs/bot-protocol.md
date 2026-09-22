@@ -90,10 +90,11 @@ under. The comparison is constant-time. When the server has none, the field is i
 what lets the server, the bots and the operator each ship this on their own. The server logs a
 refusal at WARN with the bot's name and never the token; a bot never logs it either.
 
-A `hello` under a name the server has just given back to the cluster is answered with a `fault`
-`GIVEN_BACK`: the pod is on its way out, and a bot whose link was closed dials in again at once,
-so without this the join that follows a leave took the dying bot. The name is held until the
-server asks for a bot under it again, or for two minutes.
+A `hello` from the address a bot the server has just given back to the cluster dialled in from,
+under that bot's name, is answered with a `fault` `GIVEN_BACK`: the pod is on its way out, and a
+bot whose link was closed dials in again at once, so without this the join that follows a leave
+took the dying bot. The next pod asked for under the name dials in from an address of its own and
+is taken; the old address is held for two minutes.
 
 `status.state` is one of five:
 

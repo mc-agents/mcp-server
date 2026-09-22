@@ -20,16 +20,20 @@ public final class BotRegistry {
     private final int max;
 
     /**
-     * Names given back to the cluster and when, so the pod on its way out is not taken again.
+     * The address each given-back bot dialled in from, and when, so the pod on its way out is not
+     * taken again.
      *
      * <p>A bot whose link is closed dials in again at once, and a given-back pod did so a moment
-     * before it was killed: the join that followed the leave took the dying bot, and the server
-     * refused the login as too fast on top. The name is held against a hello until the next bot
-     * is asked for under it, or until a pod could not possibly still be around.
+     * before it was killed: the join that followed the leave took the dying bot. The object goes
+     * at once while the pod lingers, so the next bot asked for under the name can be up before the
+     * old one is down, and the two are told apart by where they dial in from -- a pod keeps its
+     * address to the end, and the next pod has one of its own.
      */
-    private final Map<String, Long> givenBack = new ConcurrentHashMap<>();
+    private final Map<String, GivenBack> givenBack = new ConcurrentHashMap<>();
 
-    /** How long a given-back name is held against a hello when nothing has been asked for under it. */
+    private record GivenBack(String host, long at) {}
+
+    /** How long a given-back pod's address is held against a hello, which is longer than a pod takes to stop. */
     static final long GIVEN_BACK_MS = 120_000;
 
     public BotRegistry(int max) {
@@ -51,14 +55,17 @@ public final class BotRegistry {
     public void add(BotSession session) {
         requireValidName(session.name());
 
-        Long returned = givenBack.get(session.name());
+        GivenBack returned = givenBack.get(session.name());
 
-        if (returned != null && System.currentTimeMillis() - returned < GIVEN_BACK_MS) {
+        if (returned != null && System.currentTimeMillis() - returned.at() < GIVEN_BACK_MS
+                && returned.host().equals(session.link().remoteHost())) {
             throw new IllegalStateException(
-                    "the bot named \"%s\" was given back and its pod is on its way out; a bot under that name is taken again once one has been asked for."
-                            .formatted(session.name()));
+                    "the bot named \"%s\" at %s was given back and its pod is on its way out; the one asked for since dials in from a pod of its own."
+                            .formatted(session.name(), returned.host()));
         }
-        givenBack.remove(session.name());
+        if (returned != null) {
+            givenBack.remove(session.name());
+        }
 
         if (sessions.size() >= max) {
             throw new IllegalStateException(
@@ -95,14 +102,13 @@ public final class BotRegistry {
         return sessions.values().iterator().next();
     }
 
-    /** A name whose bot was given back: its link, should it dial in again, is refused until {@link #expect}. */
+    /** A bot was given back: its pod, should it dial in again from where it is, is refused. */
     public void giveBack(String name) {
-        givenBack.put(name, System.currentTimeMillis());
-    }
+        BotSession session = sessions.get(name);
 
-    /** A bot has been asked for under the name again, so the next hello under it is the one wanted. */
-    public void expect(String name) {
-        givenBack.remove(name);
+        if (session != null) {
+            givenBack.put(name, new GivenBack(session.link().remoteHost(), System.currentTimeMillis()));
+        }
     }
 
     public BotSession remove(String name, String reason) {
