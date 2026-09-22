@@ -135,6 +135,15 @@ class OrchestrationTest {
         assertEquals(List.of("Qa_Bot1"), cluster.released);
         assertEquals(0, bots.size());
         assertThrows(IllegalArgumentException.class, () -> bots.resolve("Qa_Bot1"));
+
+        /* The pod on its way out dials in again at once, and is not taken. */
+        IllegalStateException refused = assertThrows(IllegalStateException.class, () -> linked("Qa_Bot1"));
+        assertTrue(refused.getMessage().contains("was given back"), refused.getMessage());
+
+        /* Asked for again, the next hello under the name is the bot wanted. */
+        bots.expect("Qa_Bot1");
+        linked("Qa_Bot1");
+        assertEquals(1, bots.size());
     }
 
     @Test

@@ -301,7 +301,7 @@ public class BotLinkServer implements SmartLifecycle {
         try {
             bots.add(session);
         } catch (IllegalStateException e) {
-            throw new Rejected("NAME_TAKEN", e.getMessage());
+            throw new Rejected(e.getMessage().contains("given back") ? "GIVEN_BACK" : "NAME_TAKEN", e.getMessage());
         }
 
         link.send(new Messages.HelloOk(

@@ -19,6 +19,19 @@ public final class BotRegistry {
     private final Map<String, BotSession> sessions = new ConcurrentHashMap<>();
     private final int max;
 
+    /**
+     * Names given back to the cluster and when, so the pod on its way out is not taken again.
+     *
+     * <p>A bot whose link is closed dials in again at once, and a given-back pod did so a moment
+     * before it was killed: the join that followed the leave took the dying bot, and the server
+     * refused the login as too fast on top. The name is held against a hello until the next bot
+     * is asked for under it, or until a pod could not possibly still be around.
+     */
+    private final Map<String, Long> givenBack = new ConcurrentHashMap<>();
+
+    /** How long a given-back name is held against a hello when nothing has been asked for under it. */
+    static final long GIVEN_BACK_MS = 120_000;
+
     public BotRegistry(int max) {
         /* A limit of zero would refuse every bot with a message naming zero as the limit, which reads as a bug rather than a setting. */
         if (max < 1) {
@@ -37,6 +50,15 @@ public final class BotRegistry {
 
     public void add(BotSession session) {
         requireValidName(session.name());
+
+        Long returned = givenBack.get(session.name());
+
+        if (returned != null && System.currentTimeMillis() - returned < GIVEN_BACK_MS) {
+            throw new IllegalStateException(
+                    "the bot named \"%s\" was given back and its pod is on its way out; a bot under that name is taken again once one has been asked for."
+                            .formatted(session.name()));
+        }
+        givenBack.remove(session.name());
 
         if (sessions.size() >= max) {
             throw new IllegalStateException(
@@ -71,6 +93,16 @@ public final class BotRegistry {
                     "more than one bot is connected, so \"bot\" is required. %s".formatted(available()));
         }
         return sessions.values().iterator().next();
+    }
+
+    /** A name whose bot was given back: its link, should it dial in again, is refused until {@link #expect}. */
+    public void giveBack(String name) {
+        givenBack.put(name, System.currentTimeMillis());
+    }
+
+    /** A bot has been asked for under the name again, so the next hello under it is the one wanted. */
+    public void expect(String name) {
+        givenBack.remove(name);
     }
 
     public BotSession remove(String name, String reason) {

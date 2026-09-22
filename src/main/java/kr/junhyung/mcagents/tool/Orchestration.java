@@ -229,6 +229,7 @@ public class Orchestration {
         if (!provisioner.available() || !provisioner.release(name)) {
             return false;
         }
+        bots.giveBack(name);
         bots.remove(name, "the bot was given back");
         return true;
     }
@@ -335,6 +336,9 @@ public class Orchestration {
         String mcVersion = orDefault(ToolDispatcher.stringArg(arguments, "minecraftVersion"), "26.1.2");
 
         boolean created = provisioner.request(name, kind, mcVersion, ToolDispatcher.stringArg(arguments, "owner"));
+
+        /* Asked for anew, so the hello that follows is the bot wanted and not the one given back. */
+        bots.expect(name);
 
         try {
             return awaitLink(name, kind, progress);
