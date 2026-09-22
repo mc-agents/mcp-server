@@ -115,12 +115,9 @@ class CustomBlocksTest {
         assertEquals("few:one", customBlocks.of(played.bot).byInternal("craftengine:custom_100").id());
     }
 
-    /**
-     * Put down through WorldEdit, a learned custom block goes by the id the plugin filed it under:
-     * a name with its state is a pattern too, but a single-state block's bare name is not one.
-     */
+    /** Put down through WorldEdit, a custom block goes by its own name, which the plugin's parser accepts as a pattern. */
     @Test
-    void aLearnedCustomBlockIsPutDownByTheIdWorldEditFilesItUnder() {
+    void aLearnedCustomBlockIsPutDownByItsName() {
         played.worldEdit = true;
         played.customBlocks.put("city_road:road_line_1", "note_block[instrument=bell,note=2,powered=false]");
         customBlocks.learn(catalog.require("learn-custom-blocks"), played.bot, Map.of("bot", "fab"), Progress.NONE);
@@ -134,7 +131,7 @@ class CustomBlocksTest {
 
         String put = text(writing.write(catalog.require("write-region"), played.bot, Map.of("bot", "fab", "region", "r-cb01"), Progress.NONE));
 
-        assertTrue(played.ran.contains("//set craftengine:custom_100"), String.join("\n", played.ran));
+        assertTrue(played.ran.contains("//set city_road:road_line_1"), String.join("\n", played.ran));
         assertTrue(put.contains("Read back: all 1 blocks are as the region has them."), put);
     }
 

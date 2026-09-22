@@ -69,6 +69,9 @@ public class CustomBlocks {
     /** The namespaces WorldEdit lists that hold no custom block: the game's own, and CraftEngine's internal ids. */
     private static final java.util.Set<String> RESERVED_NAMESPACES = java.util.Set.of("minecraft:", "craftengine:");
 
+    /** How long one internal id is waited for; the plugin answers within a tick. */
+    private static final int INTERNAL_ID_MS = 2_000;
+
     /** How long the first request is given, which decides whether the command is there at all. */
     private static final int FIRST_PAGE_MS = 5_000;
 
@@ -505,42 +508,15 @@ public class CustomBlocks {
     }
 
     /**
-     * The ids WorldEdit files a row of custom blocks under, asked for back to back.
+     * The ids WorldEdit files a row of custom blocks under, one at a time.
      *
-     * <p>The server answers each in one line and in the order asked, since commands run one after
-     * another on its main thread, so a row's answers are read off the feed as one block of lines
-     * rather than waited for one at a time -- which at a second each was twenty minutes for a
-     * server with a thousand states. A row whose answers do not add up is asked again one by one.
+     * <p>Asked for back to back the answers came back in an order of their own -- the plugin
+     * answers off its main thread -- and a row read off the feed by position filed a north-facing
+     * table under a south-facing one's id, which a schematic then pasted turned the wrong way. So
+     * each is asked for from a mark of its own and its answer waited for, which is a tenth of a
+     * second a state and a few minutes for a server with two thousand.
      */
     private List<String> internals(BotSession bot, List<String> row) {
-        long mark = bot.feed("chat").nextSeq();
-
-        for (String id : row) {
-            if (commands.send(bot, "craftengine debug get-block-internal-id " + id) != null) {
-                return oneByOne(bot, row);
-            }
-        }
-
-        long deadline = System.currentTimeMillis() + 3_000;
-        List<String> found;
-
-        while (true) {
-            found = new ArrayList<>();
-            for (FeedEntry line : Commands.systemLines(bot, mark)) {
-                Matcher id = INTERNAL_ID.matcher(line.rendered());
-                if (id.find()) {
-                    found.add(id.group());
-                }
-            }
-            if (found.size() >= row.size() || System.currentTimeMillis() >= deadline) {
-                break;
-            }
-            Commands.sleep(Commands.POLL_MS);
-        }
-        return found.size() == row.size() ? found : oneByOne(bot, row);
-    }
-
-    private List<String> oneByOne(BotSession bot, List<String> row) {
         List<String> found = new ArrayList<>();
 
         for (String id : row) {
@@ -548,12 +524,10 @@ public class CustomBlocks {
             String internal = null;
 
             if (commands.send(bot, "craftengine debug get-block-internal-id " + id) == null) {
-                for (FeedEntry line : Commands.awaitChat(bot, mark, System.currentTimeMillis() + 2_000, Progress.NONE, "the internal id")) {
-                    Matcher one = INTERNAL_ID.matcher(line.rendered());
-                    if (one.find()) {
-                        internal = one.group();
-                        break;
-                    }
+                FeedEntry answered = Commands.awaitLine(bot, mark, System.currentTimeMillis() + INTERNAL_ID_MS, INTERNAL_ID);
+                if (answered != null) {
+                    Matcher one = INTERNAL_ID.matcher(answered.rendered());
+                    internal = one.find() ? one.group() : null;
                 }
             }
             found.add(internal);

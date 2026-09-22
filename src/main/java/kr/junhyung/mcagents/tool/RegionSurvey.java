@@ -300,16 +300,8 @@ public class RegionSurvey {
                             worldEdit ? "//set" : "/fill", tileSent + 1, boxes.size()),
                             System.currentTimeMillis() - started, PATIENCE_MS);
 
-                    /*
-                    A custom block by the id WorldEdit files it under, when that is known: the name
-                    with its state is a pattern too, but a name without one -- a block with a single
-                    state -- is not, and the internal id is what the plugin registered either way.
-                    */
+                    /* A custom block by its own name, which the plugin's parser gives WorldEdit as a pattern. */
                     String pattern = block;
-                    CustomBlocks.Dictionary learned = customBlocks.of(bot);
-                    if (worldEdit && learned != null && learned.byId(block) != null && learned.byId(block).internal() != null) {
-                        pattern = learned.byId(block).internal();
-                    }
 
                     if (worldEdit) {
                         McpSchema.CallToolResult refusal = edit(bot, piece, pattern, tally);
