@@ -3255,10 +3255,13 @@ class BotEndToEndTest {
         agent.requires("show-region");
         agent.requiresOffered("read-region", Map.of("bot", BotWorld.BOT,
             "from", Map.of("x", 0, "y", -60, "z", 0), "to", Map.of("x", 0, "y", -60, "z", 0)));
-        world.run("tp " + BotWorld.BOT + " 26 -59 4");
+        /* The server only fills chunks it has loaded, and the bot standing there is what loads them. */
+        world.run("tp " + BotWorld.BOT + " 335 -58 335");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 40));
         world.run("fill 300 -60 300 369 -60 369 minecraft:stone");
         world.run("setblock 365 -60 305 minecraft:gold_block");
-        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+        world.run("tp " + BotWorld.BOT + " 26 -59 4");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 40));
 
         String read = agent.mustCall("read-region", Map.of("bot", BotWorld.BOT, "name", "yard",
             "from", Map.of("x", 300, "y", -60, "z", 300), "to", Map.of("x", 369, "y", -59, "z", 369)));
@@ -3267,7 +3270,10 @@ class BotEndToEndTest {
             "from", Map.of("x", 364, "y", -60, "z", 304), "to", Map.of("x", 366, "y", -59, "z", 306)));
         agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
         String position = agent.mustCall("get-position", Map.of("bot", BotWorld.BOT));
+        world.run("tp " + BotWorld.BOT + " 335 -58 335");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 40));
         world.run("fill 300 -60 300 369 -60 369 minecraft:air");
+        world.run("tp " + BotWorld.BOT + " 26 -59 4");
 
         assertTrue(read.startsWith("(300, -60, 300) to (369, -59, 369), 70 x 2 x 70, 9800 blocks.\n"
             + "  4900 air (50%)\n  4899 stone (50%)\n     1 gold_block (0%)"), read);

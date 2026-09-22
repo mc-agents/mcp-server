@@ -27,6 +27,15 @@ public class Commands {
     /** Between two looks at the chat feed. A tick is 50ms and nothing arrives faster than that. */
     static final int POLL_MS = 200;
 
+    /**
+     * How long the server has to have said nothing before its answer counts as over.
+     *
+     * <p>One poll was not it: FastAsyncWorldEdit answers //pos1 on the tick and //distr from a
+     * thread of its own some hundreds of milliseconds later, and verify-region came back with the
+     * acknowledgement alone and none of the measurement.
+     */
+    static final int QUIET_MS = 1_000;
+
     /** {@link FeedEntry#source()} for a line the server produced; a player's line carries their name. */
     static final String SYSTEM = "system";
 
@@ -71,20 +80,24 @@ public class Commands {
      * <p>Returning the first line would cut every multi-line answer in half: //size is six lines
      * and //distr one per kind of block. So the feed is watched until a poll adds nothing, which
      * is also what lets a //set that takes ten seconds be waited out without a fixed guess at how
-     * long an edit takes.
+     * long an edit takes. A poll adding nothing is not the end: the feed has to have been quiet
+     * for {@link #QUIET_MS}, since a plugin that answers from its own thread pauses between lines.
      */
     static List<FeedEntry> awaitChat(BotSession bot, long since, long deadline, Progress progress,
             String waitingFor) {
         long started = System.currentTimeMillis();
+        long lastNew = started;
         int seen = 0;
 
         while (System.currentTimeMillis() < deadline) {
             List<FeedEntry> lines = systemLines(bot, since);
 
-            if (!lines.isEmpty() && lines.size() == seen) {
+            if (lines.size() != seen) {
+                seen = lines.size();
+                lastNew = System.currentTimeMillis();
+            } else if (seen > 0 && System.currentTimeMillis() - lastNew >= QUIET_MS) {
                 return lines;
             }
-            seen = lines.size();
             progress.report("waiting for the server to answer %s (%d line(s) so far)".formatted(waitingFor, seen),
                     System.currentTimeMillis() - started, deadline - started);
             sleep(POLL_MS);
