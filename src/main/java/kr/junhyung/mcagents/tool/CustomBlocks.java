@@ -57,6 +57,9 @@ public class CustomBlocks {
 
     private static final Pattern INTERNAL_ID = Pattern.compile("craftengine:custom_\\d+");
 
+    /** What a block id is spelled in, and so what a prefix is narrowed by: a namespace, a colon, a path, a state. */
+    private static final String ID_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789_-.:/[]=,";
+
     private static final JsonMapper MAPPER = JsonMapper.builder()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .build();
@@ -172,7 +175,7 @@ public class CustomBlocks {
         List<String> names;
 
         try {
-            names = names(bot, "");
+            names = names(bot, "", true);
         } catch (IllegalStateException nothing) {
             return ToolDispatcher.failure(nothing.getMessage());
         }
@@ -224,11 +227,14 @@ public class CustomBlocks {
                 if (view == null) {
                     notes.add("The scratch row at %s never reached the client whole, so states %d-%d were not learned."
                             .formatted(Text.block(rowX, rowY, rowZ), batch + 1, batch + row.size()));
+                    cleared(bot, box, notes);
                     continue;
                 }
 
                 List<String> seen = spelled(view);
                 List<String> internals = internals(bot, row);
+
+                cleared(bot, box, notes);
 
                 for (int i = 0; i < row.size(); i++) {
                     String appearance = seen.get(i);
@@ -243,8 +249,8 @@ public class CustomBlocks {
                     }
                 }
             }
-        } finally {
-            commands.send(bot, "fill %d %d %d %d %d %d air".formatted(rowX, rowY, rowZ, rowX + ROW - 1, rowY, rowZ));
+        } catch (IllegalStateException failed) {
+            return ToolDispatcher.failure(failed.getMessage());
         }
 
         known.put(address, dictionary);
@@ -260,10 +266,43 @@ public class CustomBlocks {
     }
 
     /**
-     * Every name the server completes after the prefix, paged by adding a character when there
-     * are more than one call shows: the completion says how many there are in all.
+     * Every name the server completes after the prefix.
+     *
+     * <p>A server caps what one request completes -- a thousand, on the one this was written
+     * against -- and a page's own names say nothing about the names after its last one. So when a
+     * page is short of the total, the prefix is narrowed a character at a time through the whole
+     * alphabet a block id is spelled in, and each narrowing that still holds anything is asked for
+     * in turn. Nothing after the first page is allowed to fail quietly: a page that the bot could
+     * not get would be a dictionary with a letter of the alphabet missing from it.
+     *
+     * @param first whether this is the first request, whose failure means the command is not there
      */
-    private List<String> names(BotSession bot, String typed) {
+    private List<String> names(BotSession bot, String typed, boolean first) {
+        Page page = page(bot, typed, first);
+
+        if (page == null) {
+            return List.of();
+        }
+        if (page.names.size() >= page.total) {
+            return page.names;
+        }
+
+        List<String> paged = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+
+        for (char next : ID_ALPHABET.toCharArray()) {
+            for (String name : names(bot, typed + next, false)) {
+                if (seen.add(name)) {
+                    paged.add(name);
+                }
+            }
+        }
+        return paged;
+    }
+
+    private record Page(int total, List<String> names) {}
+
+    private Page page(BotSession bot, String typed, boolean first) {
         ToolSpec complete = catalog.require("complete-command");
 
         ToolDispatcher.offerCheck(complete, bot);
@@ -278,10 +317,16 @@ public class CustomBlocks {
             result = remote.fetch(complete, bot, arguments).result();
         } catch (IllegalStateException unanswered) {
             /* A server without the command answers no suggestions at all, which is the same nothing. */
-            return List.of();
+            if (first) {
+                return null;
+            }
+            throw new IllegalStateException("the server did not complete \"%s%s\": %s".formatted(NAMES_PREFIX, typed, unanswered.getMessage()));
         }
         if (!result.ok() || !(result.data() instanceof Map<?, ?> data)) {
-            return List.of();
+            if (first) {
+                return null;
+            }
+            throw new IllegalStateException("the server did not complete \"%s%s\": %s".formatted(NAMES_PREFIX, typed, result.text()));
         }
 
         int total = data.get("total") instanceof Number number ? number.intValue() : 0;
@@ -294,27 +339,7 @@ public class CustomBlocks {
                 }
             }
         }
-        if (total <= COMPLETIONS || typed.length() > 40) {
-            return names;
-        }
-
-        /* Too many for one call: narrow by the next character, from what the first page showed. */
-        List<String> paged = new ArrayList<>();
-        java.util.Set<String> prefixes = new java.util.LinkedHashSet<>();
-
-        for (String name : names) {
-            if (name.length() > typed.length()) {
-                prefixes.add(name.substring(0, typed.length() + 1));
-            }
-        }
-        for (String prefix : prefixes) {
-            for (String name : names(bot, prefix)) {
-                if (!paged.contains(name)) {
-                    paged.add(name);
-                }
-            }
-        }
-        return paged;
+        return new Page(total, names);
     }
 
     /** The states among the names: those with properties, and a bare name only when it has no variants. */
@@ -336,6 +361,33 @@ public class CustomBlocks {
             }
         }
         return states;
+    }
+
+    /**
+     * The scratch row back to air, and read back to be sure: a row left at the top of the world is
+     * a row of note blocks somebody will find, so a fill the server did not do is said rather than
+     * assumed.
+     */
+    private void cleared(BotSession bot, Region box, List<String> notes) {
+        for (int attempt = 0; attempt < 2; attempt++) {
+            if (commands.send(bot, "fill %d %d %d %d %d %d air".formatted(
+                    box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ())) != null) {
+                break;
+            }
+
+            long deadline = System.currentTimeMillis() + RegionSurvey.SETTLE_MS;
+
+            while (System.currentTimeMillis() < deadline) {
+                RegionRenderer.View view = read(bot, box);
+
+                if (view.missing() == 0 && view.outside() == 0
+                        && view.palette().stream().allMatch(RegionRenderer::isAir)) {
+                    return;
+                }
+                Commands.sleep(Commands.POLL_MS);
+            }
+        }
+        notes.add("The scratch row %s could not be cleared: fill it with air by hand.".formatted(box));
     }
 
     /** The row read back once the client has caught up with the placing, or null when it never does. */

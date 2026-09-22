@@ -61,7 +61,7 @@ class CustomBlocksTest {
         assertTrue(learned.startsWith("Learned 3 custom block state(s) on paper:25565 in "), learned);
         assertTrue(learned.contains("2 with the look a client sees them as, 1 that placed as nothing"), learned);
         /* The row was placed beside the bot at the top of the world, and cleared. */
-        assertEquals(List.of("fill -27 319 5 36 319 5 air"), played.commands("fill"));
+        assertEquals(List.of("fill -27 319 5 -25 319 5 air"), played.commands("fill"));
         assertEquals("air", played.world.getOrDefault(PlayedWorld.key(-27, 319, 5), "air"));
 
         CustomBlocks.Dictionary dictionary = customBlocks.of(played.bot);
@@ -88,6 +88,25 @@ class CustomBlocksTest {
 
         assertTrue(read.contains("1 2025summer:bar_table[facing=east] (50%)"), read);
         assertTrue(read.contains("1 note_block[instrument=banjo,note=7,powered=false] (50%)"), read);
+    }
+
+    /**
+     * A server completes at most a page at a time, and a page says nothing about the names after
+     * its last one: a dictionary learned from the first page alone was missing every block whose
+     * name sorted after it. The prefix is narrowed through the alphabet until every page is whole.
+     */
+    @Test
+    void moreCustomBlocksThanOnePageCompletesAreAllLearned() {
+        for (int i = 0; i < 700; i++) {
+            played.customBlocks.put("many:block_%03d".formatted(i),
+                    "note_block[instrument=%s,note=%d,powered=%s]".formatted(i % 2 == 0 ? "harp" : "bass", i % 25, i % 50 < 25));
+        }
+
+        String learned = text(customBlocks.learn(catalog.require("learn-custom-blocks"), played.bot, Map.of("bot", "fab"), Progress.NONE));
+
+        assertTrue(learned.startsWith("Learned 700 custom block state(s)"), learned);
+        assertEquals(700, customBlocks.of(played.bot).size());
+        assertEquals("many:block_699", customBlocks.of(played.bot).byInternal("craftengine:custom_799").id());
     }
 
     @Test
