@@ -72,6 +72,9 @@ public class RegionSurvey {
     /** How long a tile's edits are given to finish before it is read back, once the server has been answering. */
     static final int EDITS_MS = 60_000;
 
+    /** How long one WorldEdit edit is given to say it finished before the next box's corners are set. */
+    static final int EDIT_MS = 30_000;
+
     /** How many differing blocks a readback names before it only counts them. */
     private static final int NAMED_DIFFERENCES = 5;
 
@@ -298,6 +301,23 @@ public class RegionSurvey {
                     sent++;
                     tileSent++;
                     blocks += piece.box().blocks();
+
+                    /*
+                    WorldEdit's edit reads the selection when it runs, not when it was asked for, and
+                    FastAsyncWorldEdit runs it on a thread of its own: two boxes sent back to back had
+                    the first //set take the second's corners and both boxes came out as the second
+                    block. So the edit is waited for before the corners move on. The game's /fill
+                    carries its own corners and needs no such wait.
+                    */
+                    if (worldEdit) {
+                        long finished = System.currentTimeMillis() + EDIT_MS;
+                        while (tally.completed < sent && System.currentTimeMillis() < finished) {
+                            tally.take(Commands.systemLines(bot, tally.mark), bot);
+                            if (tally.completed < sent) {
+                                Commands.sleep(Commands.POLL_MS / 4);
+                            }
+                        }
+                    }
 
                     /*
                     The first command is the one that says whether the bot may run it at all; the

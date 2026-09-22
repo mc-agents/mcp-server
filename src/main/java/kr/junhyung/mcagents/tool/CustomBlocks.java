@@ -119,6 +119,16 @@ public class CustomBlocks {
         return address == null ? null : known.get(address);
     }
 
+    /**
+     * The dictionary a region with no server of its own is read with: the one learned, when one
+     * server is all this process has learned. A region typed in or uploaded names no server, and
+     * an MCP server deployed beside one game server -- which is how they are deployed -- has one
+     * dictionary to offer it.
+     */
+    public Dictionary theOnlyOne() {
+        return known.size() == 1 ? known.values().iterator().next() : null;
+    }
+
     /** A palette with every look a custom block wears replaced by the custom block's own name. */
     List<String> translate(BotSession bot, List<String> palette) {
         Dictionary dictionary = of(bot);

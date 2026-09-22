@@ -52,7 +52,8 @@ public class RegionFiles {
         }
 
         /* A custom block as WorldEdit files it, when this server learned what the region's server calls them. */
-        CustomBlocks.Dictionary learned = customBlocks.of(region.origin());
+        CustomBlocks.Dictionary known = customBlocks.of(region.origin());
+        CustomBlocks.Dictionary learned = known == null ? customBlocks.theOnlyOne() : known;
         byte[] file = Schematic.write(region, null, block -> {
             CustomBlocks.Entry custom = learned == null ? null : learned.byId(block);
             return custom == null || custom.internal() == null ? block : custom.internal();

@@ -149,18 +149,30 @@ final class PlayedWorld implements AutoCloseable {
             selection[1] = words[1];
             says("system", "Second position set to (" + words[1].replace(",", ", ") + ").");
         } else if (worldEdit && "//set".equals(words[0])) {
-            int[] a = corners(selection[0]);
-            int[] b = corners(selection[1]);
-            int count = 0;
-            for (int x = Math.min(a[0], b[0]); x <= Math.max(a[0], b[0]); x++) {
-                for (int y = Math.min(a[1], b[1]); y <= Math.max(a[1], b[1]); y++) {
-                    for (int z = Math.min(a[2], b[2]); z <= Math.max(a[2], b[2]); z++) {
-                        world.put(key(x, y, z), looksLike(words[1]));
-                        count++;
+            /*
+            On a thread of its own and a moment later, reading the selection then, as
+            FastAsyncWorldEdit does: a driver that moves the corners on without waiting has this
+            edit land in the next box.
+            */
+            Thread.ofVirtual().start(() -> {
+                try {
+                    Thread.sleep(150);
+                } catch (InterruptedException interrupted) {
+                    return;
+                }
+                int[] a = corners(selection[0]);
+                int[] b = corners(selection[1]);
+                int count = 0;
+                for (int x = Math.min(a[0], b[0]); x <= Math.max(a[0], b[0]); x++) {
+                    for (int y = Math.min(a[1], b[1]); y <= Math.max(a[1], b[1]); y++) {
+                        for (int z = Math.min(a[2], b[2]); z <= Math.max(a[2], b[2]); z++) {
+                            world.put(key(x, y, z), looksLike(words[1]));
+                            count++;
+                        }
                     }
                 }
-            }
-            says("system", "(FAWE) Operation completed (%d).".formatted(count));
+                says("system", "(FAWE) Operation completed (%d).".formatted(count));
+            });
         } else if ("fill".equals(words[0])) {
             int count = 0;
             for (int x = Integer.parseInt(words[1]); x <= Integer.parseInt(words[4]); x++) {
