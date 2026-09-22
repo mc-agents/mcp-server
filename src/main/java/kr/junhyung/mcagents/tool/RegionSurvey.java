@@ -82,8 +82,16 @@ public class RegionSurvey {
     /** How long a tile's edits are given to finish before it is read back, once the server has been answering. */
     static final int EDITS_MS = 60_000;
 
-    /** How long one WorldEdit edit is given to say it finished before the next box's corners are set. */
+    /** How long one WorldEdit edit is given to finish before the next box's corners are set. */
     static final int EDIT_MS = 30_000;
+
+    /**
+     * How long the server is given to say an edit is over before the block itself is read instead.
+     *
+     * <p>Short, because it is what a server that will never say it costs a box. A server that does
+     * say it says it well inside this, so nothing is read back there at all.
+     */
+    static final int EDIT_QUIET_MS = 300;
 
     /**
      * How long WorldEdit is given to describe a selection over its CUI channel.
@@ -271,23 +279,30 @@ public class RegionSurvey {
         Decided once, before anything is put down: a region that went half through one and half
         through the other would be two edits with two ways of being undone.
         */
+        /*
+        Asked before //pos1 is: a server that describes a selection on the channel has WorldEdit,
+        and saying so is the only evidence there is on a server that answers no WorldEdit command
+        in chat. One such is live, and every region written to it went down through /fill -- which
+        cannot place a custom block at all -- because the acknowledgement it was judged by never
+        came.
+        */
+        cui = !"fill".equals(via) && bot.supports("read-selection") && describes(bot);
+
         try {
             worldEdit = switch (via) {
                 case "worldedit" -> {
-                    if (!worldEditAnswers(bot, box)) {
+                    if (!cui && !worldEditAnswers(bot, box)) {
                         throw new IllegalStateException(
-                                "via is \"worldedit\", and //pos1 was not acknowledged: WorldEdit or FastAsyncWorldEdit is not on this server, or the bot may not run it.");
+                                "via is \"worldedit\", and the server neither describes a selection on WorldEdit's CUI channel nor acknowledges //pos1: WorldEdit or FastAsyncWorldEdit is not on this server, or the bot may not run it.");
                     }
                     yield true;
                 }
                 case "fill" -> false;
-                default -> worldEditAnswers(bot, box);
+                default -> cui || worldEditAnswers(bot, box);
             };
         } catch (IllegalStateException refused) {
             return ToolDispatcher.failure(refused.getMessage());
         }
-
-        cui = worldEdit && describes(bot);
 
         try {
             for (Region tile : tiles) {
@@ -324,7 +339,7 @@ public class RegionSurvey {
                     String pattern = block;
 
                     if (worldEdit) {
-                        McpSchema.CallToolResult refusal = edit(bot, piece, pattern, tally, cui);
+                        McpSchema.CallToolResult refusal = edit(spec, bot, piece, pattern, tally, cui);
 
                         if (refusal != null) {
                             return refusal;
@@ -476,7 +491,8 @@ public class RegionSurvey {
      *
      * @return the failure to answer with, or null when the box went down
      */
-    private McpSchema.CallToolResult edit(BotSession bot, Mesh.Box piece, String pattern, Tally tally, boolean cui) {
+    private McpSchema.CallToolResult edit(ToolSpec spec, BotSession bot, Mesh.Box piece, String pattern,
+            Tally tally, boolean cui) {
         McpSchema.CallToolResult unselected = cui
                 ? described(bot, piece.box())
                 : acknowledged(bot, piece.box(), tally);
@@ -491,19 +507,71 @@ public class RegionSurvey {
         if (refusal != null) {
             return refusal;
         }
+        return settled(spec, bot, piece, pattern, tally, mark);
+    }
 
-        FeedEntry answered = Commands.awaitLine(bot, mark, System.currentTimeMillis() + EDIT_MS, EDIT_ANSWERED);
+    /**
+     * Waiting out one edit, so that the next box's corners cannot reach the plugin while this one
+     * still has to read them.
+     *
+     * <p>The plugin's own word for it when the server passes that on. When it does not -- and a
+     * real one does not, with a live server answering no WorldEdit command in chat at all while
+     * running every one of them -- the block is the word: a corner of the box that has become what
+     * was asked for is the plugin having read the selection and written it, which is the whole of
+     * what the acknowledgement promised.
+     *
+     * @return the failure to answer with, or null when the edit is over
+     */
+    private McpSchema.CallToolResult settled(ToolSpec spec, BotSession bot, Mesh.Box piece, String pattern,
+            Tally tally, long mark) {
+        long deadline = System.currentTimeMillis() + EDIT_MS;
 
-        if (answered == null) {
-            return ToolDispatcher.failure("WorldEdit did not answer \"//set %s\" within %dms; the edit may still be running, and verify-region says what is in the box now."
-                    .formatted(pattern, EDIT_MS));
+        while (true) {
+            FeedEntry answered = Commands.awaitLine(bot, mark,
+                    Math.min(deadline, System.currentTimeMillis() + EDIT_QUIET_MS), EDIT_ANSWERED);
+
+            if (answered != null) {
+                if (Commands.refused(List.of(answered)) != null) {
+                    return ToolDispatcher.failure(Trust.mark(
+                            "\"//set %s\" came back as \"%s\".".formatted(pattern, answered.rendered())));
+                }
+                tally.take(List.of(answered), bot);
+                return null;
+            }
+            if (placed(spec, bot, piece, pattern)) {
+                return null;
+            }
+            if (System.currentTimeMillis() >= deadline) {
+                return ToolDispatcher.failure(
+                        "WorldEdit neither answered \"//set %s\" within %dms nor put the block down; the edit may still be running, and verify-region says what is in the box now."
+                                .formatted(pattern, EDIT_MS));
+            }
         }
-        if (Commands.refused(List.of(answered)) != null) {
-            return ToolDispatcher.failure(Trust.mark("\"//set %s\" came back as \"%s\".".formatted(pattern, answered.rendered())));
-        }
-        tally.take(List.of(answered), bot);
+    }
 
-        return null;
+    /**
+     * Whether a corner of the box holds the block the edit was for, read from the client.
+     *
+     * <p>One block and not the box: what is being asked is whether the edit happened, and an edit
+     * that reached one block of its region reached all of them. Anything unreadable -- a chunk the
+     * client does not hold, a bot that cannot answer -- is not an edit that finished, so it reads
+     * as not yet.
+     */
+    private boolean placed(ToolSpec spec, BotSession bot, Mesh.Box piece, String block) {
+        Region box = piece.box();
+        Region corner = new Region(box.minX(), box.minY(), box.minZ(), box.minX(), box.minY(), box.minZ());
+        RegionRenderer.View view;
+
+        try {
+            view = tile(spec, bot, corner);
+        } catch (IllegalStateException unread) {
+            return false;
+        }
+        if (view.missing() > 0 || view.outside() > 0 || view.palette().isEmpty()) {
+            return false;
+        }
+        /* Named as the region names them, so a custom block put down reads back as itself. */
+        return block.equals(customBlocks.translate(bot, view.palette()).getFirst());
     }
 
     /**

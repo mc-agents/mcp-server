@@ -214,7 +214,11 @@ class RegionSurveyTest {
 
         String put = text(survey.write(catalog.require("write-region"), bot, Map.of("bot", "fab", "region", "r-cui0"), Progress.NONE));
 
-        assertEquals(List.of("//pos1 0,64,0", "//pos1 0,64,0", "//pos2 3,64,3", "//set stone"),
+        /*
+        Three commands and not four: the //pos1 that used to go first, to find out whether the
+        server had WorldEdit at all, is not sent where the channel has already said so.
+        */
+        assertEquals(List.of("//pos1 0,64,0", "//pos2 3,64,3", "//set stone"),
                 played.ran.stream().filter(command -> command.startsWith("//")).toList());
         assertTrue(put.contains("Each box was selected over WorldEdit's CUI channel"), put);
         assertTrue(put.contains("Read back: all 16 blocks are as the region has them."), put);
@@ -241,6 +245,33 @@ class RegionSurveyTest {
 
         assertTrue(put.contains("16 blocks in 3 WorldEdit edit(s)"), put);
         assertTrue(put.contains("Read back: all 16 blocks are as the region has them."), put);
+    }
+
+    /**
+     * The case the channel is there for, and a live server is one: WorldEdit runs every command and
+     * the server passes none of its words on. Judged by chat alone that is a server without
+     * WorldEdit, and the region went down through /fill -- which cannot place a custom block at
+     * all, so the block was silently left out. The channel says WorldEdit is there, and the block
+     * that appears says the edit is over.
+     */
+    @Test
+    void aServerThatRunsWorldEditWithoutSayingSoStillGoesThroughIt() {
+        played.worldEdit = true;
+        played.cui = true;
+        played.silent = true;
+        Region box = new Region(0, 64, 0, 1, 64, 0);
+        store.keep(Snapshot.blank("r-mute", null, box, Instant.EPOCH, "import-region")
+                .with(box, List.of("stone", "2025summer:bar_table[facing=east]"),
+                        List.of(new RegionRenderer.View.Run(0, 1), new RegionRenderer.View.Run(1, 1))));
+
+        String put = text(survey.write(catalog.require("write-region"), bot, Map.of("bot", "fab", "region", "r-mute"), Progress.NONE));
+
+        assertEquals(List.of("//pos1 0,64,0", "//pos2 0,64,0", "//set stone",
+                "//pos1 1,64,0", "//pos2 1,64,0", "//set 2025summer:bar_table[facing=east]"),
+                played.ran.stream().filter(command -> command.startsWith("//")).toList());
+        assertEquals(List.of(), commands("fill"));
+        assertTrue(put.contains("2 blocks in 2 WorldEdit edit(s)"), put);
+        assertTrue(put.contains("Read back: all 2 blocks are as the region has them."), put);
     }
 
     /**
@@ -286,7 +317,7 @@ class RegionSurveyTest {
                 Map.of("bot", "fab", "region", "r-we01", "via", "worldedit"), Progress.NONE);
 
         assertTrue(put.isError());
-        assertTrue(text(put).contains("//pos1 was not acknowledged"), text(put));
+        assertTrue(text(put).contains("neither describes a selection on WorldEdit's CUI channel nor acknowledges //pos1"), text(put));
         assertEquals(List.of("//pos1 0,64,0"), played.ran);
     }
 

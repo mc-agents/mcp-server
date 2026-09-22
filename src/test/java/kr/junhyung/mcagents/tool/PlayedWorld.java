@@ -76,6 +76,13 @@ final class PlayedWorld implements AutoCloseable {
      */
     volatile long selectionLagMs;
 
+    /**
+     * Whether the played server passes the plugin's chat on. A live one does not: it runs every
+     * WorldEdit command and says nothing about any of them, which is the case the channel exists
+     * for and the one a driver reading chat cannot tell from having no WorldEdit at all.
+     */
+    volatile boolean silent;
+
     /** The played server's CraftEngine custom blocks: what each is called, and the vanilla state it looks like. */
     final Map<String, String> customBlocks = new LinkedHashMap<>();
 
@@ -370,6 +377,10 @@ final class PlayedWorld implements AutoCloseable {
 
     /** One chat line, from the server itself or from whoever the source names. */
     void says(String source, String line) {
+        /* A server that runs every command and passes none of the plugin's words on. */
+        if (silent) {
+            return;
+        }
         long seq = bot.feed("chat").nextSeq();
         bot.accept(new Messages.Event(seq, "chat", source, line, List.of(), null, null, seq, seq, 1, false));
     }
