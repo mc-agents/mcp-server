@@ -94,13 +94,15 @@ public class RegionSurvey {
     static final int EDIT_QUIET_MS = 300;
 
     /**
-     * How long WorldEdit is given to describe a selection over its CUI channel.
+     * How long a bot is given to come back with a description from the channel.
      *
-     * <p>Short, because it is asked once a box and an answer comes on the tick. What it is not is
-     * how long the corners have to arrive: a description that shows the corner before last is asked
-     * for again until {@link #SELECTION_MS} is up.
+     * <p>An upper bound and not a cost: a bot that has the description answers on its next tick,
+     * so this is only ever spent where none arrives. It is generous because a fabric bot is a real
+     * client and a slow one -- under software rendering its ticks are long enough that half a
+     * second was not two of them, and every box of a write was refused for a selection the bot
+     * simply had not finished reading yet.
      */
-    static final int DESCRIBE_MS = 500;
+    static final int DESCRIBE_MS = 2_000;
 
     /**
      * Between two asks about the same selection. A plugin that has not handled the corners yet
@@ -108,6 +110,13 @@ public class RegionSurvey {
      * millisecond to learn the same thing.
      */
     static final int DESCRIBE_AGAIN_MS = 50;
+
+    /**
+     * How long a box's corners are given to become the plugin's selection, over all the asking it
+     * takes. Longer than the acknowledgement is waited for, because it covers both the plugin
+     * handling the commands and the bot reading what came back.
+     */
+    static final int SELECT_MS = 8_000;
 
     /** How many differing blocks a readback names before it only counts them. */
     private static final int NAMED_DIFFERENCES = 5;
@@ -628,7 +637,7 @@ public class RegionSurvey {
             }
         }
 
-        long deadline = System.currentTimeMillis() + SELECTION_MS;
+        long deadline = System.currentTimeMillis() + SELECT_MS;
         SelectionRenderer.View selection;
 
         do {
@@ -642,7 +651,7 @@ public class RegionSurvey {
 
         return ToolDispatcher.failure(
                 "WorldEdit did not select %s within %dms -- it last described %s -- so the edit was not sent."
-                        .formatted(box, SELECTION_MS, describe(selection)));
+                        .formatted(box, SELECT_MS, describe(selection)));
     }
 
     /** Whether the selection the plugin described is this box, corner for corner. */

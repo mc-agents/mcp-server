@@ -3189,18 +3189,19 @@ class BotEndToEndTest {
      */
     @Test
     void theSelectionIsReadFromTheChannelWorldEditDescribesItOn() {
-        agent.requiresOffered("read-selection", Map.of("bot", BotWorld.BOT));
+        agent.requiresOffered("read-selection", Map.of("bot", BotWorld.BOT, "timeoutMs", 5000));
         /* //desel and not //sel cuboid: naming the selector the session already has leaves its corners where they were. */
         agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "//desel"));
         agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
 
-        String cleared = agent.call("read-selection", Map.of("bot", BotWorld.BOT));
+        /* A fabric bot under software rendering ticks slowly, and the default second is not always two of its ticks. */
+        String cleared = agent.call("read-selection", Map.of("bot", BotWorld.BOT, "timeoutMs", 5000));
 
         agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "//pos1 60,-60,-4"));
         agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "//pos2 62,-59,-2"));
         agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
 
-        String selected = agent.call("read-selection", Map.of("bot", BotWorld.BOT));
+        String selected = agent.call("read-selection", Map.of("bot", BotWorld.BOT, "timeoutMs", 5000));
 
         agent.mustCall("run-command", Map.of("bot", BotWorld.BOT, "command", "//desel"));
 
@@ -3217,7 +3218,7 @@ class BotEndToEndTest {
     @Test
     void aRegionGoesDownWithEveryBoxConfirmedOnTheChannel() {
         agent.requires("import-region", "write-region");
-        agent.requiresOffered("read-selection", Map.of("bot", BotWorld.BOT));
+        agent.requiresOffered("read-selection", Map.of("bot", BotWorld.BOT, "timeoutMs", 5000));
         world.run("tp " + BotWorld.BOT + " 60 -59 2");
         agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
 
