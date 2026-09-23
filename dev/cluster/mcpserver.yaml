@@ -7,7 +7,7 @@ metadata:
   name: mc-agents
 spec:
   image:
-    tag: "0.67.0"
+    tag: "0.71.0"
   auth:
     existingSecret: mcp-auth
 ---
@@ -17,6 +17,6 @@ metadata:
   name: default
 spec:
   fabric:
-    tag: 0.73.1
+    tag: 0.75.0
   azalea:
-    tag: 0.25.1
+    tag: 0.26.0

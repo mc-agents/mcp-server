@@ -3399,18 +3399,19 @@ class BotEndToEndTest {
     }
 
     /**
-     * The room the bot is standing in, measured out of a region rather than out of the world: no
-     * bot is involved past the read that captured it, which is what lets a measurement be tried
-     * again with different thresholds for nothing.
+     * A room measured out of a region, and the same measurement from over its roof.
+     *
+     * <p>The roof is the case worth holding. Flooding air that has something above it takes the
+     * whole of an open building, and the rule that replaced it has to answer differently inside
+     * and outside without being told which is which.
      */
     @Test
-    void aRoomIsMeasuredOutOfAKeptRegionWithNoBot() {
+    void aRoomIsMeasuredAndTheOpenAirOverItIsNot() {
         agent.requires("measure-room");
         agent.requiresOffered("read-region", Map.of("bot", BotWorld.BOT,
             "from", Map.of("x", 0, "y", -60, "z", 0), "to", Map.of("x", 0, "y", -60, "z", 0)));
         world.run("tp " + BotWorld.BOT + " 50 -59 50");
         agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 40));
-        /* A room of stone with one glass block in a wall, which is the opening it should name. */
         world.run("fill 46 -60 46 54 -55 54 minecraft:stone");
         world.run("fill 47 -59 47 53 -56 53 minecraft:air");
         world.run("setblock 46 -58 50 minecraft:glass");
@@ -3419,19 +3420,18 @@ class BotEndToEndTest {
         String read = agent.mustCall("read-region", Map.of("bot", BotWorld.BOT,
             "from", Map.of("x", 45, "y", -61, "z", 45), "to", Map.of("x", 55, "y", -52, "z", 55)));
         String id = regionIdIn(read);
-        String measured = agent.mustCall("measure-room", Map.of("region", id,
+        String inside = agent.mustCall("measure-room", Map.of("region", id,
             "at", Map.of("x", 50, "y", -58, "z", 50)));
-        String outside = agent.mustCall("measure-room", Map.of("region", id,
-            "at", Map.of("x", 46, "y", -53, "z", 46)));
+        String over = agent.mustCall("measure-room", Map.of("region", id,
+            "at", Map.of("x", 50, "y", -53, "z", 50)));
         world.run("fill 45 -61 45 55 -52 55 minecraft:air");
         world.run("tp " + BotWorld.BOT + " 26 -59 4");
 
-        assertTrue(measured.contains("(47, -59, 47) to (53, -56, 53)"), measured);
-        assertTrue(measured.contains("stone"), measured);
-        assertTrue(measured.contains("glass"), measured);
-        /* Over the roof is not a room, and the answer has to say that rather than measure the sky. */
-        assertTrue(outside.contains("the walls did not stop it") || outside.contains("block(s) of space over"),
-            outside);
+        assertTrue(inside.contains("(47, -59, 47) to (53, -56, 53)"), inside);
+        assertTrue(inside.contains("stone"), inside);
+        assertTrue(inside.contains("glass"), inside);
+        /* Seven by seven of floor inside, against the eleven by eleven the region holds. */
+        assertTrue(over.contains("That is a small space") || over.contains("the walls did not stop it"), over);
     }
 
     /**
