@@ -2,14 +2,14 @@
 
 <!-- Rendered from catalog/catalog.json by ./gradlew renderToolReference. Edit the catalogue, not this page. -->
 
-Catalogue 5.9.0, 104 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
+Catalogue 5.10.0, 105 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
 
 Every tool but [`list-bots`](#list-bots), [`ping-server`](#ping-server), [`wait-for-server`](#wait-for-server) takes `bot`, the name given to join-server, which may be left out while exactly one bot is connected; it is not repeated below. A tool marked **fabric only** is one the headless kind of bot does not run. **Exclusive** means one call at a time on a bot, since two walks or two clicks at once would fight over the same body. **Untrusted** means the answer carries content the server did not write -- chat, item names, signs -- and is marked as data rather than instructions. **Read-only** means the call changes nothing in the game or on the server, which is what an MCP client's `readOnlyHint` approves without asking; **destructive** is the `destructiveHint`, for a call that removes something or runs with the bot's permissions. A tool that **needs a world** is refused while the bot is on a title or disconnected screen. The deadline is how long the server waits for the bot before giving the call up; a tool with a `timeoutMs` argument sets its own inside that.
 
 | Group | Tools |
 | --- | --- |
 | [world](#world) | [`activate-block`](#activate-block), [`attack-entity`](#attack-entity), [`fish`](#fish), [`interact-entity`](#interact-entity), [`use-held-item`](#use-held-item) |
-| [region](#region) | [`build-region`](#build-region), [`import-region`](#import-region), [`read-furniture`](#read-furniture), [`place-furniture`](#place-furniture), [`photograph-region`](#photograph-region), [`learn-custom-blocks`](#learn-custom-blocks), [`list-regions`](#list-regions), [`read-region`](#read-region), [`read-selection`](#read-selection), [`show-region`](#show-region), [`measure-room`](#measure-room), [`verify-region`](#verify-region), [`write-region`](#write-region) |
+| [region](#region) | [`build-region`](#build-region), [`import-region`](#import-region), [`read-furniture`](#read-furniture), [`place-furniture`](#place-furniture), [`remove-furniture`](#remove-furniture), [`photograph-region`](#photograph-region), [`learn-custom-blocks`](#learn-custom-blocks), [`list-regions`](#list-regions), [`read-region`](#read-region), [`read-selection`](#read-selection), [`show-region`](#show-region), [`measure-room`](#measure-room), [`verify-region`](#verify-region), [`write-region`](#write-region) |
 | [crafting](#crafting) | [`can-craft`](#can-craft), [`craft-item`](#craft-item), [`get-recipe`](#get-recipe), [`list-recipes`](#list-recipes) |
 | [screen](#screen) | [`click-chat`](#click-chat), [`press-dialog-button`](#press-dialog-button), [`read-book`](#read-book), [`screenshot`](#screenshot), [`set-dialog-input`](#set-dialog-input), [`type-text`](#type-text) |
 | [slot](#slot) | [`click-slot`](#click-slot), [`drag-slots`](#drag-slots), [`drop-held-item`](#drop-held-item), [`hover-slot`](#hover-slot), [`select-bundle-item`](#select-bundle-item) |
@@ -168,6 +168,24 @@ Put CraftEngine furniture down, one piece at a time, exactly where and facing wh
 | `pieces[].rotation` | number | no | Which way it faces in degrees, 0 to 360. Built rooms use multiples of 45 (default: 0) | at least 0 |
 | `pieces[].variant` | string | no | Which of the piece's variants to place it as, for example ground or ceiling. Omit for the piece's own default | at most 64 characters |
 | `verify` | boolean | no | Read each piece back with the debug stick after placing it (default: true). False is faster and says less |  |
+
+### remove-furniture
+
+*fabric and azalea · deadline 600s · exclusive · untrusted · destructive · the server drives the bot's session*
+
+Take CraftEngine furniture away again: the pieces in a box are hit until they break, which is the only thing that removes one -- the plugin has no command for it. The bot's hand is emptied first, because a hit that carries a debug stick is cancelled before it breaks anything, which is what makes read-furniture safe. This is the other half of place-furniture: a piece put down in the wrong place is taken back with this, and killing the entities by hand instead leaves the display standing and the plugin still believing the piece is there. It cannot be undone, so read the box first.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `from` | object | yes | One corner of the box, inclusive |  |
+| `from.x` | integer | yes |  |  |
+| `from.y` | integer | yes |  |  |
+| `from.z` | integer | yes |  |  |
+| `to` | object | yes | The other corner, inclusive |  |
+| `to.x` | integer | yes |  |  |
+| `to.y` | integer | yes |  |  |
+| `to.z` | integer | yes |  |  |
+| `count` | integer | no | How many pieces to take away at most (default: 24) | 1 to 64 |
 
 ### photograph-region
 

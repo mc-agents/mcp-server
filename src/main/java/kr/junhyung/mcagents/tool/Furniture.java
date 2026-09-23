@@ -80,6 +80,12 @@ public class Furniture {
     /** How long the plugin is given to answer a piece being placed; it answers within a tick. */
     private static final int PLACE_MS = 3_000;
 
+    /** How long a piece that has just been placed is given to reach the client. */
+    private static final int PLACED_MS = 3_000;
+
+    /** How many times a piece is hit before it counts as one this bot cannot break. */
+    private static final int BREAK_SWINGS = 8;
+
     /** What the plugin says to an id it does not have. */
     private static final Pattern UNKNOWN_FURNITURE = Pattern.compile("[Uu]nknown furniture");
 
@@ -163,6 +169,129 @@ public class Furniture {
         } finally {
             restore(bot, stood);
         }
+    }
+
+    /**
+     * remove-furniture: pieces taken away again.
+     *
+     * <p>The plugin has no command for this, and the one thing that does take a piece away is what
+     * a player does: hit it with something that is not a debug stick. The stick is the exception
+     * because CraftEngine cancels a hit that carries one -- which is what makes reading a room
+     * safe, and what makes this have to put the stick down first.
+     *
+     * <p>place-furniture without this was a tool that could not be taken back. A piece put down in
+     * the wrong place had to be killed as a raw entity, which leaves the display behind and the
+     * plugin still believing the piece is there.
+     */
+    public McpSchema.CallToolResult remove(ToolSpec spec, BotSession bot, Map<String, Object> given,
+            Progress progress) {
+        Map<String, Object> arguments = given == null ? Map.of() : given;
+        Region box = Region.of(spec.name(), arguments);
+        int count = arguments.get("count") instanceof Number number ? number.intValue() : DEFAULT_COUNT;
+
+        return remote.exclusively(spec, bot, () -> remove(bot, box, count, progress));
+    }
+
+    private McpSchema.CallToolResult remove(BotSession bot, Region box, int count, Progress progress) {
+        Messages.Position stood = position(bot);
+
+        try {
+            centre(bot, box);
+
+            String late = settled(bot, box);
+
+            if (late != null) {
+                return ToolDispatcher.text(late);
+            }
+            List<FoundEntitiesRenderer.Entity> hitboxes = within(bot, box, "interaction");
+
+            if (hitboxes.isEmpty()) {
+                return ToolDispatcher.text("Nothing in %s has an interaction box, so there is no furniture there to take away."
+                        .formatted(box));
+            }
+            List<String> models = within(bot, box, "item_display").stream()
+                    .filter(display -> display.item() != null && display.item().itemModel() != null)
+                    .map(display -> display.item().itemModel())
+                    .distinct()
+                    .toList();
+
+            if (hitboxes.size() > count) {
+                hitboxes = hitboxes.subList(0, count);
+            }
+            String empty = emptyHanded(bot);
+
+            if (empty != null) {
+                return ToolDispatcher.failure(empty);
+            }
+            return ToolDispatcher.text(Trust.mark(swung(bot, box, hitboxes, models, progress)));
+        } finally {
+            restore(bot, stood);
+        }
+    }
+
+    private String swung(BotSession bot, Region box, List<FoundEntitiesRenderer.Entity> hitboxes,
+            List<String> models, Progress progress) {
+        ToolSpec attack = catalog.require("attack-entity");
+
+        ToolDispatcher.offerCheck(attack, bot);
+
+        int broken = 0;
+
+        for (int at = 0; at < hitboxes.size(); at++) {
+            FoundEntitiesRenderer.Entity hitbox = hitboxes.get(at);
+
+            progress.report("taking away %d of %d".formatted(at + 1, hitboxes.size()), at, hitboxes.size());
+
+            if (hitbox.id() == null) {
+                continue;
+            }
+            stand(bot, hitbox, box, 0);
+
+            /*
+            A piece takes as many hits as its own config says, and nothing tells a client how many
+            that is. So it is hit until it is gone, which is also how the answer knows it went.
+            */
+            for (int swing = 0; swing < BREAK_SWINGS; swing++) {
+                if (Boolean.TRUE.equals(remote.call(attack, bot, Map.of("id", hitbox.id())).isError())) {
+                    break;
+                }
+                Region where = new Region(hitbox.position().x(), hitbox.position().y(), hitbox.position().z(),
+                        hitbox.position().x(), hitbox.position().y(), hitbox.position().z());
+
+                if (within(bot, where, "interaction").stream()
+                        .noneMatch(left -> hitbox.id().equals(left.id()))) {
+                    broken++;
+                    break;
+                }
+            }
+        }
+        String what = models.isEmpty() ? "" : " They were showing %s.".formatted(String.join(", ", models));
+
+        if (broken == hitboxes.size()) {
+            return "Took away %d piece(s) of furniture from %s.%s".formatted(broken, box, what);
+        }
+        return "Took away %d of %d piece(s) in %s. The rest are still standing: a piece the server will not let this bot break reads like this, and so does one whose hitbox the bot could not get outside of.%s"
+                .formatted(broken, hitboxes.size(), box, what);
+    }
+
+    /**
+     * The bot's hand empty, since a hit that carries a debug stick is cancelled before it breaks
+     * anything -- which is exactly what read-furniture relies on.
+     */
+    private String emptyHanded(BotSession bot) {
+        ToolSpec equip = catalog.require("equip-item");
+
+        ToolDispatcher.offerCheck(equip, bot);
+
+        McpSchema.CallToolResult held = remote.call(equip, bot, Map.of("itemName", "air"));
+
+        if (!Boolean.TRUE.equals(held.isError())) {
+            return null;
+        }
+        /* Nothing to hold is the same as holding nothing, as long as what is held is not the stick. */
+        return Boolean.TRUE.equals(remote.call(equip, bot, Map.of("itemName", DEBUG_STICK)).isError())
+                ? null
+                : "the bot is holding a debug stick and a hit that carries one is cancelled before it breaks anything, so nothing here could be taken away. Give it something else to hold.";
     }
 
     /**
@@ -317,7 +446,7 @@ public class Furniture {
      */
     private String confirmed(BotSession bot, Wanted piece) {
         Region block = piece.block();
-        List<FoundEntitiesRenderer.Entity> hitboxes = within(bot, block, "interaction");
+        List<FoundEntitiesRenderer.Entity> hitboxes = arriving(bot, block);
 
         if (hitboxes.isEmpty()) {
             return "- %s at %s: the command complained about nothing and nothing stands in that block, so it did not go down."
@@ -355,7 +484,28 @@ public class Furniture {
                         String.join("; ", off), models);
     }
 
-    /** Refuse a block that already holds a piece, since nothing here can take one away again. */
+    /**
+     * The hitboxes in a block, waited for.
+     *
+     * <p>A piece that has just gone down is on the server before it is on the client, and looking
+     * straight away found nothing and reported that the piece had not gone down at all -- which was
+     * the opposite of what had happened. Looking for a moment tells "not there yet" from "not
+     * there", and a block that is genuinely empty costs the wait once.
+     */
+    private List<FoundEntitiesRenderer.Entity> arriving(BotSession bot, Region block) {
+        long deadline = System.currentTimeMillis() + PLACED_MS;
+
+        while (true) {
+            List<FoundEntitiesRenderer.Entity> found = within(bot, block, "interaction");
+
+            if (!found.isEmpty() || System.currentTimeMillis() >= deadline) {
+                return found;
+            }
+            Commands.sleep(Commands.POLL_MS);
+        }
+    }
+
+    /** Refuse a block that already holds a piece, since remove-furniture is what takes one away. */
     private String occupied(BotSession bot, Wanted piece) {
         if (within(bot, piece.block(), "interaction").isEmpty()) {
             return null;

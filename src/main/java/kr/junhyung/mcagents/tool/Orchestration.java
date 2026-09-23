@@ -112,6 +112,7 @@ public class Orchestration {
                 case "learn-custom-blocks" -> customBlocks.learn(spec, resolve(spec, arguments), arguments, progress);
                 case "read-furniture" -> furniture.read(spec, resolve(spec, arguments), arguments, progress);
                 case "place-furniture" -> furniture.place(spec, resolve(spec, arguments), arguments, progress);
+                case "remove-furniture" -> furniture.remove(spec, resolve(spec, arguments), arguments, progress);
                 case "photograph-region" -> photographs.take(spec, resolve(spec, arguments), arguments, progress);
                 default -> ToolDispatcher.failure("%s is not an orchestration tool".formatted(spec.name()));
             };

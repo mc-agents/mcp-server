@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "5.9.0",
+  "catalogVersion": "5.10.0",
   "protocol": 1,
   "tools": [
     {
@@ -4031,6 +4031,89 @@
         },
         "required": [
           "pieces"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "remove-furniture",
+      "group": "region",
+      "description": "Take CraftEngine furniture away again: the pieces in a box are hit until they break, which is the only thing that removes one -- the plugin has no command for it. The bot's hand is emptied first, because a hit that carries a debug stick is cancelled before it breaks anything, which is what makes read-furniture safe. This is the other half of place-furniture: a piece put down in the wrong place is taken back with this, and killing the entities by hand instead leaves the display standing and the plugin still believing the piece is there. It cannot be undone, so read the box first.",
+      "route": "orchestrate",
+      "kinds": [
+        "fabric",
+        "azalea"
+      ],
+      "exclusive": true,
+      "untrusted": true,
+      "readOnly": false,
+      "destructive": true,
+      "structured": false,
+      "needsWorld": true,
+      "defaultDeadlineMs": 600000,
+      "requires": [
+        "craftengine-furniture"
+      ],
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "from": {
+            "description": "One corner of the box, inclusive",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "to": {
+            "description": "The other corner, inclusive",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "count": {
+            "description": "How many pieces to take away at most (default: 24)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
+          }
+        },
+        "required": [
+          "from",
+          "to"
         ],
         "additionalProperties": false
       }
@@ -11322,5 +11405,5 @@
       }
     }
   ],
-  "catalogHash": "sha256:947f280d96728c7ed0567cc756e1b4ce032f2d6e1a880562c6af42da98ff124b"
+  "catalogHash": "sha256:99fa797bc7b5def6368d304e6966b90f0889d74b49dc0c73334982a167bf5686"
 }
