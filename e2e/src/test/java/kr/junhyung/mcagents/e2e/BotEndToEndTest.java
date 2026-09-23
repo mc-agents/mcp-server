@@ -3396,14 +3396,83 @@ class BotEndToEndTest {
         assertTrue(bare.contains("No furniture in (100, -60, 100) to (104, -56, 104)"), bare);
     }
 
-    /** A server without CraftEngine has nothing to learn, and the tool says so before placing anything. */
+    /**
+     * A server without CraftEngine has nothing to learn, and it is turned away at the gate rather
+     * than after a scratch row has been placed and read -- the plugin's commands are simply not in
+     * the tree this server sent the bot.
+     */
     @Test
-    void learningCustomBlocksWhereThereAreNoneIsSaidSo() {
-        agent.requires("learn-custom-blocks");
+    void aToolWhosePluginIsNotOnTheServerIsRefusedBeforeTheBotIsTouched() {
+        agent.requires("learn-custom-blocks", "read-furniture", "place-furniture");
+        world.run("tp " + BotWorld.BOT + " 26 -59 4");
 
         String learned = agent.refusal("learn-custom-blocks", Map.of("bot", BotWorld.BOT));
+        String read = agent.refusal("read-furniture", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 24, "y", -60, "z", 2), "to", Map.of("x", 28, "y", -56, "z", 6)));
+        String placed = agent.refusal("place-furniture", Map.of("bot", BotWorld.BOT,
+            "pieces", java.util.List.of(Map.of("model", "default:desk_chair", "x", 26.5, "y", -59.0, "z", 4.5))));
 
-        assertTrue(learned.contains("either CraftEngine is not on it"), learned);
+        for (String refusal : java.util.List.of(learned, read, placed)) {
+            assertTrue(refusal.contains("has no CraftEngine"), refusal);
+        }
+    }
+
+    /**
+     * The room the bot is standing in, measured out of a region rather than out of the world: no
+     * bot is involved past the read that captured it, which is what lets a measurement be tried
+     * again with different thresholds for nothing.
+     */
+    @Test
+    void aRoomIsMeasuredOutOfAKeptRegionWithNoBot() {
+        agent.requires("measure-room");
+        agent.requiresOffered("read-region", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 0, "y", -60, "z", 0), "to", Map.of("x", 0, "y", -60, "z", 0)));
+        world.run("tp " + BotWorld.BOT + " 50 -59 50");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 40));
+        /* A room of stone with one glass block in a wall, which is the opening it should name. */
+        world.run("fill 46 -60 46 54 -55 54 minecraft:stone");
+        world.run("fill 47 -59 47 53 -56 53 minecraft:air");
+        world.run("setblock 46 -58 50 minecraft:glass");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+
+        String read = agent.mustCall("read-region", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 45, "y", -61, "z", 45), "to", Map.of("x", 55, "y", -54, "z", 55)));
+        String id = regionIdIn(read);
+        String measured = agent.mustCall("measure-room", Map.of("region", id,
+            "at", Map.of("x", 50, "y", -58, "z", 50)));
+        String outside = agent.mustCall("measure-room", Map.of("region", id,
+            "at", Map.of("x", 46, "y", -53, "z", 46)));
+        world.run("fill 45 -61 45 55 -54 55 minecraft:air");
+        world.run("tp " + BotWorld.BOT + " 26 -59 4");
+
+        assertTrue(measured.contains("(47, -59, 47) to (53, -56, 53)"), measured);
+        assertTrue(measured.contains("stone"), measured);
+        assertTrue(measured.contains("glass"), measured);
+        /* Over the roof is not a room, and the answer has to say that rather than measure the sky. */
+        assertTrue(outside.contains("the walls did not stop it") || outside.contains("block(s) of space over"),
+            outside);
+    }
+
+    /**
+     * Photographs of a room, from a tool that works out where to stand. The frames themselves are
+     * only checkable by eye; what this holds is that there are as many as were asked for, that they
+     * are images and not an error, and that the bot is put back.
+     */
+    @Test
+    void aRoomIsPhotographedFromEveryCornerAndTheBotGoesBack() {
+        agent.requires("photograph-region");
+        world.run("tp " + BotWorld.BOT + " 26 -59 4");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+
+        Agent.Answer shot = agent.answer("photograph-region", Map.of("bot", BotWorld.BOT,
+            "from", Map.of("x", 22, "y", -60, "z", 0), "to", Map.of("x", 30, "y", -54, "z", 8),
+            "width", 256, "height", 144));
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+        String position = agent.mustCall("get-position", Map.of("bot", BotWorld.BOT));
+
+        assertEquals(4, shot.images(), shot.text());
+        assertTrue(shot.text().contains("northwest corner, looking in"), shot.text());
+        assertTrue(position.startsWith("Position: (26, "), "the bot was not put back: " + position);
     }
 
     /**

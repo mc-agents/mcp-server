@@ -149,7 +149,7 @@ class RegionSessionTest {
         return new ToolSpec(spec.name(), spec.group(), spec.description(), spec.route(), spec.kinds(),
                 spec.exclusive(), spec.untrusted(), spec.structured(), spec.readOnly(), spec.destructive(),
                 spec.needsWorld(), 1_000, spec.inputSchema(), spec.wireSchema(), spec.wireSchemaHash(),
-                spec.watches());
+                spec.watches(), spec.requires());
     }
 
     private static String text(McpSchema.CallToolResult result) {

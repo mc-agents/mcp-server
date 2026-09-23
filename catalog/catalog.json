@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "5.6.0",
+  "catalogVersion": "5.9.0",
   "protocol": 1,
   "tools": [
     {
@@ -206,6 +206,9 @@
       "structured": false,
       "needsWorld": true,
       "defaultDeadlineMs": 60000,
+      "requires": [
+        "worldedit"
+      ],
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
@@ -3881,6 +3884,9 @@
       "structured": false,
       "needsWorld": true,
       "defaultDeadlineMs": 600000,
+      "requires": [
+        "craftengine-furniture"
+      ],
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
@@ -3946,6 +3952,187 @@
       }
     },
     {
+      "name": "place-furniture",
+      "group": "region",
+      "description": "Put CraftEngine furniture down, one piece at a time, exactly where and facing which way you say. The plugin's own command places a piece at the location the bot sends and the piece takes the bot's own facing, so the bot is stood at the right angle first -- which is why a yaw here is a yaw the piece ends up with rather than a request. Every piece is read back with the debug stick afterwards and the answer says what is actually there, because a wrong variant name is accepted in silence and a command's own reply repeats it back unchanged. Use read-furniture on a room you like to get the shape these arguments take.",
+      "route": "orchestrate",
+      "kinds": [
+        "fabric",
+        "azalea"
+      ],
+      "exclusive": true,
+      "untrusted": true,
+      "readOnly": false,
+      "destructive": true,
+      "structured": false,
+      "needsWorld": true,
+      "defaultDeadlineMs": 600000,
+      "requires": [
+        "craftengine-furniture"
+      ],
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "pieces": {
+            "description": "The furniture to put down, in order",
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "items": {
+              "type": "object",
+              "properties": {
+                "model": {
+                  "description": "The furniture's id, for example default:desk_chair. read-furniture answers with these",
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "x": {
+                  "description": "Where it sits, to the hundredth of a block. A piece on the middle of a block is at .50",
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                },
+                "z": {
+                  "type": "number"
+                },
+                "rotation": {
+                  "description": "Which way it faces in degrees, 0 to 360. Built rooms use multiples of 45 (default: 0)",
+                  "type": "number",
+                  "minimum": 0,
+                  "exclusiveMaximum": 360
+                },
+                "variant": {
+                  "description": "Which of the piece's variants to place it as, for example ground or ceiling. Omit for the piece's own default",
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                }
+              },
+              "required": [
+                "model",
+                "x",
+                "y",
+                "z"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "verify": {
+            "description": "Read each piece back with the debug stick after placing it (default: true). False is faster and says less",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pieces"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "photograph-region",
+      "group": "region",
+      "description": "Photograph a room from several places at once, so what it looks like can be judged rather than inferred from a block list. Give it the box and it works the viewpoints out itself: \"corners\" puts the camera high in each of the four top corners aimed at the middle, which is the room as a composition; \"centre\" stands in the middle and turns to each wall in turn, which is the room as somebody standing in it sees it. The HUD is left off by default here, the opposite of screenshot, because a hotbar across every frame is not what is being looked at. The bot goes back where it was afterwards.",
+      "route": "orchestrate",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": true,
+      "readOnly": false,
+      "structured": false,
+      "needsWorld": true,
+      "defaultDeadlineMs": 120000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "from": {
+            "description": "One corner of the room, inclusive",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "to": {
+            "description": "The other corner, inclusive",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "framing": {
+            "description": "Where to put the camera: \"corners\" (default) for four views from the top corners looking in, \"centre\" for four from the middle looking out, \"both\" for all eight",
+            "type": "string",
+            "enum": [
+              "corners",
+              "centre",
+              "both"
+            ]
+          },
+          "width": {
+            "description": "Image width (default: 854). The frame is the client's window scaled, so past 1280x720 there is no more detail in it, only more bytes",
+            "type": "integer",
+            "minimum": 256,
+            "maximum": 1920
+          },
+          "height": {
+            "description": "Image height (default: 480)",
+            "type": "integer",
+            "minimum": 144,
+            "maximum": 1080
+          },
+          "hud": {
+            "description": "Draw the HUD and any open screen over each frame (default: false)",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "learn-custom-blocks",
       "group": "region",
       "description": "Learn what every CraftEngine custom block on this server looks like to a client, once, so read-region names them and write-region puts them down. CraftEngine gives a custom block the look of a vanilla state nothing uses -- a note block with some instrument and note -- and that look is all a client is sent, so without this a custom block reads as note_block[...] and cannot be told from another. The tool lists every custom block state through the server's own tab completion, places each with CraftEngine's debug setblock in a scratch row of 64 at the top of the world beside the bot (or at scratch), reads the row back, asks the id WorldEdit files each under, and clears the row. Needs the permission for /craftengine debug (op has it). A server with a thousand states takes a minute or two; the call reports progress. What is learned is kept for the life of this server process, per server address; learn again after the plugin is reloaded. On a server without CraftEngine the answer says so and nothing is placed.",
@@ -3961,6 +4148,9 @@
       "structured": false,
       "needsWorld": true,
       "defaultDeadlineMs": 600000,
+      "requires": [
+        "craftengine-debug"
+      ],
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
@@ -9774,6 +9964,113 @@
       }
     },
     {
+      "name": "measure-room",
+      "group": "region",
+      "description": "Measure the room around a point in a kept region: how big it is, what its walls and floor and ceiling are finished in, and where the ways in and out are. Give it a point you know is inside -- where the bot stands, or where the furniture is -- and it grows outwards until the walls stop it. What stops it is not a roof, which an open arcade has too, but enclosure: a block carries the room further only when most of its horizon runs into a wall and there is room around it, so a fill cannot escape down a colonnade or slip through a doorway into the next room. If the answer says the walls did not stop it, raise \"enclosure\" or aim further in. Furniture is entities and no snapshot holds it, so read-furniture over the box it answers with is the other half. Needs no bot.",
+      "route": "local",
+      "kinds": [
+        "fabric",
+        "azalea"
+      ],
+      "exclusive": false,
+      "untrusted": false,
+      "readOnly": true,
+      "structured": false,
+      "defaultDeadlineMs": 10000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "region": {
+            "description": "The id of a kept region",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "at": {
+            "description": "A point inside the room, which is where the measuring starts",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "enclosure": {
+            "description": "How much of a block's horizon must run into a wall for it to carry the room further, 0 to 1 (default: 0.75). Raise it when a room leaks into an open space",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "clearance": {
+            "description": "How far the nearest wall must be for a block to carry the room further (default: 2), which is what keeps a doorway from joining two rooms",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8
+          },
+          "from": {
+            "description": "One corner of the part of the region to measure in, when the region is larger than one measurement takes",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "to": {
+            "description": "The other corner",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "region",
+          "at"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "smelt-item",
       "group": "smelting",
       "description": "Load a furnace, blast furnace or smoker with fuel and input, then optionally wait for the output.",
@@ -10130,6 +10427,9 @@
       "structured": false,
       "needsWorld": true,
       "defaultDeadlineMs": 30000,
+      "requires": [
+        "worldedit"
+      ],
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
@@ -11022,5 +11322,5 @@
       }
     }
   ],
-  "catalogHash": "sha256:48036f7c58aad5e4b27e14458c4e68ed46a03088a0ce4cbdb5f8f34cef1b315b"
+  "catalogHash": "sha256:947f280d96728c7ed0567cc756e1b4ce032f2d6e1a880562c6af42da98ff124b"
 }

@@ -77,7 +77,7 @@ public class LocalTools {
             case "detect-gamemode" -> gameMode(arguments);
             case "ping-server" -> ping(arguments);
             case "wait-for-server" -> waitForServer(spec, arguments, progress);
-            case "list-regions", "show-region", "import-region" -> regions.call(spec, arguments);
+            case "list-regions", "show-region", "import-region", "measure-room" -> regions.call(spec, arguments);
             default -> ToolDispatcher.failure("%s is not wired up yet".formatted(spec.name()));
         };
     }

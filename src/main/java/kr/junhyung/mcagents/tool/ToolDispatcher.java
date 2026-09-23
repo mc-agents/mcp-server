@@ -29,10 +29,13 @@ public class ToolDispatcher {
     private final RemoteTools remote;
     private final Orchestration orchestration;
     private final RegionSurvey survey;
+    private final ServerCapabilities capabilities;
     private final MeterRegistry meters;
 
     public ToolDispatcher(BotRegistry bots, LocalTools local, RemoteTools remote,
-            Orchestration orchestration, RegionSurvey survey, MeterRegistry meters) {
+            Orchestration orchestration, RegionSurvey survey, ServerCapabilities capabilities,
+            MeterRegistry meters) {
+        this.capabilities = capabilities;
         this.bots = bots;
         this.local = local;
         this.remote = remote;
@@ -111,6 +114,8 @@ public class ToolDispatcher {
         if (spec.watches() == null) {
             offerCheck(spec, session);
         }
+        capabilities.require(spec, session);
+
         return session;
     }
 

@@ -2,14 +2,14 @@
 
 <!-- Rendered from catalog/catalog.json by ./gradlew renderToolReference. Edit the catalogue, not this page. -->
 
-Catalogue 5.6.0, 101 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
+Catalogue 5.9.0, 104 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
 
 Every tool but [`list-bots`](#list-bots), [`ping-server`](#ping-server), [`wait-for-server`](#wait-for-server) takes `bot`, the name given to join-server, which may be left out while exactly one bot is connected; it is not repeated below. A tool marked **fabric only** is one the headless kind of bot does not run. **Exclusive** means one call at a time on a bot, since two walks or two clicks at once would fight over the same body. **Untrusted** means the answer carries content the server did not write -- chat, item names, signs -- and is marked as data rather than instructions. **Read-only** means the call changes nothing in the game or on the server, which is what an MCP client's `readOnlyHint` approves without asking; **destructive** is the `destructiveHint`, for a call that removes something or runs with the bot's permissions. A tool that **needs a world** is refused while the bot is on a title or disconnected screen. The deadline is how long the server waits for the bot before giving the call up; a tool with a `timeoutMs` argument sets its own inside that.
 
 | Group | Tools |
 | --- | --- |
 | [world](#world) | [`activate-block`](#activate-block), [`attack-entity`](#attack-entity), [`fish`](#fish), [`interact-entity`](#interact-entity), [`use-held-item`](#use-held-item) |
-| [region](#region) | [`build-region`](#build-region), [`import-region`](#import-region), [`read-furniture`](#read-furniture), [`learn-custom-blocks`](#learn-custom-blocks), [`list-regions`](#list-regions), [`read-region`](#read-region), [`read-selection`](#read-selection), [`show-region`](#show-region), [`verify-region`](#verify-region), [`write-region`](#write-region) |
+| [region](#region) | [`build-region`](#build-region), [`import-region`](#import-region), [`read-furniture`](#read-furniture), [`place-furniture`](#place-furniture), [`photograph-region`](#photograph-region), [`learn-custom-blocks`](#learn-custom-blocks), [`list-regions`](#list-regions), [`read-region`](#read-region), [`read-selection`](#read-selection), [`show-region`](#show-region), [`measure-room`](#measure-room), [`verify-region`](#verify-region), [`write-region`](#write-region) |
 | [crafting](#crafting) | [`can-craft`](#can-craft), [`craft-item`](#craft-item), [`get-recipe`](#get-recipe), [`list-recipes`](#list-recipes) |
 | [screen](#screen) | [`click-chat`](#click-chat), [`press-dialog-button`](#press-dialog-button), [`read-book`](#read-book), [`screenshot`](#screenshot), [`set-dialog-input`](#set-dialog-input), [`type-text`](#type-text) |
 | [slot](#slot) | [`click-slot`](#click-slot), [`drag-slots`](#drag-slots), [`drop-held-item`](#drop-held-item), [`hover-slot`](#hover-slot), [`select-bundle-item`](#select-bundle-item) |
@@ -152,6 +152,44 @@ Read the CraftEngine furniture standing in a box: what each piece is, where it s
 | `to.z` | integer | yes |  |  |
 | `count` | integer | no | How many pieces to read at most, oldest corner first (default: 24) | 1 to 64 |
 
+### place-furniture
+
+*fabric and azalea · deadline 600s · exclusive · untrusted · destructive · the server drives the bot's session*
+
+Put CraftEngine furniture down, one piece at a time, exactly where and facing which way you say. The plugin's own command places a piece at the location the bot sends and the piece takes the bot's own facing, so the bot is stood at the right angle first -- which is why a yaw here is a yaw the piece ends up with rather than a request. Every piece is read back with the debug stick afterwards and the answer says what is actually there, because a wrong variant name is accepted in silence and a command's own reply repeats it back unchanged. Use read-furniture on a room you like to get the shape these arguments take.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `pieces` | array of object | yes | The furniture to put down, in order | 1 to 32 items |
+| `pieces[].model` | string | yes | The furniture's id, for example default:desk_chair. read-furniture answers with these | at most 128 characters |
+| `pieces[].x` | number | yes | Where it sits, to the hundredth of a block. A piece on the middle of a block is at .50 |  |
+| `pieces[].y` | number | yes |  |  |
+| `pieces[].z` | number | yes |  |  |
+| `pieces[].rotation` | number | no | Which way it faces in degrees, 0 to 360. Built rooms use multiples of 45 (default: 0) | at least 0 |
+| `pieces[].variant` | string | no | Which of the piece's variants to place it as, for example ground or ceiling. Omit for the piece's own default | at most 64 characters |
+| `verify` | boolean | no | Read each piece back with the debug stick after placing it (default: true). False is faster and says less |  |
+
+### photograph-region
+
+*fabric only · deadline 120s · exclusive · untrusted · the server drives the bot's session*
+
+Photograph a room from several places at once, so what it looks like can be judged rather than inferred from a block list. Give it the box and it works the viewpoints out itself: "corners" puts the camera high in each of the four top corners aimed at the middle, which is the room as a composition; "centre" stands in the middle and turns to each wall in turn, which is the room as somebody standing in it sees it. The HUD is left off by default here, the opposite of screenshot, because a hotbar across every frame is not what is being looked at. The bot goes back where it was afterwards.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `from` | object | yes | One corner of the room, inclusive |  |
+| `from.x` | integer | yes |  |  |
+| `from.y` | integer | yes |  |  |
+| `from.z` | integer | yes |  |  |
+| `to` | object | yes | The other corner, inclusive |  |
+| `to.x` | integer | yes |  |  |
+| `to.y` | integer | yes |  |  |
+| `to.z` | integer | yes |  |  |
+| `framing` | string: `corners`, `centre`, `both` | no | Where to put the camera: "corners" (default) for four views from the top corners looking in, "centre" for four from the middle looking out, "both" for all eight |  |
+| `width` | integer | no | Image width (default: 854). The frame is the client's window scaled, so past 1280x720 there is no more detail in it, only more bytes | 256 to 1920 |
+| `height` | integer | no | Image height (default: 480) | 144 to 1080 |
+| `hud` | boolean | no | Draw the HUD and any open screen over each frame (default: false) |  |
+
 ### learn-custom-blocks
 
 *fabric and azalea · deadline 600s · exclusive · untrusted · destructive · the server drives the bot's session*
@@ -249,6 +287,30 @@ Draw a window of a kept region: its palette with counts and a map of each layer 
 | `from.y` | integer | yes |  |  |
 | `from.z` | integer | yes |  |  |
 | `to` | object | no | The other corner, inclusive |  |
+| `to.x` | integer | yes |  |  |
+| `to.y` | integer | yes |  |  |
+| `to.z` | integer | yes |  |  |
+
+### measure-room
+
+*fabric and azalea · deadline 10s · read-only · the server answers from what it holds*
+
+Measure the room around a point in a kept region: how big it is, what its walls and floor and ceiling are finished in, and where the ways in and out are. Give it a point you know is inside -- where the bot stands, or where the furniture is -- and it grows outwards until the walls stop it. What stops it is not a roof, which an open arcade has too, but enclosure: a block carries the room further only when most of its horizon runs into a wall and there is room around it, so a fill cannot escape down a colonnade or slip through a doorway into the next room. If the answer says the walls did not stop it, raise "enclosure" or aim further in. Furniture is entities and no snapshot holds it, so read-furniture over the box it answers with is the other half. Needs no bot.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `region` | string | yes | The id of a kept region | at most 64 characters |
+| `at` | object | yes | A point inside the room, which is where the measuring starts |  |
+| `at.x` | integer | yes |  |  |
+| `at.y` | integer | yes |  |  |
+| `at.z` | integer | yes |  |  |
+| `enclosure` | number | no | How much of a block's horizon must run into a wall for it to carry the room further, 0 to 1 (default: 0.75). Raise it when a room leaks into an open space | 0 to 1 |
+| `clearance` | integer | no | How far the nearest wall must be for a block to carry the room further (default: 2), which is what keeps a doorway from joining two rooms | 1 to 8 |
+| `from` | object | no | One corner of the part of the region to measure in, when the region is larger than one measurement takes |  |
+| `from.x` | integer | yes |  |  |
+| `from.y` | integer | yes |  |  |
+| `from.z` | integer | yes |  |  |
+| `to` | object | no | The other corner |  |
 | `to.x` | integer | yes |  |  |
 | `to.y` | integer | yes |  |  |
 | `to.z` | integer | yes |  |  |

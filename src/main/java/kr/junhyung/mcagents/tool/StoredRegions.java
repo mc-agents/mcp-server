@@ -4,10 +4,12 @@ import io.modelcontextprotocol.spec.McpSchema;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import kr.junhyung.mcagents.catalog.ToolSpec;
 import kr.junhyung.mcagents.render.RegionRenderer;
+import kr.junhyung.mcagents.render.Text;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,6 +33,9 @@ public class StoredRegions {
     /** An imported box may be as wide as a surveyed one. */
     private static final int MAX_SPAN = RegionSurvey.MAX_SPAN;
 
+    /** How many kinds of shell block are listed before the tail is left off. */
+    private static final int SHELL_KINDS = 12;
+
     private static final RegionRenderer RENDERER = new RegionRenderer();
 
     private final RegionStore store;
@@ -46,6 +51,7 @@ public class StoredRegions {
             case "list-regions" -> list();
             case "show-region" -> show(spec, arguments);
             case "import-region" -> imported(spec, arguments);
+            case "measure-room" -> measure(spec, arguments);
             default -> ToolDispatcher.failure("%s is not a region tool".formatted(spec.name()));
         };
     }
@@ -190,5 +196,154 @@ public class StoredRegions {
             return since.toHours() + "h";
         }
         return since.toMinutes() > 0 ? since.toMinutes() + "m" : since.toSeconds() + "s";
+    }
+
+    /**
+     * measure-room: how big a room is, what it is finished in, and where the way out is.
+     *
+     * <p>Needs no bot, because the snapshot read-region already kept holds everything this asks.
+     * That matters more than it sounds: the measurement takes a point and two thresholds, and when
+     * the first answer says the walls did not stop it, the agent tries again -- which with a bot in
+     * the loop would be a teleport and a wait for chunks each time.
+     */
+    private McpSchema.CallToolResult measure(ToolSpec spec, Map<String, Object> arguments) {
+        Snapshot snapshot = store.require(required(arguments, "region"));
+        Region box = arguments.get("from") == null || arguments.get("to") == null
+                ? snapshot.box()
+                : Region.corners(spec.name(), arguments).clip(snapshot.box());
+
+        if (box == null) {
+            throw new IllegalArgumentException("the corners given are outside %s, which holds %s"
+                    .formatted(snapshot.id(), snapshot.box()));
+        }
+        if (box.blocks() > Rooms.MAX_BLOCKS) {
+            throw new IllegalArgumentException(
+                    "%s holds %d blocks and a room is measured in at most %d. Give \"from\" and \"to\" to narrow it."
+                            .formatted(snapshot.id(), box.blocks(), Rooms.MAX_BLOCKS));
+        }
+        int[] at = point(arguments);
+        double enclosure = arguments.get("enclosure") instanceof Number number ? number.doubleValue() : 0.75;
+        int clearance = arguments.get("clearance") instanceof Number number ? number.intValue() : 2;
+
+        if (!box.contains(at[0], at[1], at[2])) {
+            return ToolDispatcher.failure("%s is not inside %s, which is what %s holds."
+                    .formatted(Text.block(at[0], at[1], at[2]), box, snapshot.id()));
+        }
+        Rooms.Room room = Rooms.of(snapshot, box, at, enclosure, clearance);
+
+        if (room == null) {
+            return ToolDispatcher.failure(
+                    "nothing at or within 3 blocks of %s is a block a room's air runs through: %s is there. Aim at the space in a room rather than at what encloses it."
+                            .formatted(Text.block(at[0], at[1], at[2]),
+                                    snapshot.blockAt(at[0], at[1], at[2])));
+        }
+        return ToolDispatcher.text(described(snapshot, box, room, enclosure, clearance));
+    }
+
+    private String described(Snapshot snapshot, Region box, Rooms.Room room, double enclosure, int clearance) {
+        List<String> out = new ArrayList<>();
+        Map<String, long[]> shell = Rooms.shell(snapshot, room.cells(), box);
+        long floor = room.cells().stream().mapToLong(cell -> ((long) cell[0] << 32) | cell[2]).distinct().count();
+
+        out.add("The room around %s in %s: %d block(s) of space over %d of floor, within %s."
+                .formatted(Text.block(room.seed()[0], room.seed()[1], room.seed()[2]), snapshot.id(),
+                        room.cells().size(), floor, room.box()));
+
+        if (room.movedSeed()) {
+            out.add("The point given was inside a block, so the nearest open one was measured from instead.");
+        }
+        out.add("It is %.1f blocks from side to side, %.1f front to back, and %.1f from floor to ceiling."
+                .formatted((double) room.box().sizeX(), (double) room.box().sizeZ(), (double) room.box().sizeY()));
+
+        List<String> faces = new ArrayList<>();
+        shell.entrySet().stream()
+                .sorted(Comparator.comparingLong((Map.Entry<String, long[]> entry) ->
+                        entry.getValue()[0] + entry.getValue()[1] + entry.getValue()[2]).reversed())
+                .limit(SHELL_KINDS)
+                .forEach(entry -> faces.add("  %5d %s (%s)".formatted(
+                        entry.getValue()[0] + entry.getValue()[1] + entry.getValue()[2], entry.getKey(),
+                        where(entry.getValue()))));
+
+        if (!faces.isEmpty()) {
+            out.add("What it is finished in, counting only the faces that look into it:");
+            out.addAll(faces);
+        }
+        List<Map.Entry<String, Long>> openings = Rooms.openings(shell);
+
+        if (!openings.isEmpty()) {
+            out.add("Ways in and out, and what lets light in: " + openings.stream()
+                    .map(entry -> "%s x%d".formatted(entry.getKey(), entry.getValue()))
+                    .collect(java.util.stream.Collectors.joining(", ")));
+        }
+        if (!room.frontier().isEmpty()) {
+            out.add("%d block(s) of it are a doorway or a gap: entered, and too tight or too open to carry the room further. Those are where it ends."
+                    .formatted(room.frontier().size()));
+        }
+        String leaking = leaking(room, box);
+
+        if (leaking != null) {
+            out.add(leaking);
+        }
+        if (room.unread() > 0) {
+            out.add("%d block(s) of the box were never read, and a gap in the blocks reads as a way out."
+                    .formatted(room.unread()));
+        }
+        out.add("As arguments: show-region %s from %d,%d,%d to %d,%d,%d draws it, and read-furniture over the same box says what stands in it -- the furniture is entities and no snapshot holds it."
+                .formatted(snapshot.id(), room.box().minX(), room.box().minY(), room.box().minZ(),
+                        room.box().maxX(), room.box().maxY(), room.box().maxZ()));
+
+        return String.join("\n", out);
+    }
+
+    /**
+     * Whether the walls stopped it, said plainly.
+     *
+     * <p>A fill that ran to the sides of the box did not find a room; it found however much of the
+     * world was read. Saying which thresholds were used along with it is what makes the next call
+     * an adjustment rather than a guess.
+     */
+    private static String leaking(Rooms.Room room, Region box) {
+        int sides = 0;
+
+        for (int touching : room.touches()) {
+            if (touching > 0) {
+                sides++;
+            }
+        }
+        if (sides < 3) {
+            return null;
+        }
+        return "It ran to %d sides of %s, so the walls did not stop it and this is the measurement of what was read rather than of a room. Raise \"enclosure\" above %.2f or \"clearance\" above %d, or aim at a point further inside."
+                .formatted(sides, box, room.clearanceUsed(), (int) room.clearanceUsed());
+    }
+
+    /** Which faces of the room a block makes up, which is how a floor is told from a ceiling. */
+    private static String where(long[] faces) {
+        List<String> named = new ArrayList<>();
+
+        if (faces[0] > 0) {
+            named.add("%d under".formatted(faces[0]));
+        }
+        if (faces[1] > 0) {
+            named.add("%d over".formatted(faces[1]));
+        }
+        if (faces[2] > 0) {
+            named.add("%d around".formatted(faces[2]));
+        }
+        return String.join(", ", named);
+    }
+
+    private static int[] point(Map<String, Object> arguments) {
+        if (!(arguments.get("at") instanceof Map<?, ?> at)) {
+            throw new IllegalArgumentException("\"at\" is required: a point inside the room to measure");
+        }
+        return new int[] {axis(at, "x"), axis(at, "y"), axis(at, "z")};
+    }
+
+    private static int axis(Map<?, ?> at, String axis) {
+        if (at.get(axis) instanceof Number value) {
+            return value.intValue();
+        }
+        throw new IllegalArgumentException("\"at.%s\" is a whole number, and it was not given".formatted(axis));
     }
 }

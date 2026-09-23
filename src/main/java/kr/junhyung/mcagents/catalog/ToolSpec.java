@@ -22,6 +22,10 @@ import java.util.Map;
  * @param wireSchema  what a bot receives: no {@code bot}, nothing optional, already clamped
  * @param watches   the reading tool this one polls until its answer matches, for a wait on state
  *                  the bot pushes no feed for. Null for everything else
+ * @param requires  what the server the bot is on has to be running for this tool to do anything:
+ *                  a plugin the tool drives rather than a part of the game. Empty for a tool that
+ *                  only needs a bot. Named here and not in the description so an agent reads it in
+ *                  tools/list and the server can refuse before it touches the bot
  */
 public record ToolSpec(
         String name,
@@ -39,7 +43,8 @@ public record ToolSpec(
         Map<String, Object> inputSchema,
         Map<String, Object> wireSchema,
         String wireSchemaHash,
-        String watches) {
+        String watches,
+        List<String> requires) {
 
     public enum Route {
         LOCAL, RPC, COMPOSE, ORCHESTRATE;
