@@ -395,7 +395,14 @@ public class Furniture {
         /* Standing at the piece is what decides its facing, so a teleport that was refused places it wrong. */
         long mark = bot.feed("chat").nextSeq();
 
-        commands.send(bot, "tp %.2f %.2f %.2f %.2f 0".formatted(piece.x(), piece.y() + STAND_BESIDE,
+        /*
+        Named, because "/tp x y z yaw pitch" is not a form the game has: a rotation may only follow
+        a target, and without one the game reads the yaw as the start of a second position and
+        refuses the whole command. It did, quietly -- the refusal is an "Incorrect argument", which
+        is neither an unknown command nor a missing permission -- and the piece was then placed
+        facing wherever the bot happened to be looking.
+        */
+        commands.send(bot, "tp @s %.2f %.2f %.2f %.2f 0".formatted(piece.x(), piece.y() + STAND_BESIDE,
                 piece.z(), piece.rotation()));
 
         FeedEntry no = Commands.refused(Commands.systemLines(bot, mark));

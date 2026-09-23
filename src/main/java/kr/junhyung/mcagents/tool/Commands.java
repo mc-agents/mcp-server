@@ -46,6 +46,16 @@ public class Commands {
     /** What the game says to a player without the permission level a command needs. */
     static final Pattern NO_PERMISSION = Pattern.compile("(do not have permission|not allowed|insufficient)", Pattern.CASE_INSENSITIVE);
 
+    /**
+     * What the game says to a command it could not parse.
+     *
+     * <p>A refusal that is neither of the two above, and one a composed tool has to treat as a
+     * refusal all the same: a teleport the game would not read is a bot that did not move, and the
+     * step after it goes ahead believing it did. That is how a piece of furniture came to be placed
+     * facing wherever the bot happened to be looking.
+     */
+    static final Pattern BAD_ARGUMENT = Pattern.compile("incorrect argument", Pattern.CASE_INSENSITIVE);
+
     private final RemoteTools remote;
     private final Catalog catalog;
 
@@ -140,7 +150,8 @@ public class Commands {
     static FeedEntry refused(List<FeedEntry> lines) {
         return lines.stream()
                 .filter(line -> NO_SUCH_COMMAND.matcher(line.rendered()).find()
-                        || NO_PERMISSION.matcher(line.rendered()).find())
+                        || NO_PERMISSION.matcher(line.rendered()).find()
+                        || BAD_ARGUMENT.matcher(line.rendered()).find())
                 .findFirst().orElse(null);
     }
 
