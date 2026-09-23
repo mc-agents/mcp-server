@@ -493,10 +493,17 @@ public class Furniture {
      * there", and a block that is genuinely empty costs the wait once.
      */
     private List<FoundEntitiesRenderer.Entity> arriving(BotSession bot, Region block) {
+        /*
+        A block either side, because a hitbox does not sit in the block its piece does. A chair
+        placed at y=3 is given one at y=2 -- the box hangs under the model rather than around it --
+        and looking only where the piece is found nothing and reported the piece had not gone down.
+        */
+        Region around = new Region(block.minX(), block.minY() - 1, block.minZ(),
+                block.maxX(), block.maxY() + 1, block.maxZ());
         long deadline = System.currentTimeMillis() + PLACED_MS;
 
         while (true) {
-            List<FoundEntitiesRenderer.Entity> found = within(bot, block, "interaction");
+            List<FoundEntitiesRenderer.Entity> found = within(bot, around, "interaction");
 
             if (!found.isEmpty() || System.currentTimeMillis() >= deadline) {
                 return found;
@@ -507,7 +514,11 @@ public class Furniture {
 
     /** Refuse a block that already holds a piece, since remove-furniture is what takes one away. */
     private String occupied(BotSession bot, Wanted piece) {
-        if (within(bot, piece.block(), "interaction").isEmpty()) {
+        Region block = piece.block();
+        Region around = new Region(block.minX(), block.minY() - 1, block.minZ(),
+                block.maxX(), block.maxY() + 1, block.maxZ());
+
+        if (within(bot, around, "interaction").isEmpty()) {
             return null;
         }
         return "- %s was not placed at %s: something with an interaction box already stands in that block. read-furniture says what it is."
