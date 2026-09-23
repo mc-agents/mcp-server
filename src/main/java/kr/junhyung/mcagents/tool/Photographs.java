@@ -257,10 +257,28 @@ public class Photographs {
         }
     }
 
+    /**
+     * Where the bot is, asked rather than remembered.
+     *
+     * <p>A status is pushed every so often, so one read just after a teleport says the bot is still
+     * where it was -- and a tool that puts the bot back from that puts it somewhere it never was.
+     */
     private Messages.Position position(BotSession bot) {
-        Messages.Status status = bot.status();
+        ToolSpec getPosition = catalog.require("get-position");
 
-        return status == null ? null : status.position();
+        if (!bot.supports(getPosition.name())) {
+            Messages.Status status = bot.status();
+
+            return status == null ? null : status.position();
+        }
+        Messages.Result result = remote.fetch(getPosition, bot, Map.of()).result();
+
+        if (result.ok() && result.data() instanceof Map<?, ?> data && data.get("position") instanceof Map<?, ?> at
+                && at.get("x") instanceof Number x && at.get("y") instanceof Number y
+                && at.get("z") instanceof Number z) {
+            return new Messages.Position(x.doubleValue(), y.doubleValue(), z.doubleValue());
+        }
+        return null;
     }
 
     private void restore(BotSession bot, Messages.Position stood) {

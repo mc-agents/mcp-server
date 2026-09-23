@@ -149,6 +149,11 @@ final class Agent implements AutoCloseable {
         return new Answer(text(answer), images(answer), frame(answer));
     }
 
+    /** Which kind of bot this run drives, for a case whose answer depends on what a bot can do. */
+    String kind() {
+        return kind;
+    }
+
     List<String> tools() {
         return client.listTools().tools().stream().map(McpSchema.Tool::name).toList();
     }
