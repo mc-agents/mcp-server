@@ -140,10 +140,16 @@ jobs:
         env:
           BOT_IMAGE: junhyung.cloud/mc-agents/bot-${{ matrix.kind }}:latest-mc${{ env.MINECRAFT }}
           # Both prefixes are empty by default so a laptop pulls from Docker Hub without a login:
-          # this one is read by the suite for the Paper image, the Testcontainers one covers ryuk
-          # and sshd, which the suite never names.
+          # this one is read by the suite for the Paper image, the Testcontainers one covers sshd,
+          # which the suite never names.
           E2E_HUB_PREFIX: ${{ env.REGISTRY }}/docker-hub/
           TESTCONTAINERS_HUB_IMAGE_NAME_PREFIX: ${{ env.REGISTRY }}/docker-hub/
+          # Ryuk is a container that kills the run's other containers when the JVM that asked for
+          # them goes away. A runner is thrown away after the job, so there is nothing for it to
+          # clean up -- and pulling it was the single most common way this job failed, three times
+          # in one afternoon, always before a test had run. It is the registry's proxy reaching
+          # Docker Hub that is flaky, and the fix that needs no registry is not to need the image.
+          TESTCONTAINERS_RYUK_DISABLED: "true"
         run: |
           # The bot is the slowest pull of the run, nearly two minutes for fabric, and the suite asks
           # for it only once its server is up. Started here it downloads while Gradle and the server

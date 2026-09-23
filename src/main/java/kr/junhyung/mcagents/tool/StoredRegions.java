@@ -33,15 +33,20 @@ public class StoredRegions {
     /** An imported box may be as wide as a surveyed one. */
     private static final int MAX_SPAN = RegionSurvey.MAX_SPAN;
 
+    /** Under how many blocks a room is worth remarking on as a small one. */
+    private static final int CRAMPED = 24;
+
     /** How many kinds of shell block are listed before the tail is left off. */
     private static final int SHELL_KINDS = 12;
 
     private static final RegionRenderer RENDERER = new RegionRenderer();
 
     private final RegionStore store;
+    private final CustomBlocks customBlocks;
 
-    public StoredRegions(RegionStore store) {
+    public StoredRegions(RegionStore store, CustomBlocks customBlocks) {
         this.store = store;
+        this.customBlocks = customBlocks;
     }
 
     public McpSchema.CallToolResult call(ToolSpec spec, Map<String, Object> given) {
@@ -256,13 +261,15 @@ public class StoredRegions {
                 .formatted((double) room.box().sizeX(), (double) room.box().sizeZ(), (double) room.box().sizeY()));
 
         List<String> faces = new ArrayList<>();
+        CustomBlocks.Dictionary dictionary = named(snapshot);
+
         shell.entrySet().stream()
                 .sorted(Comparator.comparingLong((Map.Entry<String, long[]> entry) ->
                         entry.getValue()[0] + entry.getValue()[1] + entry.getValue()[2]).reversed())
                 .limit(SHELL_KINDS)
                 .forEach(entry -> faces.add("  %5d %s (%s)".formatted(
-                        entry.getValue()[0] + entry.getValue()[1] + entry.getValue()[2], entry.getKey(),
-                        where(entry.getValue()))));
+                        entry.getValue()[0] + entry.getValue()[1] + entry.getValue()[2],
+                        named(dictionary, entry.getKey()), where(entry.getValue()))));
 
         if (!faces.isEmpty()) {
             out.add("What it is finished in, counting only the faces that look into it:");
@@ -283,6 +290,8 @@ public class StoredRegions {
 
         if (leaking != null) {
             out.add(leaking);
+        } else if (room.cells().size() < CRAMPED) {
+            out.add("That is a small space for a room. If it should be bigger, the walls it found are furniture or a counter rather than walls, and a lower \"clearance\" gets past them -- or aim at a point with more room around it.");
         }
         if (room.unread() > 0) {
             out.add("%d block(s) of the box were never read, and a gap in the blocks reads as a way out."
@@ -315,6 +324,29 @@ public class StoredRegions {
         }
         return "It ran to %d sides of %s, so the walls did not stop it and this is the measurement of what was read rather than of a room. Raise \"enclosure\" above %.2f or \"clearance\" above %d, or aim at a point further inside."
                 .formatted(sides, box, room.clearanceUsed(), (int) room.clearanceUsed());
+    }
+
+    /**
+     * The dictionary the region's own server learned, so a wall can be named by what it is.
+     *
+     * <p>CraftEngine dresses a custom block as a vanilla state nobody else uses, so a room finished
+     * in it reads as note blocks in three instruments -- which answers nothing about what it is
+     * finished in, and that is the whole question this tool is asked. A server nobody has run
+     * learn-custom-blocks against has no dictionary, and then the states are what there is.
+     */
+    private CustomBlocks.Dictionary named(Snapshot snapshot) {
+        CustomBlocks.Dictionary dictionary = customBlocks.of(snapshot.origin());
+
+        return dictionary == null ? customBlocks.theOnlyOne() : dictionary;
+    }
+
+    private static String named(CustomBlocks.Dictionary dictionary, String block) {
+        if (dictionary == null) {
+            return block;
+        }
+        CustomBlocks.Entry custom = dictionary.byAppearance(block);
+
+        return custom == null ? block : custom.id();
     }
 
     /** Which faces of the room a block makes up, which is how a floor is told from a ceiling. */

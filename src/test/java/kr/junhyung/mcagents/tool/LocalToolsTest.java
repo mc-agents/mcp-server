@@ -44,7 +44,7 @@ class LocalToolsTest {
     private final Commands commands = new Commands(remote, catalog);
     private final CustomBlocks customBlocks = new CustomBlocks(remote, commands, catalog);
     private final RegionSurvey survey = new RegionSurvey(remote, commands, new RegionStore(), catalog, customBlocks);
-    private final ToolDispatcher dispatcher = new ToolDispatcher(bots, new LocalTools(bots, new StoredRegions(new RegionStore())), remote,
+    private final ToolDispatcher dispatcher = new ToolDispatcher(bots, new LocalTools(bots, new StoredRegions(new RegionStore(), customBlocks)), remote,
             new Orchestration(bots, new BotProvisioner(null, null, null, 0, null, null),
                     new RegionTools(bots, remote, commands), survey, customBlocks,
                     new Furniture(catalog, remote, commands), new Photographs(catalog, remote, commands),

@@ -15,7 +15,10 @@ class StoredRegionsTest {
 
     private final Catalog catalog = Catalog.load();
     private final RegionStore store = new RegionStore();
-    private final StoredRegions regions = new StoredRegions(store);
+    private final RemoteTools remote = new RemoteTools(catalog);
+    private final CustomBlocks customBlocks =
+            new CustomBlocks(remote, new Commands(remote, catalog), catalog);
+    private final StoredRegions regions = new StoredRegions(store, customBlocks);
 
     private static String text(McpSchema.CallToolResult result) {
         return ((McpSchema.TextContent) result.content().getFirst()).text();
