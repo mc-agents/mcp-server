@@ -98,7 +98,10 @@ public class RemoteTools {
         Map<String, Object> wire = Normaliser.normalise(spec, checked);
         int deadline = Normaliser.deadlineOf(spec, wire);
 
-        if (spec.exclusive() && !claim(bot.name(), spec.name())) {
+        /* A composed tool already holds this bot, and its own steps are what it holds it for. */
+        boolean ours = spec.exclusive() && !driving.get().contains(bot.name());
+
+        if (ours && !claim(bot.name(), spec.name())) {
             throw new IllegalStateException(busyWith(bot));
         }
 
@@ -115,7 +118,7 @@ public class RemoteTools {
         } catch (ExecutionException e) {
             throw new IllegalStateException("%s failed: %s".formatted(spec.name(), e.getCause()));
         } finally {
-            if (spec.exclusive()) {
+            if (ours) {
                 release(bot.name(), spec.name());
             }
         }
@@ -441,12 +444,25 @@ public class RemoteTools {
         if (!claim(bot.name(), spec.name())) {
             return ToolDispatcher.failure(busyWith(bot));
         }
+        driving.get().add(bot.name());
         try {
             return body.get();
         } finally {
+            driving.get().remove(bot.name());
             release(bot.name(), spec.name());
         }
     }
+
+    /**
+     * The bots this thread is driving a composed tool on.
+     *
+     * <p>The claim is what stops two callers working the same body at once, and a composed tool's
+     * own steps are not a second caller: read-furniture holds the bot and then hits an entity with
+     * it, and attack-entity is exclusive, so the tool was refused by the claim it had taken itself.
+     * Marking the thread rather than counting the claim keeps that narrow -- a call from anywhere
+     * else still finds the bot busy, which is the whole point of the claim.
+     */
+    private final ThreadLocal<Set<String>> driving = ThreadLocal.withInitial(java.util.HashSet::new);
 
     private String busyWith(BotSession bot) {
         return "bot \"%s\" is already running %s. Wait for it or use another bot."
