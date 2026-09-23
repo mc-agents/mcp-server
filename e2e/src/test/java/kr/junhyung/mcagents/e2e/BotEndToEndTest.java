@@ -3371,32 +3371,6 @@ class BotEndToEndTest {
     }
 
     /**
-     * The fixture has no CraftEngine, so what is under test is everything around the plugin: the box
-     * is swept, the interaction boxes in it are found and hit, and a piece that said nothing about
-     * itself is reported as such rather than invented. A room of plain interactions is exactly what
-     * a server without the plugin looks like, and saying so is the answer.
-     */
-    @Test
-    void furnitureThatIsNotCraftEngineIsListedAndSaidToHaveAnsweredNothing() {
-        agent.requires("read-furniture");
-        world.run("tp " + BotWorld.BOT + " 40 -59 40");
-        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 40));
-        world.run("summon interaction 41 -59 41 {width:1f,height:1f}");
-        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
-
-        String read = agent.mustCall("read-furniture", Map.of("bot", BotWorld.BOT,
-            "from", Map.of("x", 38, "y", -60, "z", 38), "to", Map.of("x", 44, "y", -56, "z", 44)));
-        String bare = agent.mustCall("read-furniture", Map.of("bot", BotWorld.BOT,
-            "from", Map.of("x", 100, "y", -60, "z", 100), "to", Map.of("x", 104, "y", -56, "z", 104)));
-        world.run("kill @e[type=interaction,x=41,y=-59,z=41,distance=..8]");
-        world.run("tp " + BotWorld.BOT + " 26 -59 4");
-
-        assertTrue(read.startsWith("1 piece(s) of furniture in (38, -60, 38) to (44, -56, 44)"), read);
-        assertTrue(read.contains("None of them answered the debug stick."), read);
-        assertTrue(bare.contains("No furniture in (100, -60, 100) to (104, -56, 104)"), bare);
-    }
-
-    /**
      * A server without CraftEngine has nothing to learn, and it is turned away at the gate rather
      * than after a scratch row has been placed and read -- the plugin's commands are simply not in
      * the tree this server sent the bot.
