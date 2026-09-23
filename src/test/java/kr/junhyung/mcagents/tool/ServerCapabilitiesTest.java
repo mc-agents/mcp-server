@@ -99,6 +99,8 @@ class ServerCapabilitiesTest {
         assertNotNull(refused);
         assertTrue(refused.contains("not this bot's to run"), refused);
         assertTrue(refused.contains("ce.command.debug.spawn_furniture"), refused);
+        /* The command it names has to be one somebody could type; it was run together once. */
+        assertTrue(refused.contains("/craftengine debug spawn-furniture"), refused);
     }
 
     /**

@@ -22,6 +22,7 @@ SAMPLES = {
     "from": {"x": 0, "y": 64, "z": 0}, "to": {"x": 3, "y": 66, "z": 3}, "operation": "set",
     "region": "r-0000", "at": {"x": 0, "y": 64, "z": 0}, "size": {"x": 2, "y": 1, "z": 1},
     "palette": ["stone"], "runs": [{"block": 0, "count": 2}],
+    "pieces": [{"model": "default:desk_chair", "x": 0.5, "y": 64.0, "z": 0.5}],
 }
 
 # The errors the world is allowed to answer with. The wait-for tools are asked for a pattern that
@@ -34,6 +35,9 @@ EXPECTED_ERRORS = {
     "wait-for-effect", "wait-for-item", "wait-for-player-list", "wait-for-scoreboard", "wait-for-title",
     "wait-for-toast", "ping-server", "wait-for-server", "build-region", "verify-region",
     "show-region", "write-region", "learn-custom-blocks",
+    # The capability gate reads a command tree the fake bot does not have, so every tool that names
+    # a plugin is refused here for the reason it exists to give.
+    "read-furniture", "place-furniture", "measure-room",
 }
 
 

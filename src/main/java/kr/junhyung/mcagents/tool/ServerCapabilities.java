@@ -150,7 +150,7 @@ public class ServerCapabilities {
             case ABSENT -> "the server bot \"%s\" is on has no %s, or none of it is this bot's to run: \"%s\" completes nothing. %s"
                     .formatted(bot.name(), probe.plugin(), probe.command().trim(), remedy(probe));
             case UNPERMITTED -> "%s is on the server and \"%s\" is not this bot's to run%s."
-                    .formatted(probe.plugin(), probe.command().trim() + probe.wanted(),
+                    .formatted(probe.plugin(), probe.command() + probe.wanted(),
                             probe.permission() == null ? "" : " (permission %s, which op has)".formatted(probe.permission()));
         };
     }
