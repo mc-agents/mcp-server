@@ -37,7 +37,7 @@ EXPECTED_ERRORS = {
     "show-region", "write-region", "learn-custom-blocks",
     # The capability gate reads a command tree the fake bot does not have, so every tool that names
     # a plugin is refused here for the reason it exists to give.
-    "read-furniture", "place-furniture", "measure-room",
+    "read-furniture", "place-furniture", "remove-furniture", "measure-room",
 }
 
 
