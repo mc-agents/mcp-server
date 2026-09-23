@@ -1,7 +1,9 @@
 package kr.junhyung.mcagents.render;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -63,9 +65,10 @@ public final class RegionRenderer implements Renderer<RegionRenderer.View> {
             counted += count;
         }
 
-        boolean drawable = counted == view.blocks() && view.blocks() <= DRAWABLE_BLOCKS
-                && letters(view.palette()) <= LEGEND.length();
-        char[] legend = legend(view.palette());
+        boolean states = letters(view.palette(), false) <= LEGEND.length();
+        boolean collapsed = !states && letters(view.palette(), true) <= LEGEND.length();
+        boolean drawable = counted == view.blocks() && view.blocks() <= DRAWABLE_BLOCKS && (states || collapsed);
+        char[] legend = legend(view.palette(), collapsed);
         List<String> out = new ArrayList<>();
 
         out.add("%s to %s, %d x %d x %d, %d blocks.".formatted(view.from(), view.to(),
@@ -81,7 +84,10 @@ public final class RegionRenderer implements Renderer<RegionRenderer.View> {
                     .formatted(view.outside()));
         }
         if (drawable) {
-            out.add("One character a block, a layer at a time, y ascending, x to the right and z downwards:");
+            out.add(collapsed
+                    ? "One character a kind of block, a layer at a time, y ascending, x to the right and z downwards. The %d states above share %d letters, because a letter each is more than the legend has:"
+                            .formatted(letters(view.palette(), false), letters(view.palette(), true))
+                    : "One character a block, a layer at a time, y ascending, x to the right and z downwards:");
             out.addAll(map(view, legend));
         } else if (!view.palette().isEmpty()) {
             out.add(noMap(view, counted));
@@ -114,16 +120,46 @@ public final class RegionRenderer implements Renderer<RegionRenderer.View> {
         return counts;
     }
 
-    private static char[] legend(List<String> palette) {
+    private static char[] legend(List<String> palette, boolean collapsed) {
+        Map<String, Character> taken = new LinkedHashMap<>();
         char[] marks = new char[palette.size()];
         int letter = 0;
 
         for (int entry = 0; entry < palette.size(); entry++) {
-            marks[entry] = isAir(palette.get(entry))
-                    ? AIR_MARK
-                    : LEGEND.charAt(Math.min(letter++, LEGEND.length() - 1));
+            String block = palette.get(entry);
+
+            if (isAir(block)) {
+                marks[entry] = AIR_MARK;
+                continue;
+            }
+            Character shared = taken.get(mark(block, collapsed));
+
+            if (shared != null) {
+                marks[entry] = shared;
+                continue;
+            }
+            char given = LEGEND.charAt(Math.min(letter++, LEGEND.length() - 1));
+
+            taken.put(mark(block, collapsed), given);
+            marks[entry] = given;
         }
         return marks;
+    }
+
+    /**
+     * What a letter is spent on: a state of its own, or the block whatever state it is in.
+     *
+     * <p>Collapsing is what lets a room be drawn at all. A built room is stairs facing four ways,
+     * walls in eight connection states and slabs top and bottom, and counting those separately puts
+     * a plain interior past thirty-six before it has thirty-six materials in it -- the map was
+     * refused for a room of eleven kinds of block wearing sixty-eight states. The counts above the
+     * map still name every state, so nothing is lost; what the picture then shows is the shape,
+     * which is what it was drawn for.
+     */
+    private static String mark(String block, boolean collapsed) {
+        int state = block.indexOf('[');
+
+        return collapsed && state > 0 ? block.substring(0, state) : block;
     }
 
     /**
@@ -132,8 +168,9 @@ public final class RegionRenderer implements Renderer<RegionRenderer.View> {
      * <p>Air spends none of them, since it keeps its dot. Measuring the palette itself refused a
      * map to a palette of thirty-seven with air among them, which spends thirty-six and fits.
      */
-    private static int letters(List<String> palette) {
-        return (int) palette.stream().filter(block -> !isAir(block)).count();
+    private static int letters(List<String> palette, boolean collapsed) {
+        return (int) palette.stream().filter(block -> !isAir(block))
+                .map(block -> mark(block, collapsed)).distinct().count();
     }
 
     public static boolean isAir(String block) {
@@ -216,8 +253,8 @@ public final class RegionRenderer implements Renderer<RegionRenderer.View> {
             return "No map: %d blocks is more than the %d one is drawn for. Read it in boxes of that size or smaller."
                     .formatted(view.blocks(), DRAWABLE_BLOCKS);
         }
-        return "No map: %d kinds of block need a letter each, and the legend has %d."
-                .formatted(letters(view.palette()), LEGEND.length());
+        return "No map: %d kinds of block need a letter each even with their states put together, and the legend has %d. Read it in smaller boxes."
+                .formatted(letters(view.palette(), true), LEGEND.length());
     }
 
     /** What to do about a box the runs do not tile, which is a different thing for each reason. */

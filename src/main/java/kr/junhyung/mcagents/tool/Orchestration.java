@@ -66,22 +66,24 @@ public class Orchestration {
     private final RegionTools regions;
     private final RegionSurvey survey;
     private final CustomBlocks customBlocks;
+    private final Furniture furniture;
     private final Duration patience;
 
     @Autowired
     public Orchestration(BotRegistry bots, BotProvisioner provisioner, RegionTools regions, RegionSurvey survey,
-            CustomBlocks customBlocks) {
-        this(bots, provisioner, regions, survey, customBlocks, JOIN_PATIENCE);
+            CustomBlocks customBlocks, Furniture furniture) {
+        this(bots, provisioner, regions, survey, customBlocks, furniture, JOIN_PATIENCE);
     }
 
     Orchestration(BotRegistry bots, BotProvisioner provisioner, RegionTools regions, RegionSurvey survey,
-            CustomBlocks customBlocks, Duration patience) {
+            CustomBlocks customBlocks, Furniture furniture, Duration patience) {
         this.patience = patience;
         this.bots = bots;
         this.provisioner = provisioner;
         this.regions = regions;
         this.survey = survey;
         this.customBlocks = customBlocks;
+        this.furniture = furniture;
     }
 
     public McpSchema.CallToolResult call(ToolSpec spec, Map<String, Object> arguments) {
@@ -101,6 +103,7 @@ public class Orchestration {
                 case "build-region", "verify-region" -> regions.call(spec, arguments, progress);
                 case "write-region" -> survey.write(spec, resolve(spec, arguments), arguments, progress);
                 case "learn-custom-blocks" -> customBlocks.learn(spec, resolve(spec, arguments), arguments, progress);
+                case "read-furniture" -> furniture.read(spec, resolve(spec, arguments), arguments, progress);
                 default -> ToolDispatcher.failure("%s is not an orchestration tool".formatted(spec.name()));
             };
         } catch (JoinFailure | StillStarting e) {

@@ -76,7 +76,10 @@ public final class FoundEntitiesRenderer implements Renderer<FoundEntitiesRender
         if (view.entities().isEmpty()) {
             String what = view.query() == null ? "entity" : view.query();
 
-            return "No " + what + " within " + Text.number(view.maxDistance()) + " blocks.";
+            /* A box was searched, not a radius, and a bot says so by sending no distance to report. */
+            return view.maxDistance() <= 0
+                    ? "No " + what + " in the box."
+                    : "No " + what + " within " + Text.number(view.maxDistance()) + " blocks.";
         }
 
         List<String> lines = view.entities().stream().map(FoundEntitiesRenderer::line).toList();

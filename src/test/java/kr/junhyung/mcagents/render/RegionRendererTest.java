@@ -31,8 +31,40 @@ class RegionRendererTest {
     void aPaletteThatSpendsMoreLettersThanThereAreSaysHowManyItNeeded() {
         String rendered = renderer.render(row(37));
 
-        assertTrue(rendered.contains("No map: 37 kinds of block need a letter each, and the legend has 36."),
+        assertTrue(rendered.contains("No map: 37 kinds of block need a letter each even with their states put together, and the legend has 36."),
                 rendered);
+    }
+
+    /**
+     * The case a built room is: few materials, many states. Fifty stair and wall states spend more
+     * letters than there are while being ten kinds of block, and refusing the map there left the
+     * one question a map answers -- what shape is this -- unanswerable for every real interior.
+     */
+    @Test
+    void statesOfOneBlockShareALetterWhenAStateEachWouldNotFit() {
+        String rendered = renderer.render(states(10, 5));
+
+        assertTrue(rendered.contains("One character a kind of block"), rendered);
+        assertTrue(rendered.contains("The 50 states above share 10 letters"), rendered);
+        assertTrue(rendered.endsWith("\n    .aaaaabbbbbcccccdddddeeeeefffffggggghhhhhiiiiijjjjj"), rendered);
+    }
+
+    /** A row of one block of each kind in each of its states, air first. */
+    private static RegionRenderer.View states(int kinds, int each) {
+        List<String> palette = new ArrayList<>();
+        List<RegionRenderer.View.Run> runs = new ArrayList<>();
+
+        palette.add("air");
+        for (int kind = 0; kind < kinds; kind++) {
+            for (int state = 0; state < each; state++) {
+                palette.add("block" + kind + "[facing=" + state + "]");
+            }
+        }
+        for (int entry = 0; entry < palette.size(); entry++) {
+            runs.add(new RegionRenderer.View.Run(entry, 1));
+        }
+        return new RegionRenderer.View(new Point(0, 64, 0), new Point(kinds * each, 64, 0),
+                new RegionRenderer.View.Size(palette.size(), 1, 1), palette.size(), palette, runs, 0, 0);
     }
 
     /**

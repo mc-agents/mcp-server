@@ -2,14 +2,14 @@
 
 <!-- Rendered from catalog/catalog.json by ./gradlew renderToolReference. Edit the catalogue, not this page. -->
 
-Catalogue 5.5.0, 100 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
+Catalogue 5.6.0, 101 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
 
 Every tool but [`list-bots`](#list-bots), [`ping-server`](#ping-server), [`wait-for-server`](#wait-for-server) takes `bot`, the name given to join-server, which may be left out while exactly one bot is connected; it is not repeated below. A tool marked **fabric only** is one the headless kind of bot does not run. **Exclusive** means one call at a time on a bot, since two walks or two clicks at once would fight over the same body. **Untrusted** means the answer carries content the server did not write -- chat, item names, signs -- and is marked as data rather than instructions. **Read-only** means the call changes nothing in the game or on the server, which is what an MCP client's `readOnlyHint` approves without asking; **destructive** is the `destructiveHint`, for a call that removes something or runs with the bot's permissions. A tool that **needs a world** is refused while the bot is on a title or disconnected screen. The deadline is how long the server waits for the bot before giving the call up; a tool with a `timeoutMs` argument sets its own inside that.
 
 | Group | Tools |
 | --- | --- |
 | [world](#world) | [`activate-block`](#activate-block), [`attack-entity`](#attack-entity), [`fish`](#fish), [`interact-entity`](#interact-entity), [`use-held-item`](#use-held-item) |
-| [region](#region) | [`build-region`](#build-region), [`import-region`](#import-region), [`learn-custom-blocks`](#learn-custom-blocks), [`list-regions`](#list-regions), [`read-region`](#read-region), [`read-selection`](#read-selection), [`show-region`](#show-region), [`verify-region`](#verify-region), [`write-region`](#write-region) |
+| [region](#region) | [`build-region`](#build-region), [`import-region`](#import-region), [`read-furniture`](#read-furniture), [`learn-custom-blocks`](#learn-custom-blocks), [`list-regions`](#list-regions), [`read-region`](#read-region), [`read-selection`](#read-selection), [`show-region`](#show-region), [`verify-region`](#verify-region), [`write-region`](#write-region) |
 | [crafting](#crafting) | [`can-craft`](#can-craft), [`craft-item`](#craft-item), [`get-recipe`](#get-recipe), [`list-recipes`](#list-recipes) |
 | [screen](#screen) | [`click-chat`](#click-chat), [`press-dialog-button`](#press-dialog-button), [`read-book`](#read-book), [`screenshot`](#screenshot), [`set-dialog-input`](#set-dialog-input), [`type-text`](#type-text) |
 | [slot](#slot) | [`click-slot`](#click-slot), [`drag-slots`](#drag-slots), [`drop-held-item`](#drop-held-item), [`hover-slot`](#hover-slot), [`select-bundle-item`](#select-bundle-item) |
@@ -133,6 +133,24 @@ Keep a region you spell out yourself, in the encoding read-region answers with: 
 | `runs[].block` | integer | yes |  | at least 0 |
 | `runs[].count` | integer | yes |  | at least 1 |
 | `name` | string | no | What to call it, for list-regions; optional | at most 64 characters |
+
+### read-furniture
+
+*fabric and azalea · deadline 600s · exclusive · untrusted · the server drives the bot's session*
+
+Read the CraftEngine furniture standing in a box: what each piece is, where it sits to the hundredth of a block, which way it faces and which of its variants it was placed as. Nothing a client receives says any of that -- a piece of furniture arrives as an unnamed item display -- so each is asked with CraftEngine's own debug stick, whose left click reports one property and changes nothing. The bot needs creative mode and minecraft.debugstick, and it is given a debug stick if it has none. A piece takes about twenty seconds, so this is a tool for a room rather than a district. What it answers is what a builder would have to write down by hand to copy a room.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `from` | object | yes | One corner of the box, inclusive |  |
+| `from.x` | integer | yes |  |  |
+| `from.y` | integer | yes |  |  |
+| `from.z` | integer | yes |  |  |
+| `to` | object | yes | The other corner, inclusive |  |
+| `to.x` | integer | yes |  |  |
+| `to.y` | integer | yes |  |  |
+| `to.z` | integer | yes |  |  |
+| `count` | integer | no | How many pieces to read at most, oldest corner first (default: 24) | 1 to 64 |
 
 ### learn-custom-blocks
 
@@ -1265,13 +1283,21 @@ Polls [`list-inventory`](#list-inventory) until its answer matches, so the answe
 
 *fabric and azalea · deadline 5s · untrusted · read-only · needs a world · the bot answers*
 
-Find nearby entities, optionally filtered by type or name. Each comes with the id interact-entity and attack-entity take, and the label floating over it when there is one.
+Find nearby entities, optionally filtered by type or name. Each comes with the id interact-entity and attack-entity take, and the label floating over it when there is one. Give from and to to search a box instead of a radius: a room's furniture sits in a box and not in a sphere, and the count a box needs is not the count a glance around needs.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
 | `type` | string | no | "player", "mob", or part of an entity name. Omit to match anything. |  |
 | `maxDistance` | number | no | Search radius (default: 16) | at least 1 |
-| `count` | integer | no | How many to return (default: 1) | 1 to 50 |
+| `count` | integer | no | How many to return (default: 1, at most 500) | 1 to 500 |
+| `from` | object | no | One corner of a box to search instead of a radius, inclusive. Needs "to"; maxDistance is then ignored |  |
+| `from.x` | integer | yes |  |  |
+| `from.y` | integer | yes |  |  |
+| `from.z` | integer | yes |  |  |
+| `to` | object | no | The other corner, inclusive |  |
+| `to.x` | integer | yes |  |  |
+| `to.y` | integer | yes |  |  |
+| `to.z` | integer | yes |  |  |
 
 The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
 

@@ -46,7 +46,8 @@ class LocalToolsTest {
     private final RegionSurvey survey = new RegionSurvey(remote, commands, new RegionStore(), catalog, customBlocks);
     private final ToolDispatcher dispatcher = new ToolDispatcher(bots, new LocalTools(bots, new StoredRegions(new RegionStore())), remote,
             new Orchestration(bots, new BotProvisioner(null, null, null, 0, null, null),
-                    new RegionTools(bots, remote, commands), survey, customBlocks),
+                    new RegionTools(bots, remote, commands), survey, customBlocks,
+                    new Furniture(catalog, remote, commands)),
             survey,
             new SimpleMeterRegistry());
 

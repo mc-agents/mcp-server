@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "5.5.0",
+  "catalogVersion": "5.6.0",
   "protocol": 1,
   "tools": [
     {
@@ -1884,7 +1884,7 @@
     {
       "name": "find-entity",
       "group": "entity",
-      "description": "Find nearby entities, optionally filtered by type or name. Each comes with the id interact-entity and attack-entity take, and the label floating over it when there is one.",
+      "description": "Find nearby entities, optionally filtered by type or name. Each comes with the id interact-entity and attack-entity take, and the label floating over it when there is one. Give from and to to search a box instead of a radius: a room's furniture sits in a box and not in a sphere, and the count a box needs is not the count a glance around needs.",
       "route": "rpc",
       "kinds": [
         "fabric",
@@ -1914,10 +1914,52 @@
             "minimum": 1
           },
           "count": {
-            "description": "How many to return (default: 1)",
+            "description": "How many to return (default: 1, at most 500)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 50
+            "maximum": 500
+          },
+          "from": {
+            "description": "One corner of a box to search instead of a radius, inclusive. Needs \"to\"; maxDistance is then ignored",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "to": {
+            "description": "The other corner, inclusive",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
           }
         },
         "additionalProperties": false
@@ -1940,21 +1982,73 @@
             "default": 16.0
           },
           "count": {
-            "description": "How many to return (default: 1)",
+            "description": "How many to return (default: 1, at most 500)",
             "type": "integer",
             "minimum": 1,
-            "maximum": 50,
+            "maximum": 500,
             "default": 1
+          },
+          "from": {
+            "description": "One corner of a box to search instead of a radius, inclusive. Needs \"to\"; maxDistance is then ignored",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false,
+            "default": null
+          },
+          "to": {
+            "description": "The other corner, inclusive",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false,
+            "default": null
           }
         },
         "additionalProperties": false,
         "required": [
           "count",
+          "from",
           "maxDistance",
+          "to",
           "type"
         ]
       },
-      "wireSchemaHash": "sha256:edc4079f23fb94f5260a9eebdfaa77b5fa60522c056205b3cbd1af9b687e73d0",
+      "wireSchemaHash": "sha256:f2f1b4d4a488fa523fa98671ed491f6ee23f27a20900d2f97cce8377ca26e9aa",
       "resultSchema": {
         "type": "object",
         "properties": {
@@ -3771,6 +3865,85 @@
         "required": []
       },
       "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+    },
+    {
+      "name": "read-furniture",
+      "group": "region",
+      "description": "Read the CraftEngine furniture standing in a box: what each piece is, where it sits to the hundredth of a block, which way it faces and which of its variants it was placed as. Nothing a client receives says any of that -- a piece of furniture arrives as an unnamed item display -- so each is asked with CraftEngine's own debug stick, whose left click reports one property and changes nothing. The bot needs creative mode and minecraft.debugstick, and it is given a debug stick if it has none. A piece takes about twenty seconds, so this is a tool for a room rather than a district. What it answers is what a builder would have to write down by hand to copy a room.",
+      "route": "orchestrate",
+      "kinds": [
+        "fabric",
+        "azalea"
+      ],
+      "exclusive": true,
+      "untrusted": true,
+      "readOnly": false,
+      "structured": false,
+      "needsWorld": true,
+      "defaultDeadlineMs": 600000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "from": {
+            "description": "One corner of the box, inclusive",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "to": {
+            "description": "The other corner, inclusive",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "z": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "count": {
+            "description": "How many pieces to read at most, oldest corner first (default: 24)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "learn-custom-blocks",
@@ -10849,5 +11022,5 @@
       }
     }
   ],
-  "catalogHash": "sha256:2e3984973ae926b4a12622c0f4095e8484c51f5780abfbebe618bceb8199cf1a"
+  "catalogHash": "sha256:48036f7c58aad5e4b27e14458c4e68ed46a03088a0ce4cbdb5f8f34cef1b315b"
 }

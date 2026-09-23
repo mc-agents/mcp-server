@@ -40,6 +40,7 @@ class OrchestrationTest {
             new RegionSurvey(new RemoteTools(catalog), new Commands(new RemoteTools(catalog), catalog), new RegionStore(), catalog,
                     new CustomBlocks(new RemoteTools(catalog), new Commands(new RemoteTools(catalog), catalog), catalog)),
             new CustomBlocks(new RemoteTools(catalog), new Commands(new RemoteTools(catalog), catalog), catalog),
+            new Furniture(catalog, new RemoteTools(catalog), new Commands(new RemoteTools(catalog), catalog)),
             Duration.ofMillis(200));
 
     /** The cluster as the provisioner sees it: which bots it was asked for, and what came of them. */
