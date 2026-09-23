@@ -272,11 +272,20 @@ class BotEndToEndTest {
         assertTrue(sign.contains("back_text: back side / (blank) / (blank) / four again"), sign);
     }
 
-    /** A nameplate carries a rank glyph in front of the name on any server that draws with a pack. */
+    /**
+     * A nameplate carries a rank glyph in front of the name on any server that draws with a pack.
+     *
+     * <p>The bot is put beside the cow first, and more than one is asked for. Where a case leaves
+     * the bot is the case after it's starting point, and this one read whichever cow happened to
+     * be nearest to wherever the last case walked off to.
+     */
     @Test
     void anEntityIsNamedTheWayItsNameplateIs() {
+        world.run("tp " + BotWorld.BOT + " 5 -59 2");
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+
         String found = agent.call("find-entity",
-            Map.of("bot", BotWorld.BOT, "type", "cow", "maxDistance", 16));
+            Map.of("bot", BotWorld.BOT, "type", "cow", "count", 5, "maxDistance", 16));
 
         assertTrue(found.contains("[nametag/label] Probe Cow (cow) at (5, -60, 5)"), found);
     }
@@ -3382,7 +3391,7 @@ class BotEndToEndTest {
         world.run("kill @e[type=interaction,x=41,y=-59,z=41,distance=..8]");
         world.run("tp " + BotWorld.BOT + " 26 -59 4");
 
-        assertTrue(read.startsWith("1 piece(s) of furniture in (38, -60, 38) to (44, -56, 44)."), read);
+        assertTrue(read.startsWith("1 piece(s) of furniture in (38, -60, 38) to (44, -56, 44)"), read);
         assertTrue(read.contains("None of them answered the debug stick."), read);
         assertTrue(bare.contains("No furniture in (100, -60, 100) to (104, -56, 104)"), bare);
     }
