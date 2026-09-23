@@ -218,7 +218,7 @@ public class Furniture {
             if (hitboxes.size() > count) {
                 hitboxes = hitboxes.subList(0, count);
             }
-            String empty = emptyHanded(bot);
+            String empty = disarmed(bot);
 
             if (empty != null) {
                 return ToolDispatcher.failure(empty);
@@ -270,28 +270,35 @@ public class Furniture {
         if (broken == hitboxes.size()) {
             return "Took away %d piece(s) of furniture from %s.%s".formatted(broken, box, what);
         }
-        return "Took away %d of %d piece(s) in %s. The rest are still standing: a piece the server will not let this bot break reads like this, and so does one whose hitbox the bot could not get outside of.%s"
-                .formatted(broken, hitboxes.size(), box, what);
+        /*
+        Measured on liveops: the server acknowledged every swing and the piece did not break, which
+        is what a world that protects its build looks like from here. There is nothing this can do
+        about that, and saying which of the two it is would be guessing, so it says both.
+        */
+        return "Took away %d of %d piece(s) in %s. The rest are still standing, and the server acknowledged every swing: either it does not let this bot break furniture -- a protected build does this -- or the piece takes more hits in a row than %d.%s"
+                .formatted(broken, hitboxes.size(), box, BREAK_SWINGS, what);
     }
 
     /**
-     * The bot's hand empty, since a hit that carries a debug stick is cancelled before it breaks
-     * anything -- which is exactly what read-furniture relies on.
+     * The debug stick out of the bot's hands, since a hit that carries one is cancelled before it
+     * breaks anything -- which is exactly what read-furniture relies on.
+     *
+     * <p>Taken away rather than asked about. Nothing here can see what a bot is holding, and the
+     * first try at working it out equipped the stick to find out whether it was equipped, which
+     * meant it always was. read-furniture gives itself one whenever it needs one, so losing it
+     * costs nothing.
      */
-    private String emptyHanded(BotSession bot) {
-        ToolSpec equip = catalog.require("equip-item");
+    private String disarmed(BotSession bot) {
+        long mark = bot.feed("chat").nextSeq();
 
-        ToolDispatcher.offerCheck(equip, bot);
+        commands.send(bot, "clear @s minecraft:debug_stick");
 
-        McpSchema.CallToolResult held = remote.call(equip, bot, Map.of("itemName", "air"));
+        FeedEntry no = Commands.refused(Commands.systemLines(bot, mark));
 
-        if (!Boolean.TRUE.equals(held.isError())) {
-            return null;
-        }
-        /* Nothing to hold is the same as holding nothing, as long as what is held is not the stick. */
-        return Boolean.TRUE.equals(remote.call(equip, bot, Map.of("itemName", DEBUG_STICK)).isError())
+        return no == null
                 ? null
-                : "the bot is holding a debug stick and a hit that carries one is cancelled before it breaks anything, so nothing here could be taken away. Give it something else to hold.";
+                : Trust.mark("the debug stick could not be taken out of the bot's hands, and a hit that carries one breaks nothing: /clear came back as \"%s\"."
+                        .formatted(no.rendered()));
     }
 
     /**
