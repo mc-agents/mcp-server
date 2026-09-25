@@ -258,7 +258,7 @@ public class Furniture {
                         at * STANCES + stance, hitboxes.size() * STANCES);
                 stand(bot, hitbox, box, stance);
 
-                long mark = listening(bot);
+                long mark = bot.feed("chat").nextSeq();
 
                 for (int swing = 0; swing < BREAK_SWINGS; swing++) {
                     if (Boolean.TRUE.equals(remote.call(attack, bot, Map.of("id", hitbox.id())).isError())) {
@@ -299,32 +299,6 @@ public class Furniture {
 
         return "Took away %d of %d piece(s) in %s, from %d sides each. The rest are still standing.%s%s"
                 .formatted(broken, hitboxes.size(), box, STANCES, said, what);
-    }
-
-    /**
-     * The mark a piece's hits are judged from, taken once the bot's own teleport has been answered.
-     *
-     * <p>Marking as soon as the bot had been stood put "Teleported interior to ..." in with the
-     * refusals, which is the one thing that list is for. Waiting for the feed to go quiet keeps it
-     * out whatever language the server says it in, which matching the sentence would not, and the
-     * plugin's own line comes after this anyway: it is an answer to the swing, and the swing has
-     * not gone out yet.
-     */
-    private static long listening(BotSession bot) {
-        long deadline = System.currentTimeMillis() + Commands.QUIET_MS;
-        long mark = bot.feed("chat").nextSeq();
-
-        while (System.currentTimeMillis() < deadline) {
-            Commands.sleep(Commands.POLL_MS);
-
-            long now = bot.feed("chat").nextSeq();
-
-            if (now == mark) {
-                return mark;
-            }
-            mark = now;
-        }
-        return bot.feed("chat").nextSeq();
     }
 
     /**
@@ -836,9 +810,24 @@ public class Furniture {
             dirX = -dirZ;
             dirZ = spun;
         }
+        long mark = bot.feed("chat").nextSeq();
+
         commands.send(bot, "tp %.2f %d %.2f".formatted(x + dirX * STAND_BESIDE, hitbox.position().y(),
                 z + dirZ * STAND_BESIDE));
-        Commands.sleep(Commands.POLL_MS);
+
+        /*
+        Waited out rather than slept through. The answer to this /tp is a system line like any
+        other, and remove-furniture quotes the lines that arrive while a piece is being hit as what
+        the server said about it -- so a teleport still in flight came back as the reason a piece
+        would not break. Sleeping a poll was not enough: a poll that finds nothing cannot tell an
+        answer that has already landed from one that has not come yet, and this one had not.
+
+        The reading side is waited out too, and not only to keep the two the same. A swing is
+        judged by the rotation and the position the server holds, so one sent while the bot is
+        still being moved is aimed from where it was.
+        */
+        Commands.awaitChat(bot, mark, System.currentTimeMillis() + PLACE_MS, Progress.NONE,
+                "the bot to be stood beside the piece");
     }
 
     /**
