@@ -49,6 +49,9 @@ public class CustomBlocks {
     /** Where the scratch row goes unless told otherwise: the overworld's top layer. */
     static final int SCRATCH_Y = 319;
 
+    /** How many known states a resumed call puts down again to see whether the looks still hold. */
+    private static final int RESAMPLE = 16;
+
     /** The most completions one call asks for, which is the catalogue's own limit for it. */
     private static final int COMPLETIONS = 500;
 
@@ -117,6 +120,15 @@ public class CustomBlocks {
 
         public int size() {
             return byId.size();
+        }
+
+        boolean knows(String id) {
+            return byId.containsKey(id);
+        }
+
+        /** A few of what is known, to put down again and see whether the looks still hold. */
+        List<Entry> sample(int most) {
+            return byId.values().stream().filter(entry -> entry.appearance() != null).limit(most).toList();
         }
     }
 
@@ -201,7 +213,6 @@ public class CustomBlocks {
 
         /* One entry a state: the bare name is the default state, listed again with its properties. */
         List<String> states = states(names);
-        Dictionary dictionary = new Dictionary();
         Messages.Position stood = position(bot);
 
         if (scratch == null && stood == null) {
@@ -212,18 +223,29 @@ public class CustomBlocks {
         int rowY = scratch == null ? SCRATCH_Y : scratch.minY();
         int rowZ = scratch == null ? (int) Math.floor(stood.z()) : scratch.minZ();
         int rowX = scratch == null ? (int) Math.floor(stood.x()) - ROW / 2 : scratch.minX();
+        Dictionary dictionary;
+        List<String> todo;
+
+        try {
+            dictionary = carried(bot, address, states, rowX, rowY, rowZ, notes);
+            todo = states.stream().filter(state -> !dictionary.knows(state)).toList();
+        } catch (IllegalStateException failed) {
+            return ToolDispatcher.failure(failed.getMessage());
+        }
         int placed = 0;
         int unseen = 0;
 
         try {
-            for (int batch = 0; batch < states.size(); batch += ROW) {
+            for (int batch = 0; batch < todo.size(); batch += ROW) {
                 if (System.currentTimeMillis() > deadline) {
-                    notes.add("Stopped after %d of %d states: the call's deadline is up.".formatted(batch, states.size()));
+                    notes.add("Stopped with %d of %d state(s) learned: the call's deadline is up. Calling learn-custom-blocks again carries on from here."
+                            .formatted(dictionary.size(), states.size()));
                     break;
                 }
-                List<String> row = states.subList(batch, Math.min(batch + ROW, states.size()));
+                List<String> row = todo.subList(batch, Math.min(batch + ROW, todo.size()));
 
-                progress.report("placing custom blocks %d-%d of %d".formatted(batch + 1, batch + row.size(), states.size()),
+                progress.report("placing custom blocks %d-%d of %d".formatted(dictionary.size() + 1,
+                                dictionary.size() + row.size(), states.size()),
                         System.currentTimeMillis() - started, spec.defaultDeadlineMs());
 
                 for (int i = 0; i < row.size(); i++) {
@@ -238,8 +260,8 @@ public class CustomBlocks {
                 RegionRenderer.View view = settled(bot, box);
 
                 if (view == null) {
-                    notes.add("The scratch row at %s never reached the client whole, so states %d-%d were not learned."
-                            .formatted(Text.block(rowX, rowY, rowZ), batch + 1, batch + row.size()));
+                    notes.add("The scratch row at %s never reached the client whole, so %d state(s) of this batch were not learned."
+                            .formatted(Text.block(rowX, rowY, rowZ), row.size()));
                     cleared(bot, box, notes);
                     continue;
                 }
@@ -270,12 +292,95 @@ public class CustomBlocks {
 
         List<String> out = new ArrayList<>();
 
-        out.add("Learned %d custom block state(s) on %s in %ds: %d with the look a client sees them as, %d that placed as nothing (a block that needs support, or a furniture)."
-                .formatted(dictionary.size(), address, (System.currentTimeMillis() - started) / 1_000, placed, unseen));
-        out.add("read-region on this server now names them, write-region puts them down through WorldEdit, and a schematic carries them as WorldEdit files them. Learn again after the plugin is reloaded.");
+        int left = states.size() - dictionary.size();
+
+        out.add("%d of %d custom block state(s) on %s are known%s. This call put down %d in %ds: %d showed the look a client sees them as, %d placed as nothing (a block that needs support, or a furniture)."
+                .formatted(dictionary.size(), states.size(), address,
+                        left == 0 ? "" : ", %d still to go".formatted(left),
+                        placed + unseen, (System.currentTimeMillis() - started) / 1_000, placed, unseen));
+        out.add("read-region on this server now names them, write-region puts them down through WorldEdit, and a schematic carries them as WorldEdit files them. A plugin reload hands the same names different looks; the next call puts a few of these down again, notices, and starts over.");
         out.addAll(notes);
 
         return ToolDispatcher.text(String.join("\n", out));
+    }
+
+    /**
+     * What a previous call learned, when it still holds.
+     *
+     * <p>A call stops at its deadline, and a server with more states than one deadline fits was
+     * learning the same first few hundred every time and putting that back in place of whatever was
+     * there: the dictionary could not grow past one call, and a complete one shrank to a partial
+     * one. What is kept is carried forward instead, so the next call takes the states this one did
+     * not reach.
+     *
+     * <p>Carried only while the looks still hold. A plugin reload hands the same names different
+     * vanilla states, and a dictionary from before it is confidently wrong rather than merely
+     * short -- read-region would name blocks that are not there. So a handful of what is kept goes
+     * down again first, and one of them reading differently throws all of it away, which is what
+     * "learn again after a reload" meant back when every call started over.
+     *
+     * <p>A state the server no longer names is dropped whether or not the looks held: the block is
+     * out of the plugin, and an entry for it answers for something that is not there.
+     */
+    private Dictionary carried(BotSession bot, String address, List<String> states, int rowX, int rowY, int rowZ,
+            List<String> notes) {
+        Dictionary kept = known.get(address);
+
+        if (kept == null) {
+            return new Dictionary();
+        }
+        Dictionary carried = new Dictionary();
+
+        for (String state : states) {
+            Entry entry = kept.byId(state);
+
+            if (entry != null) {
+                carried.add(entry);
+            }
+        }
+        List<Entry> sample = carried.sample(RESAMPLE);
+
+        if (sample.isEmpty() || holds(bot, sample, rowX, rowY, rowZ, notes)) {
+            return carried;
+        }
+        notes.add("What was known before was thrown away: of %d state(s) put down again, one did not look the way it did, which is a plugin reload giving the same names different vanilla states."
+                .formatted(sample.size()));
+
+        return new Dictionary();
+    }
+
+    /**
+     * Whether states already learned still look the way they were learned.
+     *
+     * <p>Anything that stops this from being answered is read as "still holds": the batch loop is
+     * about to run the same commands against the same row, and it says what went wrong far better
+     * than a guess made here would. Throwing the dictionary away on a read that simply did not
+     * arrive would cost a whole relearn for a slow chunk.
+     */
+    private boolean holds(BotSession bot, List<Entry> sample, int rowX, int rowY, int rowZ, List<String> notes) {
+        for (int i = 0; i < sample.size(); i++) {
+            if (commands.send(bot, "craftengine debug setblock %d %d %d %s"
+                    .formatted(rowX + i, rowY, rowZ, sample.get(i).id())) != null) {
+                return true;
+            }
+        }
+        Region box = new Region(rowX, rowY, rowZ, rowX + sample.size() - 1, rowY, rowZ);
+        RegionRenderer.View view = settled(bot, box);
+
+        if (view == null) {
+            cleared(bot, box, notes);
+            return true;
+        }
+        List<String> seen = spelled(view);
+
+        cleared(bot, box, notes);
+
+        for (int i = 0; i < sample.size(); i++) {
+            if (!sample.get(i).appearance().equals(seen.get(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
