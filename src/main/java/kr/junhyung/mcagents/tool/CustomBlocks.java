@@ -439,7 +439,8 @@ public class CustomBlocks {
                     namespaces.add(name.substring(0, colon));
                 }
             }
-            notes.add("The namespaces were read off the first page of names, since the server has no WorldEdit to list them; a namespace whose every block sorts after that page was not learned.");
+            notes.add("WorldEdit did not list the namespaces -- it may not be on the server, and it may be there and not complete \"%s\" for this bot. They were read off the first page of names instead, and a namespace whose every block sorts after that page was not learned: ask the server what completes \"%s<namespace>:\" to see whether one is missing, since a namespace that has nothing answers with silence."
+                    .formatted(PATTERN_PREFIX.trim(), NAMES_PREFIX));
         }
         return new ArrayList<>(namespaces);
     }

@@ -235,15 +235,23 @@ class CustomBlocksTest {
         assertTrue(put.contains("Read back: all 1 blocks are as the region has them."), put);
     }
 
-    /** Without WorldEdit to list the namespaces, the first page is what there is, and the answer says so. */
+    /**
+     * Without a list of namespaces the first page is what there is, and the answer says so without
+     * saying why. It used to blame the server for having no WorldEdit, and liveops has
+     * FastAsyncWorldEdit 2.15.2 and simply does not complete //set for a bot -- so the one note
+     * that flags an incomplete dictionary sent its reader to check the wrong thing. It names both
+     * possibilities now and says how to tell whether anything was actually missed.
+     */
     @Test
-    void withoutWorldEditTheNamespacesComeFromTheFirstPageAndTheAnswerSaysSo() {
+    void withoutAListOfNamespacesTheFirstPageIsWhatThereIsAndTheAnswerSaysSo() {
         played.customBlocks.put("2025summer:bar_table[facing=east]", "note_block[instrument=banjo,note=1,powered=false]");
 
-        String learned = text(customBlocks.learn(catalog.require("learn-custom-blocks"), played.bot, Map.of("bot", "fab"), Progress.NONE));
+        String learned = learn();
 
         assertTrue(learned.startsWith("1 of 1 custom block state(s)"), learned);
-        assertTrue(learned.contains("The namespaces were read off the first page of names"), learned);
+        assertTrue(learned.contains("WorldEdit did not list the namespaces"), learned);
+        assertTrue(learned.contains("it may be there and not complete"), learned);
+        assertTrue(learned.contains("a namespace that has nothing answers with silence"), learned);
     }
 
     @Test
