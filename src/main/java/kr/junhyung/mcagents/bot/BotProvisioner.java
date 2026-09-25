@@ -54,6 +54,20 @@ public class BotProvisioner {
      * asks for. Null leaves the choice to the operator: the namespace's default, then the cluster's.
      */
     public record Profile(String kind, String name) {
+
+        /*
+        The kind is filled in here rather than by whoever builds one, so there is a single answer to
+        what a half-written profile means, and it is the CRD's: a ref without a kind is a namespaced
+        profile. A ref without a name is not a profile at all, and saying so here is the difference
+        between one sentence and a NullPointerException thrown out of Map.of several frames from
+        whatever left the name out.
+        */
+        public Profile {
+            if (name == null || name.isBlank()) {
+                throw new IllegalArgumentException("a profile is named; leave the whole profile out to take the operator's");
+            }
+            kind = kind == null || kind.isBlank() ? "MinecraftBotProfile" : kind;
+        }
     }
 
     /**

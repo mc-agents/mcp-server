@@ -203,7 +203,7 @@ public class Wiring {
             log.info("bots can be started in namespace {}", where);
 
             BotProvisioner.Profile profile = profileName.isBlank() ? null
-                    : new BotProvisioner.Profile(profileKind.isBlank() ? "MinecraftBotProfile" : profileKind, profileName);
+                    : new BotProvisioner.Profile(profileKind, profileName);
 
             return new BotProvisioner(client, where, mcpHost.isBlank() ? defaultHost(where) : mcpHost, port, profile,
                     linkSecret.isBlank() ? null : linkSecret);
