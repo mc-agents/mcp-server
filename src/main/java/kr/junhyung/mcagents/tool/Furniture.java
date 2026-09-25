@@ -209,11 +209,8 @@ public class Furniture {
                 return ToolDispatcher.text("Nothing in %s has an interaction box, so there is no furniture there to take away."
                         .formatted(box));
             }
-            List<String> models = within(bot, box, "item_display").stream()
-                    .filter(display -> display.item() != null && display.item().itemModel() != null)
-                    .map(display -> display.item().itemModel())
-                    .distinct()
-                    .toList();
+            /* Read before anything is broken, since what a piece was showing is gone with it. */
+            List<FoundEntitiesRenderer.Entity> displays = within(bot, box, "item_display");
 
             if (hitboxes.size() > count) {
                 hitboxes = hitboxes.subList(0, count);
@@ -223,20 +220,21 @@ public class Furniture {
             if (empty != null) {
                 return ToolDispatcher.failure(empty);
             }
-            return ToolDispatcher.text(Trust.mark(swung(bot, box, hitboxes, models, progress)));
+            return ToolDispatcher.text(Trust.mark(swung(bot, box, hitboxes, displays, progress)));
         } finally {
             restore(bot, stood);
         }
     }
 
     private String swung(BotSession bot, Region box, List<FoundEntitiesRenderer.Entity> hitboxes,
-            List<String> models, Progress progress) {
+            List<FoundEntitiesRenderer.Entity> displays, Progress progress) {
         ToolSpec attack = catalog.require("attack-entity");
 
         ToolDispatcher.offerCheck(attack, bot);
 
         int broken = 0;
         List<String> refusals = new ArrayList<>();
+        List<String> taken = new ArrayList<>();
 
         for (int at = 0; at < hitboxes.size(); at++) {
             FoundEntitiesRenderer.Entity hitbox = hitboxes.get(at);
@@ -246,6 +244,8 @@ public class Furniture {
             }
             Region where = new Region(hitbox.position().x(), hitbox.position().y(), hitbox.position().z(),
                     hitbox.position().x(), hitbox.position().y(), hitbox.position().z());
+            List<String> showing = models(hitbox.position().x() + 0.5, hitbox.position().y(),
+                    hitbox.position().z() + 0.5, true, displays);
             boolean gone = false;
 
             /*
@@ -258,7 +258,7 @@ public class Furniture {
                         at * STANCES + stance, hitboxes.size() * STANCES);
                 stand(bot, hitbox, box, stance);
 
-                long mark = bot.feed("chat").nextSeq();
+                long mark = listening(bot);
 
                 for (int swing = 0; swing < BREAK_SWINGS; swing++) {
                     if (Boolean.TRUE.equals(remote.call(attack, bot, Map.of("id", hitbox.id())).isError())) {
@@ -268,6 +268,7 @@ public class Furniture {
                             .noneMatch(left -> hitbox.id().equals(left.id()))) {
                         broken++;
                         gone = true;
+                        showing.stream().filter(model -> !taken.contains(model)).forEach(taken::add);
                         break;
                     }
                 }
@@ -283,7 +284,11 @@ public class Furniture {
                 }
             }
         }
-        String what = models.isEmpty() ? "" : " They were showing %s.".formatted(String.join(", ", models));
+        /*
+        Only what went. Listing every display in the box named pieces that are still standing as
+        things that had been taken away, which is the opposite of what the sentence says.
+        */
+        String what = taken.isEmpty() ? "" : " They were showing %s.".formatted(String.join(", ", taken));
 
         if (broken == hitboxes.size()) {
             return "Took away %d piece(s) of furniture from %s.%s".formatted(broken, box, what);
@@ -294,6 +299,32 @@ public class Furniture {
 
         return "Took away %d of %d piece(s) in %s, from %d sides each. The rest are still standing.%s%s"
                 .formatted(broken, hitboxes.size(), box, STANCES, said, what);
+    }
+
+    /**
+     * The mark a piece's hits are judged from, taken once the bot's own teleport has been answered.
+     *
+     * <p>Marking as soon as the bot had been stood put "Teleported interior to ..." in with the
+     * refusals, which is the one thing that list is for. Waiting for the feed to go quiet keeps it
+     * out whatever language the server says it in, which matching the sentence would not, and the
+     * plugin's own line comes after this anyway: it is an answer to the swing, and the swing has
+     * not gone out yet.
+     */
+    private static long listening(BotSession bot) {
+        long deadline = System.currentTimeMillis() + Commands.QUIET_MS;
+        long mark = bot.feed("chat").nextSeq();
+
+        while (System.currentTimeMillis() < deadline) {
+            Commands.sleep(Commands.POLL_MS);
+
+            long now = bot.feed("chat").nextSeq();
+
+            if (now == mark) {
+                return mark;
+            }
+            mark = now;
+        }
+        return bot.feed("chat").nextSeq();
     }
 
     /**
@@ -498,7 +529,7 @@ public class Furniture {
             off.add("it sits at %.2f, %.2f, %.2f".formatted(found.x(), found.y(), found.z()));
         }
         if (found.rotation() != null && Math.abs(turn(found.rotation()) - turn(piece.rotation())) > 0.01) {
-            off.add("it faces %s".formatted(Text.oneDecimal(found.rotation())));
+            off.add("it faces %s".formatted(Text.oneDecimal(turn(found.rotation()))));
         }
         if (piece.variant() != null && found.variant() != null && !piece.variant().equals(found.variant())) {
             off.add("its variant is %s, which is what the plugin falls back to when it does not know the name it was given"
@@ -556,7 +587,13 @@ public class Furniture {
                 .formatted(piece.model(), piece.where());
     }
 
-    /** Degrees as the server holds them, so 360 and 0 and -360 are one angle. */
+    /**
+     * Degrees as the server holds them, so 360 and 0 and -360 are one angle.
+     *
+     * <p>What is read back is reported through this as well. The stick answers a piece placed at
+     * 225 with -135, and place-furniture takes 0 to 360, so a room read in order to be copied came
+     * back with angles its own tool would refuse.
+     */
     private static double turn(double degrees) {
         double wrapped = degrees % 360;
 
@@ -914,7 +951,7 @@ public class Furniture {
             out.add("- %s at %s%s%s%s".formatted(
                     piece.models().isEmpty() ? "(a piece whose displays show no model)" : String.join(", ", piece.models()),
                     "%.2f, %.2f, %.2f".formatted(piece.x(), piece.y(), piece.z()),
-                    piece.rotation() == null ? "" : ", facing %s".formatted(Text.oneDecimal(piece.rotation())),
+                    piece.rotation() == null ? "" : ", facing %s".formatted(Text.oneDecimal(turn(piece.rotation()))),
                     piece.variant() == null ? "" : ", variant %s".formatted(piece.variant()),
                     piece.hitboxes() == 1 ? "" : " (%d interaction boxes)".formatted(piece.hitboxes())));
         }
