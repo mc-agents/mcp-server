@@ -1341,6 +1341,13 @@ class BotEndToEndTest {
         assertTrue(clicked.contains("player"), "the hitbox was never clicked: " + clicked);
     }
 
+    /**
+     * The two answers read differently on purpose. A mannequin is living, so the server answers the
+     * swing with a damage event and the bot can say it hit something. An interaction box takes no
+     * damage and the server says nothing either way, so the bot says it swung and leaves the rest
+     * to the chat -- calling that a hit is how ten swings a plugin was cancelling came back as ten
+     * hits. What actually reached the entity is the world's own record, checked below.
+     */
     @Test
     void anNpcIsHitByTheLabelOverIt() {
         standBesideTheNpcs();
@@ -1353,7 +1360,7 @@ class BotEndToEndTest {
         world.run("function mcagents:setup");
 
         assertEquals("Hit mannequin 1 time(s).", mannequin);
-        assertEquals("Hit interaction 1 time(s).", hitbox);
+        assertEquals("Swung at interaction 1 time(s); it takes no damage, so the server confirmed nothing -- read the chat for a plugin that refused it.", hitbox);
         assertTrue(health.contains("entity data: ") && !health.contains("20.0f"), "the mannequin was never hurt: " + health);
         assertTrue(attacked.contains("player"), "the hitbox was never hit: " + attacked);
     }

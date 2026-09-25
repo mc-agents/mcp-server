@@ -236,32 +236,50 @@ public class Furniture {
         ToolDispatcher.offerCheck(attack, bot);
 
         int broken = 0;
+        List<String> refusals = new ArrayList<>();
 
         for (int at = 0; at < hitboxes.size(); at++) {
             FoundEntitiesRenderer.Entity hitbox = hitboxes.get(at);
 
-            progress.report("taking away %d of %d".formatted(at + 1, hitboxes.size()), at, hitboxes.size());
-
             if (hitbox.id() == null) {
                 continue;
             }
-            stand(bot, hitbox, box, 0);
+            Region where = new Region(hitbox.position().x(), hitbox.position().y(), hitbox.position().z(),
+                    hitbox.position().x(), hitbox.position().y(), hitbox.position().z());
+            boolean gone = false;
 
             /*
-            A piece takes as many hits as its own config says, and nothing tells a client how many
-            that is. So it is hit until it is gone, which is also how the answer knows it went.
+            From each side in turn, the way reading does. A swing is judged by the rotation the
+            server holds, so one that was aimed from a place the piece is not visible from lands
+            nowhere -- and a piece is not proof against every side just because it survived one.
             */
-            for (int swing = 0; swing < BREAK_SWINGS; swing++) {
-                if (Boolean.TRUE.equals(remote.call(attack, bot, Map.of("id", hitbox.id())).isError())) {
-                    break;
-                }
-                Region where = new Region(hitbox.position().x(), hitbox.position().y(), hitbox.position().z(),
-                        hitbox.position().x(), hitbox.position().y(), hitbox.position().z());
+            for (int stance = 0; stance < STANCES && !gone; stance++) {
+                progress.report("taking away %d of %d".formatted(at + 1, hitboxes.size()),
+                        at * STANCES + stance, hitboxes.size() * STANCES);
+                stand(bot, hitbox, box, stance);
 
-                if (within(bot, where, "interaction").stream()
-                        .noneMatch(left -> hitbox.id().equals(left.id()))) {
-                    broken++;
-                    break;
+                long mark = bot.feed("chat").nextSeq();
+
+                for (int swing = 0; swing < BREAK_SWINGS; swing++) {
+                    if (Boolean.TRUE.equals(remote.call(attack, bot, Map.of("id", hitbox.id())).isError())) {
+                        break;
+                    }
+                    if (within(bot, where, "interaction").stream()
+                            .noneMatch(left -> hitbox.id().equals(left.id()))) {
+                        broken++;
+                        gone = true;
+                        break;
+                    }
+                }
+                /*
+                What the server said while it was being hit. A plugin that will not let this piece
+                be broken says so here and nowhere else -- the swing itself is answered with
+                silence, since an interaction box takes no damage and reports nothing either way.
+                */
+                for (FeedEntry line : Commands.systemLines(bot, mark)) {
+                    if (!refusals.contains(line.rendered())) {
+                        refusals.add(line.rendered());
+                    }
                 }
             }
         }
@@ -270,13 +288,12 @@ public class Furniture {
         if (broken == hitboxes.size()) {
             return "Took away %d piece(s) of furniture from %s.%s".formatted(broken, box, what);
         }
-        /*
-        Measured on liveops: the server acknowledged every swing and the piece did not break, which
-        is what a world that protects its build looks like from here. There is nothing this can do
-        about that, and saying which of the two it is would be guessing, so it says both.
-        */
-        return "Took away %d of %d piece(s) in %s. The rest are still standing, and the server acknowledged every swing: either it does not let this bot break furniture -- a protected build does this -- or the piece takes more hits in a row than %d.%s"
-                .formatted(broken, hitboxes.size(), box, BREAK_SWINGS, what);
+        String said = refusals.isEmpty()
+                ? " The server said nothing while they were being hit, and a swing at an interaction box is answered with silence either way, so there is nothing here that says why."
+                : " While they were being hit the server said: %s".formatted(String.join(" / ", refusals));
+
+        return "Took away %d of %d piece(s) in %s, from %d sides each. The rest are still standing.%s%s"
+                .formatted(broken, hitboxes.size(), box, STANCES, said, what);
     }
 
     /**
@@ -709,20 +726,32 @@ public class Furniture {
         double atY = y == null ? hitbox.position().y() : y;
         double atZ = z == null ? hitbox.position().z() + 0.5 : z;
 
-        return new Piece(atX, atY, atZ, rotation, variant, models(atX, atY, atZ, displays), 1);
+        return new Piece(atX, atY, atZ, rotation, variant, models(atX, atY, atZ, y == null, displays), 1);
     }
 
-    /** The models of the displays standing in the block a piece sits in, which is what says what it is. */
-    private static List<String> models(double x, double y, double z,
+    /**
+     * The models of the displays standing in the block a piece sits in, which is what says what it
+     * is.
+     *
+     * <p>When the stick said nothing the block is the hitbox's rather than the piece's, and a
+     * hitbox hangs under its piece, so the block above counts too. Without that every silent piece
+     * was listed as showing no model -- and a silent piece is the one case where the model is all
+     * there is to name it by.
+     */
+    private static List<String> models(double x, double y, double z, boolean fromHitbox,
             List<FoundEntitiesRenderer.Entity> displays) {
         List<String> found = new ArrayList<>();
+        int block = (int) Math.floor(y);
 
         for (FoundEntitiesRenderer.Entity display : displays) {
             if (display.item() == null || display.item().itemModel() == null) {
                 continue;
             }
-            if (display.position().x() == (int) Math.floor(x) && display.position().y() == (int) Math.floor(y)
+            int above = display.position().y() - block;
+
+            if (display.position().x() == (int) Math.floor(x)
                     && display.position().z() == (int) Math.floor(z)
+                    && (above == 0 || (fromHitbox && above == 1))
                     && !found.contains(display.item().itemModel())) {
                 found.add(display.item().itemModel());
             }
