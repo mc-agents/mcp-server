@@ -457,10 +457,10 @@ public class RemoteTools {
      * The bots this thread is driving a composed tool on.
      *
      * <p>The claim is what stops two callers working the same body at once, and a composed tool's
-     * own steps are not a second caller: read-furniture holds the bot and then hits an entity with
-     * it, and attack-entity is exclusive, so the tool was refused by the claim it had taken itself.
-     * Marking the thread rather than counting the claim keeps that narrow -- a call from anywhere
-     * else still finds the bot busy, which is the whole point of the claim.
+     * own steps are not a second caller: a tool that holds the bot and then calls an exclusive one
+     * with it -- as the furniture tools did, hitting an entity mid-session -- was refused by the
+     * claim it had taken itself. Marking the thread rather than counting the claim keeps that
+     * narrow: a call from anywhere else still finds the bot busy, which is the point of the claim.
      */
     private final ThreadLocal<Set<String>> driving = ThreadLocal.withInitial(java.util.HashSet::new);
 

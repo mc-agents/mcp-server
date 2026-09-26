@@ -207,7 +207,7 @@ class RemoteToolsTest {
         return new ToolDispatcher(bots, new LocalTools(bots, new StoredRegions(new RegionStore(), customBlocks)), remote,
                 new Orchestration(bots, new BotProvisioner(null, null, null, 0, null, null),
                         new RegionTools(bots, remote, commands), survey, customBlocks,
-                        new Furniture(catalog, remote, commands), new Photographs(catalog, remote, commands),
+                        new Photographs(catalog, remote, commands),
                     new ServerCapabilities(catalog, remote)),
                 survey, new ServerCapabilities(catalog, remote),
                 new SimpleMeterRegistry());

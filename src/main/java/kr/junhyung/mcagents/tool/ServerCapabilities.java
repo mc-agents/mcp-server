@@ -15,10 +15,9 @@ import org.springframework.stereotype.Component;
  * Whether the server a bot is on runs the plugin a tool drives, and whether that bot may use it.
  *
  * <p>Several tools here are a plugin's command with a session around it, and each of them used to
- * find out for itself that the plugin was missing: one read an empty tab completion, one waited
- * three seconds for {@code //pos1} to go unanswered, one hit every piece of furniture fifteen
- * times before concluding nothing was listening. Three ways of learning the same fact, three
- * sentences for it, and the slowest of them cost a minute.
+ * find out for itself that the plugin was missing: one read an empty tab completion, another waited
+ * three seconds for {@code //pos1} to go unanswered. Two ways of learning the same fact and two
+ * sentences for it, each of them a wait that the answer did not need.
  *
  * <p>The fact is cheap to come by. A server sends each player the whole command tree they are
  * allowed to use, at login, so the client already knows -- and asking the bot to complete a
@@ -36,9 +35,6 @@ public class ServerCapabilities {
 
     /** CraftEngine's debug commands: what the custom block dictionary is learned through. */
     public static final String CRAFT_ENGINE_DEBUG = "craftengine-debug";
-
-    /** The one debug command that puts a piece of furniture down. */
-    public static final String CRAFT_ENGINE_FURNITURE = "craftengine-furniture";
 
     /** WorldEdit or FastAsyncWorldEdit, whichever answers {@code //set}. */
     public static final String WORLD_EDIT = "worldedit";
@@ -77,9 +73,6 @@ public class ServerCapabilities {
             CRAFT_ENGINE_DEBUG,
             new Probe("/craftengine ", "/craftengine debug ", "get-block-internal-id", "CraftEngine",
                     "ce.command.debug.get_block_internal_id"),
-            CRAFT_ENGINE_FURNITURE,
-            new Probe("/craftengine ", "/craftengine debug ", "spawn-furniture", "CraftEngine",
-                    "ce.command.debug.spawn_furniture"),
             WORLD_EDIT,
             new Probe(null, "//", "set", "WorldEdit", null));
 

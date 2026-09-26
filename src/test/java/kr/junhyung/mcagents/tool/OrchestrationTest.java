@@ -40,7 +40,6 @@ class OrchestrationTest {
             new RegionSurvey(new RemoteTools(catalog), new Commands(new RemoteTools(catalog), catalog), new RegionStore(), catalog,
                     new CustomBlocks(new RemoteTools(catalog), new Commands(new RemoteTools(catalog), catalog), catalog)),
             new CustomBlocks(new RemoteTools(catalog), new Commands(new RemoteTools(catalog), catalog), catalog),
-            new Furniture(catalog, new RemoteTools(catalog), new Commands(new RemoteTools(catalog), catalog)),
             new Photographs(catalog, new RemoteTools(catalog), new Commands(new RemoteTools(catalog), catalog)),
             new ServerCapabilities(catalog, new RemoteTools(catalog)),
             Duration.ofMillis(200));

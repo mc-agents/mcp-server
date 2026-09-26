@@ -66,9 +66,9 @@ class ServerCapabilitiesTest {
 
     @Test
     void aCommandInTheTreeIsPresentAndRefusesNothing() {
-        ServerCapabilities gate = gate(Map.of("/craftengine debug ", List.of("setblock", "spawn-furniture")));
+        ServerCapabilities gate = gate(Map.of("/craftengine debug ", List.of("setblock", "get-block-internal-id")));
 
-        assertNull(gate.refusal(bot("a", "complete-command"), ServerCapabilities.CRAFT_ENGINE_FURNITURE));
+        assertNull(gate.refusal(bot("a", "complete-command"), ServerCapabilities.CRAFT_ENGINE_DEBUG));
     }
 
     /**
@@ -78,7 +78,7 @@ class ServerCapabilitiesTest {
     @Test
     void aCommandThatCompletesNothingAnywhereIsAbsentAndSaysWhichPluginIsMissing() {
         ServerCapabilities gate = gate(Map.of("/craftengine debug ", List.of(), "/craftengine ", List.of()));
-        String refused = gate.refusal(bot("a", "complete-command"), ServerCapabilities.CRAFT_ENGINE_FURNITURE);
+        String refused = gate.refusal(bot("a", "complete-command"), ServerCapabilities.CRAFT_ENGINE_DEBUG);
 
         assertNotNull(refused);
         assertTrue(refused.contains("has no CraftEngine"), refused);
@@ -94,25 +94,25 @@ class ServerCapabilitiesTest {
         ServerCapabilities gate = gate(Map.of(
                 "/craftengine debug ", List.of("setblock"),
                 "/craftengine ", List.of("debug", "reload")));
-        String refused = gate.refusal(bot("a", "complete-command"), ServerCapabilities.CRAFT_ENGINE_FURNITURE);
+        String refused = gate.refusal(bot("a", "complete-command"), ServerCapabilities.CRAFT_ENGINE_DEBUG);
 
         assertNotNull(refused);
         assertTrue(refused.contains("not this bot's to run"), refused);
-        assertTrue(refused.contains("ce.command.debug.spawn_furniture"), refused);
+        assertTrue(refused.contains("ce.command.debug.get_block_internal_id"), refused);
         /* The command it names has to be one somebody could type; it was run together once. */
-        assertTrue(refused.contains("/craftengine debug spawn-furniture"), refused);
+        assertTrue(refused.contains("/craftengine debug get-block-internal-id"), refused);
     }
 
     /**
      * A bot with no completion tool cannot be asked, and an unasked question is not a no. The call
-     * goes through and whatever the tool does itself decides -- which is what read-furniture and
-     * build-region did before this gate existed, correctly.
+     * goes through and whatever the tool does itself decides -- which is what learn-custom-blocks
+     * and build-region did before this gate existed, correctly.
      */
     @Test
     void aBotThatCannotBeAskedIsUnknownAndLetsTheCallThrough() {
         ServerCapabilities gate = gate(Map.of());
 
-        assertNull(gate.refusal(bot("a"), ServerCapabilities.CRAFT_ENGINE_FURNITURE));
+        assertNull(gate.refusal(bot("a"), ServerCapabilities.CRAFT_ENGINE_DEBUG));
     }
 
     /** A tool that names no plugin is never probed, so a bot in no world is not held up by the gate. */

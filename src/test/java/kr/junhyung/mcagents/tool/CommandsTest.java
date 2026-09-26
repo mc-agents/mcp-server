@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
  * <p>Three things do and they look nothing alike, which is why they are decided in one place: a
  * command that is not there, one this player may not run, and one the game could not read. The
  * third was the one that got away -- a teleport with a rotation and no target is refused as an
- * "Incorrect argument", the tool that sent it read no refusal, and the piece of furniture it was
- * about to place ended up facing wherever the bot was already looking.
+ * "Incorrect argument", the tool that sent it read no refusal, and every step after it went ahead
+ * believing the bot stood where it had been sent.
  */
 class CommandsTest {
 

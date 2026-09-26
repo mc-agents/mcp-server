@@ -66,21 +66,19 @@ public class Orchestration {
     private final RegionTools regions;
     private final RegionSurvey survey;
     private final CustomBlocks customBlocks;
-    private final Furniture furniture;
     private final Photographs photographs;
     private final ServerCapabilities capabilities;
     private final Duration patience;
 
     @Autowired
     public Orchestration(BotRegistry bots, BotProvisioner provisioner, RegionTools regions, RegionSurvey survey,
-            CustomBlocks customBlocks, Furniture furniture, Photographs photographs,
+            CustomBlocks customBlocks, Photographs photographs,
             ServerCapabilities capabilities) {
-        this(bots, provisioner, regions, survey, customBlocks, furniture, photographs, capabilities,
-                JOIN_PATIENCE);
+        this(bots, provisioner, regions, survey, customBlocks, photographs, capabilities, JOIN_PATIENCE);
     }
 
     Orchestration(BotRegistry bots, BotProvisioner provisioner, RegionTools regions, RegionSurvey survey,
-            CustomBlocks customBlocks, Furniture furniture, Photographs photographs,
+            CustomBlocks customBlocks, Photographs photographs,
             ServerCapabilities capabilities, Duration patience) {
         this.patience = patience;
         this.bots = bots;
@@ -88,7 +86,6 @@ public class Orchestration {
         this.regions = regions;
         this.survey = survey;
         this.customBlocks = customBlocks;
-        this.furniture = furniture;
         this.photographs = photographs;
         this.capabilities = capabilities;
     }
@@ -110,9 +107,6 @@ public class Orchestration {
                 case "build-region", "verify-region" -> regions.call(spec, arguments, progress);
                 case "write-region" -> survey.write(spec, resolve(spec, arguments), arguments, progress);
                 case "learn-custom-blocks" -> customBlocks.learn(spec, resolve(spec, arguments), arguments, progress);
-                case "read-furniture" -> furniture.read(spec, resolve(spec, arguments), arguments, progress);
-                case "place-furniture" -> furniture.place(spec, resolve(spec, arguments), arguments, progress);
-                case "remove-furniture" -> furniture.remove(spec, resolve(spec, arguments), arguments, progress);
                 case "photograph-region" -> photographs.take(spec, resolve(spec, arguments), arguments, progress);
                 default -> ToolDispatcher.failure("%s is not an orchestration tool".formatted(spec.name()));
             };

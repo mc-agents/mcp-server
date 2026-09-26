@@ -3384,7 +3384,7 @@ class BotEndToEndTest {
      */
     @Test
     void aToolWhosePluginIsNotOnTheServerIsRefusedBeforeTheBotIsTouched() {
-        agent.requires("learn-custom-blocks", "read-furniture", "place-furniture");
+        agent.requires("learn-custom-blocks");
         /*
         A fabric bot resolves a literal out of the tree the server sent it at login, so the gate can
         see. An azalea bot has to ask the server and the answer does not come, which is the gate's
@@ -3395,14 +3395,8 @@ class BotEndToEndTest {
         world.run("tp " + BotWorld.BOT + " 26 -59 4");
 
         String learned = agent.call("learn-custom-blocks", Map.of("bot", BotWorld.BOT));
-        String read = agent.call("read-furniture", Map.of("bot", BotWorld.BOT,
-            "from", Map.of("x", 24, "y", -60, "z", 2), "to", Map.of("x", 28, "y", -56, "z", 6)));
-        String placed = agent.call("place-furniture", Map.of("bot", BotWorld.BOT,
-            "pieces", java.util.List.of(Map.of("model", "default:desk_chair", "x", 26.5, "y", -59.0, "z", 4.5))));
 
-        for (String answer : java.util.List.of(learned, read, placed)) {
-            assertTrue(sees ? answer.contains("has no CraftEngine") : !answer.isBlank(), answer);
-        }
+        assertTrue(sees ? learned.contains("has no CraftEngine") : !learned.isBlank(), learned);
     }
 
     /**

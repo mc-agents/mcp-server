@@ -297,7 +297,7 @@ public class StoredRegions {
             out.add("%d block(s) of the box were never read, and a gap in the blocks reads as a way out."
                     .formatted(room.unread()));
         }
-        out.add("As arguments: show-region %s from %d,%d,%d to %d,%d,%d draws it, and read-furniture over the same box says what stands in it -- the furniture is entities and no snapshot holds it."
+        out.add("As arguments: show-region %s from %d,%d,%d to %d,%d,%d draws it. What furnishes it is not in here -- furniture is entities and a snapshot holds blocks -- so find-entity over the same box is what says whether anything stands in it."
                 .formatted(snapshot.id(), room.box().minX(), room.box().minY(), room.box().minZ(),
                         room.box().maxX(), room.box().maxY(), room.box().maxZ()));
 

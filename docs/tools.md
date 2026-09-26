@@ -2,14 +2,14 @@
 
 <!-- Rendered from catalog/catalog.json by ./gradlew renderToolReference. Edit the catalogue, not this page. -->
 
-Catalogue 5.10.0, 105 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
+Catalogue 5.11.0, 102 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
 
 Every tool but [`list-bots`](#list-bots), [`ping-server`](#ping-server), [`wait-for-server`](#wait-for-server) takes `bot`, the name given to join-server, which may be left out while exactly one bot is connected; it is not repeated below. A tool marked **fabric only** is one the headless kind of bot does not run. **Exclusive** means one call at a time on a bot, since two walks or two clicks at once would fight over the same body. **Untrusted** means the answer carries content the server did not write -- chat, item names, signs -- and is marked as data rather than instructions. **Read-only** means the call changes nothing in the game or on the server, which is what an MCP client's `readOnlyHint` approves without asking; **destructive** is the `destructiveHint`, for a call that removes something or runs with the bot's permissions. A tool that **needs a world** is refused while the bot is on a title or disconnected screen. The deadline is how long the server waits for the bot before giving the call up; a tool with a `timeoutMs` argument sets its own inside that.
 
 | Group | Tools |
 | --- | --- |
 | [world](#world) | [`activate-block`](#activate-block), [`attack-entity`](#attack-entity), [`fish`](#fish), [`interact-entity`](#interact-entity), [`use-held-item`](#use-held-item) |
-| [region](#region) | [`build-region`](#build-region), [`import-region`](#import-region), [`read-furniture`](#read-furniture), [`place-furniture`](#place-furniture), [`remove-furniture`](#remove-furniture), [`photograph-region`](#photograph-region), [`learn-custom-blocks`](#learn-custom-blocks), [`list-regions`](#list-regions), [`read-region`](#read-region), [`read-selection`](#read-selection), [`show-region`](#show-region), [`measure-room`](#measure-room), [`verify-region`](#verify-region), [`write-region`](#write-region) |
+| [region](#region) | [`build-region`](#build-region), [`import-region`](#import-region), [`photograph-region`](#photograph-region), [`learn-custom-blocks`](#learn-custom-blocks), [`list-regions`](#list-regions), [`read-region`](#read-region), [`read-selection`](#read-selection), [`show-region`](#show-region), [`measure-room`](#measure-room), [`verify-region`](#verify-region), [`write-region`](#write-region) |
 | [crafting](#crafting) | [`can-craft`](#can-craft), [`craft-item`](#craft-item), [`get-recipe`](#get-recipe), [`list-recipes`](#list-recipes) |
 | [screen](#screen) | [`click-chat`](#click-chat), [`press-dialog-button`](#press-dialog-button), [`read-book`](#read-book), [`screenshot`](#screenshot), [`set-dialog-input`](#set-dialog-input), [`type-text`](#type-text) |
 | [slot](#slot) | [`click-slot`](#click-slot), [`drag-slots`](#drag-slots), [`drop-held-item`](#drop-held-item), [`hover-slot`](#hover-slot), [`select-bundle-item`](#select-bundle-item) |
@@ -133,59 +133,6 @@ Keep a region you spell out yourself, in the encoding read-region answers with: 
 | `runs[].block` | integer | yes |  | at least 0 |
 | `runs[].count` | integer | yes |  | at least 1 |
 | `name` | string | no | What to call it, for list-regions; optional | at most 64 characters |
-
-### read-furniture
-
-*fabric and azalea · deadline 600s · exclusive · untrusted · the server drives the bot's session*
-
-Read the CraftEngine furniture standing in a box: what each piece is, where it sits to the hundredth of a block, which way it faces and which of its variants it was placed as. Nothing a client receives says any of that -- a piece of furniture arrives as an unnamed item display -- so each is asked with CraftEngine's own debug stick, whose left click reports one property and changes nothing. The bot needs creative mode and minecraft.debugstick, and it is given a debug stick if it has none. A piece takes about twenty seconds, so this is a tool for a room rather than a district. What it answers is what a builder would have to write down by hand to copy a room.
-
-| Argument | Type | Required | What it is | Limits |
-| --- | --- | --- | --- | --- |
-| `from` | object | yes | One corner of the box, inclusive |  |
-| `from.x` | integer | yes |  |  |
-| `from.y` | integer | yes |  |  |
-| `from.z` | integer | yes |  |  |
-| `to` | object | yes | The other corner, inclusive |  |
-| `to.x` | integer | yes |  |  |
-| `to.y` | integer | yes |  |  |
-| `to.z` | integer | yes |  |  |
-| `count` | integer | no | How many pieces to read at most, oldest corner first (default: 24) | 1 to 64 |
-
-### place-furniture
-
-*fabric and azalea · deadline 600s · exclusive · untrusted · destructive · the server drives the bot's session*
-
-Put CraftEngine furniture down, one piece at a time, exactly where and facing which way you say. The plugin's own command places a piece at the location the bot sends and the piece takes the bot's own facing, so the bot is stood at the right angle first -- which is why a yaw here is a yaw the piece ends up with rather than a request. Every piece is read back with the debug stick afterwards and the answer says what is actually there, because a wrong variant name is accepted in silence and a command's own reply repeats it back unchanged. Use read-furniture on a room you like to get the shape these arguments take.
-
-| Argument | Type | Required | What it is | Limits |
-| --- | --- | --- | --- | --- |
-| `pieces` | array of object | yes | The furniture to put down, in order | 1 to 32 items |
-| `pieces[].model` | string | yes | The furniture's id, for example default:desk_chair. read-furniture answers with these | at most 128 characters |
-| `pieces[].x` | number | yes | Where it sits, to the hundredth of a block. A piece on the middle of a block is at .50 |  |
-| `pieces[].y` | number | yes |  |  |
-| `pieces[].z` | number | yes |  |  |
-| `pieces[].rotation` | number | no | Which way it faces in degrees, 0 to 360. Built rooms use multiples of 45 (default: 0) | at least 0 |
-| `pieces[].variant` | string | no | Which of the piece's variants to place it as, for example ground or ceiling. Omit for the piece's own default | at most 64 characters |
-| `verify` | boolean | no | Read each piece back with the debug stick after placing it (default: true). False is faster and says less |  |
-
-### remove-furniture
-
-*fabric and azalea · deadline 600s · exclusive · untrusted · destructive · the server drives the bot's session*
-
-Take CraftEngine furniture away again: the pieces in a box are hit until they break, which is the only thing that removes one -- the plugin has no command for it. The bot's hand is emptied first, because a hit that carries a debug stick is cancelled before it breaks anything, which is what makes read-furniture safe. This is the other half of place-furniture: a piece put down in the wrong place is taken back with this, and killing the entities by hand instead leaves the display standing and the plugin still believing the piece is there. It cannot be undone, so read the box first.
-
-| Argument | Type | Required | What it is | Limits |
-| --- | --- | --- | --- | --- |
-| `from` | object | yes | One corner of the box, inclusive |  |
-| `from.x` | integer | yes |  |  |
-| `from.y` | integer | yes |  |  |
-| `from.z` | integer | yes |  |  |
-| `to` | object | yes | The other corner, inclusive |  |
-| `to.x` | integer | yes |  |  |
-| `to.y` | integer | yes |  |  |
-| `to.z` | integer | yes |  |  |
-| `count` | integer | no | How many pieces to take away at most (default: 24) | 1 to 64 |
 
 ### photograph-region
 
@@ -313,7 +260,7 @@ Draw a window of a kept region: its palette with counts and a map of each layer 
 
 *fabric and azalea · deadline 10s · read-only · the server answers from what it holds*
 
-Measure the room around a point in a kept region: how big it is, what its walls and floor and ceiling are finished in, and where the ways in and out are. Give it a point you know is inside -- where the bot stands, or where the furniture is -- and it grows outwards until the walls stop it. What stops it is not a roof, which an open arcade has too, but enclosure: a block carries the room further only when most of its horizon runs into a wall and there is room around it, so a fill cannot escape down a colonnade or slip through a doorway into the next room. If the answer says the walls did not stop it, raise "enclosure" or aim further in. Furniture is entities and no snapshot holds it, so read-furniture over the box it answers with is the other half. Needs no bot.
+Measure the room around a point in a kept region: how big it is, what its walls and floor and ceiling are finished in, and where the ways in and out are. Give it a point you know is inside -- where the bot stands, or where the furniture is -- and it grows outwards until the walls stop it. What stops it is not a roof, which an open arcade has too, but enclosure: a block carries the room further only when most of its horizon runs into a wall and there is room around it, so a fill cannot escape down a colonnade or slip through a doorway into the next room. If the answer says the walls did not stop it, raise "enclosure" or aim further in. Furniture is entities and no snapshot holds it, so find-entity over the box it answers with is what says whether the room is furnished. Needs no bot.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
