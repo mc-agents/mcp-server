@@ -1305,6 +1305,24 @@ class BotEndToEndTest {
         agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
     }
 
+    /**
+     * Until the bot's own client says it is in that mode. A gamemode command is answered by the
+     * server at once and reaches the client a packet later, so a case that turns on which mode the
+     * bot is in has to start from the client's answer and not from the command's.
+     */
+    private void awaitGameMode(String mode) {
+        String seen = "";
+
+        for (int attempt = 0; attempt < 40; attempt++) {
+            seen = agent.call("detect-gamemode", Map.of("bot", BotWorld.BOT));
+            if (seen.toLowerCase(java.util.Locale.ROOT).contains(mode)) {
+                return;
+            }
+            agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+        }
+        throw new IllegalStateException("the bot never reported " + mode + ", last said: " + seen);
+    }
+
     /** What the server holds on an entity, once it holds what a click leaves. */
     private String awaitRecord(String entity, String path, Predicate<String> recorded) {
         String read = "";
@@ -3033,7 +3051,14 @@ class BotEndToEndTest {
         world.run("gamemode survival " + BotWorld.BOT);
         world.run("clear " + BotWorld.BOT);
         world.run("tp " + BotWorld.BOT + " 11.5 -60 0.5");
-        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
+        /*
+        Waited for and not slept through. A creative click breaks dirt in one, so this case is only
+        a case once the client has been told it is in survival -- and that is a packet behind the
+        command, which on a loaded runner arrived after the ten ticks this used to give it. The
+        failure then read as "one click broke the dirt", which is the thing the case is here to
+        catch, so the flake looked exactly like the regression it was meant to find.
+        */
+        awaitGameMode("survival");
         agent.mustCall("look-at", Map.of("bot", BotWorld.BOT, "x", 11, "y", -60, "z", 2));
 
         agent.mustCall("press-input", Map.of("bot", BotWorld.BOT, "key", "attack"));

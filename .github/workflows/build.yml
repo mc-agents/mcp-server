@@ -155,11 +155,31 @@ jobs:
           # for it only once its server is up. Started here it downloads while Gradle and the server
           # start, and the suite's own pull waits on this one rather than beginning again.
           docker pull --quiet "$BOT_IMAGE" > /dev/null &
-          ./gradlew :e2e:test \
-            -Pe2e.minecraft.version=$MINECRAFT \
-            -Pe2e.bot.kind=${{ matrix.kind }} \
-            -Pe2e.bot.image=$BOT_IMAGE \
-            -Pe2e.shard=${{ matrix.shard }}/${{ matrix.shards }}
+
+          # Twice, and the second time from nothing. What starves a case here is the runner and not
+          # the case: a Modrinth that answered nothing took all five shards out at once, and two
+          # different cases have failed on a fixed wait that a loaded runner outran. Retrying a case
+          # inside the run was tried and is not this, deliberately -- a case that summons something
+          # and clears it at the end summons it twice, and the second run passes with its premise
+          # broken. Throwing the containers away and starting the shard again cannot do that, since
+          # a fresh server is a fresh world.
+          #
+          # --rerun-tasks because Gradle would otherwise call a failed task up to date, and a
+          # warning rather than silence because a shard that only passes on the second go is a
+          # thing to notice rather than a green tick.
+          rerun=""
+          for attempt in 1 2; do
+            if ./gradlew :e2e:test $rerun \
+              -Pe2e.minecraft.version=$MINECRAFT \
+              -Pe2e.bot.kind=${{ matrix.kind }} \
+              -Pe2e.bot.image=$BOT_IMAGE \
+              -Pe2e.shard=${{ matrix.shard }}/${{ matrix.shards }}; then
+              exit 0
+            fi
+            echo "::warning title=e2e shard retried::${{ matrix.kind }} ${{ matrix.shard }}/${{ matrix.shards }} failed on attempt ${attempt} of 2"
+            rerun="--rerun-tasks"
+          done
+          exit 1
 
       - uses: actions/upload-artifact@v7
         if: failure()

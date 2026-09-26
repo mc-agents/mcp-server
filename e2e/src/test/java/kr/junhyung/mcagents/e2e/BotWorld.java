@@ -41,6 +41,19 @@ final class BotWorld implements AutoCloseable {
     /** Boot, world generation and a datapack. Slow the first time an image is pulled. */
     private static final Duration SERVER_START = Duration.ofMinutes(5);
 
+    /**
+     * How many times a container is given to come up before the run is called failed.
+     *
+     * <p>Neither of these starts is only this project's doing. The server downloads a plugin from
+     * Modrinth every time it boots, and the bot fetches a client jar and its assets from Mojang; a
+     * slow minute at either turns into "container exited with code 1" and takes every shard of the
+     * run with it, which is what a Modrinth that was answering nothing did on 2026-09-26. A second
+     * attempt starts the download again from a fresh container rather than waiting longer on a
+     * fetch that has already given up, and a service that is genuinely down still fails the run
+     * rather than being retried into the ground.
+     */
+    private static final int START_ATTEMPTS = 3;
+
     /** A client jar, its libraries and 500MB of assets, unless the volume already holds them. */
     private static final Duration BOT_LINK = Duration.ofMinutes(10);
 
@@ -101,6 +114,7 @@ final class BotWorld implements AutoCloseable {
                 "/patches/no-connection-throttle.json")
             .withNetwork(network)
             .withNetworkAliases(SERVER_ALIAS)
+            .withStartupAttempts(START_ATTEMPTS)
             .waitingFor(Wait.forLogMessage(".*RCON running.*\\n", 1).withStartupTimeout(SERVER_START));
 
         bot = new GenericContainer<>(botImage)
@@ -115,6 +129,7 @@ final class BotWorld implements AutoCloseable {
             loading, which on a machine without a graphics card is a minute and a half after the
             process starts.
             */
+            .withStartupAttempts(START_ATTEMPTS)
             .waitingFor(Wait.forLogMessage(".*dialling .*\\n", 1).withStartupTimeout(BOT_LINK));
 
         /*
