@@ -1,0 +1,184 @@
+# mc-agents on one machine: the MCP server and the bots, no cluster.
+#
+#     make -C deploy/compose up                      tokens if there are none, then the lot
+#     make -C deploy/compose names                   the address and the line that registers it
+#     docker compose up -d --scale bot=4             four headless bots instead of one
+#     docker compose run --rm bot-login              the Microsoft login one-shot, if you use it
+#
+# The Minecraft server is deliberately not in this project. It is the one you already have, and a
+# bot is told where it is by `join-server`, not by this file: `host.docker.internal` for a server on
+# this machine, a LAN address or a forwarded port for one anywhere else. See README.md.
+#
+# The image tags are pinned, and the three of them belong together. This set is newer than the one
+# operator 0.24.0's values.yaml installs, because the things that make this file work -- a bot that
+# takes its name from its own container, a bot that can hold a Microsoft account, a server that says
+# why an online-mode login was refused -- arrived after it, and the file would otherwise point at
+# images none of them is in. operator/docs/compatibility.md tabulates sets per operator release and
+# does not have this one: it is keyed by the thing a compose deployment never installs. What stands
+# behind these three is each repository's own release, and a bot older than this server reports
+# fewer tools rather than failing, so if you move one of them, move the others.
+#
+# Nothing here may use `:latest`: it moves with every push to main, so the deployment would change
+# under you between two `up`s, and the catalogue the server ships has to be the one the bots were
+# built against -- a mismatch is not a loud failure, it disables the mismatched tools at the
+# handshake and leaves an agent wondering where they went.
+name: mc-agents
+
+services:
+  mcp-server:
+    image: junhyung.cloud/mc-agents/mcp-server:0.74.0
+    restart: unless-stopped
+    # Only the MCP port is published, and only on loopback.
+    #
+    # Not 8765: the bot link's own gate is the token below and nothing else, and whatever reaches
+    # that port can introduce itself as a bot under the name a real bot would use, then answer the
+    # agent's calls with whatever it likes. The compose network is this deployment's NetworkPolicy,
+    # and a bot is on it. Not 0.0.0.0 either: a published port is DNAT'd before the host firewall
+    # sees it, so a rule that closes 3000 does not close this.
+    #
+    # A fixed host port is also the only thing here that refuses `--scale mcp-server=2`: the second
+    # replica has nowhere to publish 3000 and `up` stops with "port is already allocated". Compose
+    # has no equivalent of the chart's `fail` on replicaCount, and two servers that did come up
+    # would each bind 8765 in their own netns, scatter the bots between them, and leave `list-bots`
+    # reporting none while bots stood in the world.
+    ports:
+      - "127.0.0.1:${MCP_HOST_PORT:-3000}:3000"
+    environment:
+      # Both come out of .env, which `make up` writes once. The `:?` is not decoration:
+      #
+      # A blank MCP_AUTH_TOKEN does not mean "no token to check", it means the auth filter is not
+      # installed at all, and it drops the bind host to 127.0.0.1 -- inside this container, where
+      # nothing can reach it, so publishing quietly stops working and the obvious fix for that
+      # (MCP_BIND_HOST below) is what removes the last guard. A blank BOT_LINK_TOKEN takes any
+      # hello on 8765.
+      #
+      # Compose stops before it creates anything when either is unset or empty, which is the error
+      # the chart's `fail` and the operator's generated Secrets give you in a cluster.
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:?run `make -C deploy/compose up` first, which writes .env; a blank token disables the auth filter on /mcp entirely}
+      BOT_LINK_TOKEN: ${BOT_LINK_TOKEN:?run `make -C deploy/compose up` first, which writes .env; a blank link token lets anything that reaches 8765 become a bot}
+      # The published port above reaches the container, not its loopback. Safe only because the
+      # token is required: these two settings are one decision.
+      MCP_BIND_HOST: 0.0.0.0
+      # `join-server` cannot start a bot here: there is no operator to create a MinecraftBot for, so
+      # a name nothing below is running under is answered "start one by hand", and starting one means
+      # adding a service to this file. Set rather than left at `auto`, which decides by looking for
+      # KUBERNETES_SERVICE_HOST in the environment -- an .env copied off a pod would send it reaching
+      # for that cluster.
+      MCP_BOTS_PROVISION: never
+
+  # The headless kind, and the one worth scaling: `--scale bot=4` joins four. azalea needs no
+  # volume, no client jar and no X server, and links in about a second.
+  bot:
+    image: junhyung.cloud/mc-agents/bot-azalea:0.28.0-mc26.1.2
+    restart: unless-stopped
+    # Nothing to wait for beyond the container: a bot that dials before the link port is accepting
+    # backs off and redials by itself. `up` returning does not mean an agent can call yet.
+    depends_on:
+      - mcp-server
+    environment:
+      MCP_SERVER_HOST: mcp-server
+      BOT_LINK_TOKEN: ${BOT_LINK_TOKEN:?run `make -C deploy/compose up` first, which writes .env}
+      # No BOT_NAME on purpose. Replicas of one service share every environment variable, so a
+      # BOT_NAME here would have all four announce the same name: the first is admitted and the
+      # rest are refused NAME_TAKEN and redial for ever. Without one a bot names itself after its
+      # container hostname, which under compose is the container id -- twelve hex characters, a
+      # legal Minecraft name, and different for every replica. The cost is that the names are not
+      # yours to choose, so `list-bots` is how an agent learns them.
+    # host.docker.internal is how `join-server` reaches a Minecraft server on this machine. Docker
+    # Desktop resolves it anyway; on Linux it exists only because of this line.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # The real client: screenshots, dialogs, anything the catalogue marks fabric-only. One service
+  # and not a scalable one, because of the volume below.
+  bot-fabric:
+    image: junhyung.cloud/mc-agents/bot-fabric:0.77.0-mc26.1.2
+    restart: unless-stopped
+    depends_on:
+      - mcp-server
+    environment:
+      MCP_SERVER_HOST: mcp-server
+      BOT_LINK_TOKEN: ${BOT_LINK_TOKEN:?run `make -C deploy/compose up` first, which writes .env}
+      # A name an agent can address without looking it up, which is safe here only because this
+      # service is never scaled: a second replica would announce "fabric" too and be refused.
+      BOT_NAME: fabric
+      # MC_VERSION is not set, and must not be. This image was built for one Minecraft version and
+      # carries it in its tag; setting another sends the entrypoint off to fetch that client and run
+      # a mod built against this one inside it.
+    volumes:
+      # The client jar, its libraries and the assets: 200-600MB the entrypoint downloads from Mojang
+      # when it finds /mc empty. In the image /mc is a plain directory, so without this every
+      # `docker compose up --force-recreate`, every image bump and every `down` pays for it again.
+      #
+      # A named volume and not a bind mount: Docker seeds a new named volume from the image's own
+      # directory and keeps its ownership, so uid 10001 can write it. A host directory arrives owned
+      # by root and the fetch dies on permission denied before the client ever starts.
+      - fabric-assets:/mc
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # --- Microsoft accounts ------------------------------------------------------------------------
+  #
+  # Offline authentication is the default above, and it needs the target server in offline-mode.
+  # For a server whose online-mode you will not turn off, a bot logs in as a real account instead.
+  # That is one account per bot: an account can be in a world once, so these are services written
+  # out by hand, never `--scale`.
+  #
+  # The login is a one-shot and not part of the bot. It prints a link and a code, waits for you to
+  # visit them, and leaves the credential cache in a volume the bot mounts as well. A bot
+  # that did this itself would block for ever on a prompt nobody is attached to, which looks exactly
+  # like a bot that cannot connect.
+  #
+  #     docker compose run --rm bot-login      visit the link it prints, then `up` the bot
+  #
+  # `profiles` is what keeps the one-shot out of `up`; `run` enables its own profile, so no flag is
+  # needed. Uncomment the one-shot, one service per account, and the `msa` volume at the foot of this
+  # file -- a service naming a volume that is still commented out is refused before anything starts.
+  #
+  # The environment below is the shape and not the contract: those names belong to the bot image and
+  # not to this file, so check them against the README of the tag you pinned.
+  #
+  # bot-login:
+  #   image: junhyung.cloud/mc-agents/bot-azalea:0.28.0-mc26.1.2
+  #   profiles: ["login"]
+  #   command: ["login"]
+  #   # The cache is the whole point of the volume: without it every recreate is another login.
+  #   volumes:
+  #     - msa:/auth
+  #   environment:
+  #     BOT_AUTH: microsoft
+  #     # The key the credential is filed under, and the bot has to be given the same one. Any
+  #     # string does; the account's email is the one you will remember which account it was.
+  #     BOT_AUTH_ACCOUNT: you@example.com
+  #     BOT_AUTH_CACHE: /auth/azalea-auth.json
+  #   # The flow is a device code read off this terminal.
+  #   stdin_open: true
+  #   tty: true
+  #
+  # bot-alice:
+  #   image: junhyung.cloud/mc-agents/bot-azalea:0.28.0-mc26.1.2
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - mcp-server
+  #   volumes:
+  #     # Writable, and the same volume the one-shot filled: an access token expires, and a bot that
+  #     # cannot write the refreshed one back sends you to the terminal again on its next start.
+  #     - msa:/auth
+  #   environment:
+  #     MCP_SERVER_HOST: mcp-server
+  #     BOT_LINK_TOKEN: ${BOT_LINK_TOKEN}
+  #     BOT_AUTH: microsoft
+  #     # The same two the one-shot was given: a bot looking under another key finds nothing and
+  #     # stops, and a bot looking at another path finds nothing and stops.
+  #     BOT_AUTH_ACCOUNT: you@example.com
+  #     BOT_AUTH_CACHE: /auth/azalea-auth.json
+  #     # The link name an agent addresses, which the account's own Minecraft name has to match:
+  #     # otherwise `list-bots` says one thing and the player list says another, and a command
+  #     # aimed at the bot by name hits nobody.
+  #     BOT_NAME: alice
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+
+volumes:
+  fabric-assets:
+  # msa:

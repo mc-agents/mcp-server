@@ -29,7 +29,7 @@ everything, and a second way to say it is a second thing that can disagree.
 | `BOT_KIND` | what the starter thinks it started. Informational: a bot reports its own kind in `hello`, and a disagreement is the starter's bug | |
 | `MC_VERSION` | the version to claim; `auto` negotiates | `auto` |
 | `HEALTH_PORT` | where `/healthz` and `/readyz` are served | `8080` |
-| `RECONNECT_MIN_MS`, `RECONNECT_MAX_MS` | backoff bounds for redialling | `500`, `15000` |
+| `RECONNECT_MIN_MS`, `RECONNECT_MAX_MS` | how long to wait before redialling a link that dropped. `bot-azalea` backs off between the two; `bot-fabric` waits the minimum every time and never reads the maximum | azalea `500` and `15000`; fabric `2000` |
 | `BOT_LINK_TOKEN` | what to send as `hello.linkToken`. The operator sets it from the server's link Secret; a bot must never log it | unset: no `linkToken` in `hello` |
 
 The hostname comes before any constant, and that is what makes `docker compose up --scale` mean

@@ -124,6 +124,30 @@ A wrong or missing token is answered `401` with `WWW-Authenticate: Bearer`, so a
 cannot connect has that to look for. Against the development cluster, `make -C dev/cluster names`
 prints this line with the cluster's own token in it.
 
+### In Docker, without a cluster
+
+[`deploy/compose/`](deploy/compose/README.md) is this server and some bots in docker compose, for a
+Minecraft server you already run:
+
+```bash
+make -C deploy/compose up      # both tokens into .env on the first run, the lot, then the line above
+make -C deploy/compose names   # that line again later, whenever you want the token back
+```
+
+The Minecraft server is not in that project. A bot is told where one is by `join-server`, and
+`host.docker.internal` reaches a server on the same machine, which is also how a forwarded port
+works. Bots authenticate offline there by default, which is what makes `--scale bot=4` mean
+anything: replicas share every environment variable, so a bot left without a `BOT_NAME` takes its
+container id for a name and four of them are four bots. Microsoft accounts are the opt-in, for a
+server whose online-mode stays on — one account per bot, written out by hand, and the login is a
+one-shot (`docker compose run --rm bot-login`) rather than something a long-running bot does, since
+a bot waiting on a prompt nobody is attached to looks exactly like a bot that cannot connect.
+
+It generates both tokens, unlike the chart, which refuses to because a value that changes per
+render leaves GitOps out of sync — not a thing that happens to a file on one machine. What it does
+not have is the operator: no autoscaling, nothing probing liveness to restart a wedged server, no
+profile pinning, and one server, because the server cannot be scaled.
+
 ### End to end
 
 ```bash
