@@ -292,8 +292,17 @@ public class Orchestration {
 
         /* The reason is the server's: a kick message, a login refusal, whatever the bot was told. */
         if (!joined.ok()) {
-            throw new JoinFailure(stageOf(joined),
-                    Trust.mark("bot \"%s\" could not join %s: %s".formatted(bot.name(), where, joined.text())));
+            JoinStage stage = stageOf(joined);
+            String said = "bot \"%s\" could not join %s: %s".formatted(bot.name(), where, joined.text());
+            /*
+            A login refusal gets what the client's own sentence leaves out. Only a login refusal:
+            past it the bot was admitted, so who it is was settled, and a line about authentication
+            would be pointing at the one part that worked. The notice still lands on the server's
+            words: Trust marks the end of the first line, and this sentence is a line after them.
+            */
+            String offline = stage == JoinStage.LOGIN ? Authentication.note(joined.text()) : null;
+
+            throw new JoinFailure(stage, Trust.mark(offline == null ? said : said + "\n" + offline));
         }
         if (bot.status() == null || !READY.equals(bot.status().state())) {
             throw new JoinFailure(JoinStage.SPAWN,

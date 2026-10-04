@@ -1048,7 +1048,7 @@ No arguments beyond `bot`.
 
 *fabric and azalea · deadline 180s · the server drives the bot's session*
 
-Send a bot into a Minecraft server and wait until it has spawned. A bot already running under this name is used as it is; otherwise one is started, which in a cluster means the operator creates it. A fabric client takes about a minute to link, longer than one call waits: a call that runs out of patience says the bot is still starting, and calling join-server again with the same arguments waits for that bot rather than starting another. A failure says how far it got, because a bot that never started and a server that refused the login have different fixes.
+Send a bot into a Minecraft server and wait until it has spawned. Bots authenticate offline -- a username and nothing that proves it is theirs -- so the target server has to be running online-mode=false. An online-mode server refuses the login, and the refusal it sends does not mention authentication, which is why the answer here says so instead. An azalea bot can be started signed in to a Microsoft account, and then joins an online-mode server as that account; a fabric bot has no such mode, so for it offline is the only one. A bot already running under this name is used as it is; otherwise one is started, which in a cluster means the operator creates it. A fabric client takes about a minute to link, longer than one call waits: a call that runs out of patience says the bot is still starting, and calling join-server again with the same arguments waits for that bot rather than starting another. A failure says how far it got, because a bot that never started and a server that refused the login have different fixes.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
@@ -1893,7 +1893,7 @@ Wait until a toast whose text matches a regular expression pops up: an advanceme
 
 *fabric and azalea · deadline 5s · untrusted · read-only · the server answers from what it holds*
 
-Send a Minecraft server list ping and report version, protocol, player count and MOTD. Use it to check a server is up and speaks a version we can join before spending a bot slot. The wait for this is wait-for-server.
+Send a Minecraft server list ping and report version, protocol, player count and MOTD. Use it to check a server is up and speaks a version we can join before spending a bot slot. A ping is answered before any login, so it says nothing about whether this bot would be let in; join-server's description says what decides that. The wait for this is wait-for-server.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
@@ -1905,7 +1905,7 @@ Send a Minecraft server list ping and report version, protocol, player count and
 
 *fabric and azalea · deadline 300s · read-only · the server answers from what it holds*
 
-Wait until a Minecraft server answers a server list ping and reports it can be joined. Use it after restarting a server so the next join-server does not race the boot. The read for this is ping-server.
+Wait until a Minecraft server answers a server list ping. Use it after restarting a server so the next join-server does not race the boot. A ping is answered before any login, so a server that is up here can still refuse the join: bots authenticate offline by default, and an online-mode server will not take one. The read for this is ping-server.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
@@ -1929,7 +1929,7 @@ Read recent chat and system messages the bot received.
 
 *fabric and azalea · deadline 5s · needs a world · the bot answers*
 
-Say something in chat as the bot. Use run-command for slash commands.
+Say something in chat as the bot. Use run-command for slash commands. A server that takes only signed chat refuses this rather than dropping the message: no bot here signs, having no profile key to sign with. The refusal reads the server's flag and not the bot's account, so an azalea bot signed in to Microsoft is refused as well, though the account it holds could sign. Commands are not signed, so run-command still works.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |

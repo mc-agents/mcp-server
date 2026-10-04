@@ -25,12 +25,19 @@ everything, and a second way to say it is a second thing that can disagree.
 | --- | --- | --- |
 | `MCP_SERVER_HOST` | where to dial | `127.0.0.1` |
 | `MCP_SERVER_PORT` | | `8765` |
-| `BOT_NAME` | the name reported in `hello`, and the name an agent addresses | the hostname |
+| `BOT_NAME` | the name reported in `hello`, and the name an agent addresses | `HOSTNAME`, and a constant of the bot's own where even that is unset |
 | `BOT_KIND` | what the starter thinks it started. Informational: a bot reports its own kind in `hello`, and a disagreement is the starter's bug | |
 | `MC_VERSION` | the version to claim; `auto` negotiates | `auto` |
 | `HEALTH_PORT` | where `/healthz` and `/readyz` are served | `8080` |
 | `RECONNECT_MIN_MS`, `RECONNECT_MAX_MS` | backoff bounds for redialling | `500`, `15000` |
 | `BOT_LINK_TOKEN` | what to send as `hello.linkToken`. The operator sets it from the server's link Secret; a bot must never log it | unset: no `linkToken` in `hello` |
+
+The hostname comes before any constant, and that is what makes `docker compose up --scale` mean
+anything: replicas of one service share every environment variable, so a bot falling back to a
+constant has every replica announce the same name, the first is admitted and the rest are refused
+`NAME_TAKEN` and redial for ever. A container's hostname is its own -- the container id under
+compose, the pod name under Kubernetes. `bot-azalea` has read it this way since it was written and
+`bot-fabric` now does too, which this page claimed before it was so.
 
 A `fabric` bot needs three more, because it runs a real client:
 
@@ -157,11 +164,24 @@ says which half went wrong through its error code, because the fixes are in diff
 | `error.code` | Means | Look at |
 | --- | --- | --- |
 | `JOIN_FAILED_DIAL` | The address did not accept a connection at all | The address, and whether the server is up |
-| `JOIN_FAILED_LOGIN` | The server rejected the login: whitelist, ban, full, wrong version | The target server |
+| `JOIN_FAILED_LOGIN` | The login was refused, by the server or by the bot's own client before it sent one: authentication, whitelist, ban, full, wrong version | The target server, and whether it runs `online-mode` |
 | `JOIN_FAILED_SPAWN` | Logged in, never spawned. Usually a plugin holding the player | The world and its plugins |
 
 The server reads any other code as a login problem, which is where a join fails most of the time,
 so a bot may add codes without the server having to learn them first.
+
+**Authentication is the first thing to suspect.** A bot authenticates offline by default: it sends a
+username and carries nothing that proves the name is its own, so a server running `online-mode` will
+not take it. Neither refusal says that. A `fabric` bot reports its own client's "Failed to log in:
+Invalid session (Try restarting your game and the launcher)" -- written before the login was ever
+sent, and quoting a launcher that is not running anywhere here -- and an `azalea` bot reports the
+server's "Failed to verify username!". A proxy that authenticates in front of the server -- the
+arrangement anyone who cannot leave their own server unauthenticated is told to use -- words it a
+third way, and that says no more about the cause than the other two. The server recognises all
+three and adds what they leave out, as the likely reading rather than a certain one, together with
+the two ways out: `online-mode=false` on the target server, or an `azalea` bot signed in to a
+Microsoft account before it joined, which a `fabric` bot has no mode for. A bot does not have to
+word anything differently; it reports what it was told, as it always does.
 
 A bot that has not sent `hello` within 5s is dropped. A frame before `hello`, or a second `hello`,
 is a violation. A `hello` the server refuses -- the wrong protocol, a name it cannot use or one
