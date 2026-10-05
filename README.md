@@ -124,6 +124,38 @@ A wrong or missing token is answered `401` with `WWW-Authenticate: Bearer`, so a
 cannot connect has that to look for. Against the development cluster, `make -C dev/cluster names`
 prints this line with the cluster's own token in it.
 
+### Three ways to run it
+
+Which one depends on what is around, and they do not stack: each is a whole deployment.
+
+| | | |
+| --- | --- | --- |
+| **Helm** | [`charts/mc-agents-mcp-server/`](charts/mc-agents-mcp-server/README.md) | A cluster, one server. The chart installs the Deployment, the Service's two ports and the tokens; bots come from the operator, and `join-server` asks it for one. |
+| **The operator's `MCPServer`** | [mc-agents/operator](https://github.com/mc-agents/operator) | A cluster with tenants. A namespace gets a server by creating one CR, and the operator renders the same objects the chart does, plus the bot pods, plus autoscaling. |
+| **docker compose** | [`deploy/compose/`](deploy/compose/README.md) | No cluster. This server, a scalable headless bot and one fabric bot on one machine. |
+
+The two cluster paths are not layered: an `MCPServer` does not install the chart, it builds the
+same thing from Go. The chart is here because one server does not need an operator, three CRDs and
+a cluster-wide RBAC in front of it.
+
+### In a cluster, with Helm
+
+```bash
+helm install mc-agents oci://junhyung.cloud/mc-agents/charts/mc-agents-mcp-server \
+  --namespace game --create-namespace \
+  --set auth.token="$(openssl rand -hex 32)" \
+  --set botLink.token="$(openssl rand -hex 32)"
+```
+
+Keep both. The chart generates neither, and will not render without `auth.token` or
+`auth.existingSecret`: a token that differs on every render leaves a GitOps application
+permanently out of sync, which is worse than an install that stops and says so. The same goes for
+`replicaCount > 1`, which fails rather than installing a second pod that would answer about bots
+it cannot reach, and for bots created in another namespace than the link Secret they are pointed
+at. [The chart's README](charts/mc-agents-mcp-server/README.md) has the rest: what the two tokens
+gate, when `existingSecret` means a rotation no longer rolls the pod, and why `bots.namespace` is
+worth setting.
+
 ### In Docker, without a cluster
 
 [`deploy/compose/`](deploy/compose/README.md) is this server and some bots in docker compose, for a
@@ -143,10 +175,10 @@ server whose online-mode stays on — one account per bot, written out by hand, 
 one-shot (`docker compose run --rm bot-login`) rather than something a long-running bot does, since
 a bot waiting on a prompt nobody is attached to looks exactly like a bot that cannot connect.
 
-It generates both tokens, unlike the chart, which refuses to because a value that changes per
-render leaves GitOps out of sync — not a thing that happens to a file on one machine. What it does
-not have is the operator: no autoscaling, nothing probing liveness to restart a wedged server, no
-profile pinning, and one server, because the server cannot be scaled.
+It does generate both tokens, where the chart refuses to: nothing renders a file on one machine
+twice, so the reason the chart has for not doing it does not apply. What compose does not have is
+the operator — no autoscaling, nothing probing liveness to restart a wedged server, no profile
+pinning — and the image tags are literals in `compose.yml` rather than a profile.
 
 ### End to end
 

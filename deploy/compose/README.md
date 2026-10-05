@@ -92,6 +92,20 @@ are two clients writing the same files. The operator gives a fabric bot 4Gi, whi
 with a resource pack turned out to need; nothing here sets a limit, so on Docker Desktop how many of
 them fit is a question about the VM's memory before it is a question about this file.
 
+## If you do have a cluster
+
+Two other deployments exist, and neither is layered on this one.
+
+| | |
+| --- | --- |
+| [`charts/mc-agents-mcp-server/`](../../charts/mc-agents-mcp-server/README.md) | One server in a cluster. Bots come from the operator, which `join-server` asks for one. |
+| [the operator's `MCPServer`](https://github.com/mc-agents/operator) | A cluster with tenants: a namespace gets a server by creating one CR, and the bot pods come with it. |
+
+The tokens work the same way in all three, and only here are they generated for you: a chart that
+did it would render a different value every time, which leaves a GitOps application permanently out
+of sync. Nothing renders a file on one machine twice, so that reason does not apply and the
+Makefile writes both.
+
 ## What this does not give you
 
 The cluster deployment is the operator, and these are the things it does that nothing here does.
