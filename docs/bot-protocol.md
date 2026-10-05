@@ -39,13 +39,15 @@ constant has every replica announce the same name, the first is admitted and the
 compose, the pod name under Kubernetes. `bot-azalea` has read it this way since it was written and
 `bot-fabric` now does too, which this page claimed before it was so.
 
-A `fabric` bot needs three more, because it runs a real client:
+A `fabric` bot needs five more, because it runs a real client:
 
 | variable | meaning | default |
 | --- | --- | --- |
 | `MC_ASSETS_DIR` | where the client jar, its libraries and its assets are. An init container fills it; the bot fills it itself if it finds it empty | `/mc` |
 | `BOT_WORK_DIR` | writable scratch: the game directory, mods, logs. The root filesystem is read-only | `/data` |
-| `BOT_SCREEN` | the virtual display's geometry | `1280x720x24` |
+| `BOT_SCREEN` | the virtual display's geometry, which is not the framebuffer: the client opens its own window inside this root, at its own default of 854x480 unless the arguments `--width` and `--height` say otherwise, and that window is the resolution a frame is captured at. What a screenshot comes back as is its caller's, scaled from the capture | `1280x720x24` |
+| `BOT_RENDER_DISTANCE` | chunks the client draws, clamped to 2..32. The largest lever on the process's memory, since a container has no graphics card and every chunk mesh stays in system memory. Simulation distance follows it down only as far as 5, which is the lowest the client takes | `8` |
+| `BOT_FRAME_RATE_LIMIT` | frames a second while no call is in flight; a call that needs the picture current raises it to 60 for its duration | `1` |
 
 **`/readyz` must not go green until `hello` has been accepted.** Pod readiness is the only thing
 outside this protocol that knows whether a bot is linked, and the operator's `LINK` column is
