@@ -198,7 +198,8 @@ rather than against a second bot, because two implementations agreeing is a weak
 they agreed for a while that a chat line reading "Hello world" was "Hello  | world".
 
 It needs Docker and a bot image, so it is not part of `build`. Which bot to drive is the build's to
-say; the Minecraft version is the one the bots support, 26.1.2:
+say; the Minecraft version follows the kind, 26.3 for fabric and 26.1.2 for azalea, which has no
+release past it:
 
 ```bash
 ./gradlew :e2e:test -Pe2e.bot.image=<image>

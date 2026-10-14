@@ -1,6 +1,8 @@
 name: McAgentsFixture
 version: "1"
 main: kr.junhyung.mcagents.fixture.FixturePlugin
+# The oldest server this loads on, not the API it compiles against. The azalea run of the suite is
+# still on a 26.1.2 Paper, and Paper refuses a plugin that names an API newer than its own.
 api-version: "26.1"
 commands:
   fixture:

@@ -61,6 +61,13 @@ public class Orchestration {
     */
     private static final Duration JOIN_PATIENCE = Duration.ofSeconds(40);
 
+    /*
+    The version each kind of bot is built for, which is what a bot started without one is asked to
+    be. The two stopped agreeing at 26.3: azalea has no release that speaks it, so a headless bot
+    stays a version behind until it does.
+    */
+    private static final Map<String, String> BUILT_FOR = Map.of("fabric", "26.3", "azalea", "26.1.2");
+
     private final BotRegistry bots;
     private final BotProvisioner provisioner;
     private final RegionTools regions;
@@ -350,7 +357,7 @@ public class Orchestration {
         }
 
         String kind = orDefault(ToolDispatcher.stringArg(arguments, "kind"), "fabric");
-        String mcVersion = orDefault(ToolDispatcher.stringArg(arguments, "minecraftVersion"), "26.1.2");
+        String mcVersion = orDefault(ToolDispatcher.stringArg(arguments, "minecraftVersion"), BUILT_FOR.get(kind));
 
         boolean created = provisioner.request(name, kind, mcVersion, ToolDispatcher.stringArg(arguments, "owner"));
 

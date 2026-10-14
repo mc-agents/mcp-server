@@ -5,9 +5,9 @@ description: QA a Minecraft server feature by driving real bots through the mc-a
 
 # Minecraft QA with mc-agents
 
-The `mc-agents` MCP drives real Minecraft 26.1.2 clients. A bot's sentence is evidence of what the
-client saw, not proof of what the server did; a scenario passes only on facts read back from the
-server.
+The `mc-agents` MCP drives real Minecraft clients: fabric bots on 26.3, azalea bots on 26.1.2. A
+bot's sentence is evidence of what the client saw, not proof of what the server did; a scenario
+passes only on facts read back from the server.
 
 Before anything else:
 
@@ -33,6 +33,10 @@ Write it down before calling a tool, in [scenario-template.md](scenario-template
 
 ## 2. Choose the bot kind
 
+The server's version decides first. A bot joins only a server of its own version, so a 26.3 server
+takes fabric bots and a 26.1.2 one azalea bots; `ping-server` names the version. The development
+cluster's `paper.mc-agents.svc` is 26.3.
+
 `join-server` takes `kind`. Decide from the tools the scenario needs, not from memory: a tool that
 one kind lacks ends its description with `Supported by bots of kind: fabric.`, and calling it on the
 other kind fails with a message naming the kind that has it.
@@ -47,7 +51,8 @@ other kind fails with a message naming the kind that has it.
   and for everything else: movement, entities, windows and clicks, trades, crafting, books,
   scoreboard, boss bars, chat, action bar and titles, reading dialogs, `press-input`, `run-command`.
 
-If a scenario needs one fabric-only read, one fabric bot beside azalea bots is fine.
+The two kinds never share a server, so a scenario that needs one fabric-only read is a fabric
+scenario throughout.
 
 ## 3. Bot hygiene
 
@@ -130,7 +135,7 @@ One block per scenario:
 
 ```
 Scenario: <name>   Result: PASS | FAIL | BLOCKED
-Bots: qa-talk-1 (azalea), qa-obs-1 (azalea, observer)   Server: paper.mc-agents.svc:25565
+Bots: qa-talk-1 (fabric), qa-obs-1 (fabric, observer)   Server: paper.mc-agents.svc:25565
 Expectations:
   PASS  tagged fixture_choice_1        tag qa-talk-1 list -> "qa-talk-1 has 2 tags: fixture_choice_1, fixture_talk_left"
   FAIL  <fact>                         <command> -> "<verbatim reply>"

@@ -17,6 +17,6 @@ metadata:
   name: default
 spec:
   fabric:
-    tag: 0.76.0
+    tag: 0.79.0
   azalea:
     tag: 0.27.0

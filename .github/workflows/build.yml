@@ -107,15 +107,18 @@ jobs:
         # quarter of an hour over all of them, so its cases are shared out between shards that each
         # start a server and a bot of their own. Azalea's one job still finishes before the fabric
         # shards do, so a second shard of it would only pay for another start.
+        #
+        # Each kind against the Minecraft version it is built for, which is no longer one version:
+        # azalea has no release past 26.1.2, and a 26.1.2 client cannot join a 26.3 server. Moving a
+        # kind to another is a release of its own.
         include:
-          - { kind: fabric, shard: 1, shards: 4 }
-          - { kind: fabric, shard: 2, shards: 4 }
-          - { kind: fabric, shard: 3, shards: 4 }
-          - { kind: fabric, shard: 4, shards: 4 }
-          - { kind: azalea, shard: 1, shards: 1 }
+          - { kind: fabric, minecraft: "26.3", shard: 1, shards: 4 }
+          - { kind: fabric, minecraft: "26.3", shard: 2, shards: 4 }
+          - { kind: fabric, minecraft: "26.3", shard: 3, shards: 4 }
+          - { kind: fabric, minecraft: "26.3", shard: 4, shards: 4 }
+          - { kind: azalea, minecraft: "26.1.2", shard: 1, shards: 1 }
     env:
-      # The one Minecraft version the bots support. Moving to another is a release of its own.
-      MINECRAFT: "26.1.2"
+      MINECRAFT: ${{ matrix.minecraft }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6

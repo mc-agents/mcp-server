@@ -2081,8 +2081,13 @@ class BotEndToEndTest {
     void aCrouchIsOneTheServerSees() {
         world.run("tp " + BotWorld.BOT + " 9 -60 8");
         agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 10));
-        /* "unless" rather than a failed "if", because a failed test answers the console with nothing. */
-        String predicate = " predicate {condition:\"minecraft:entity_properties\",entity:\"this\","
+        /*
+        "unless" rather than a failed "if", because a failed test answers the console with nothing.
+        The condition is named twice: 26.3 reads type, 26.1.2 reads condition, and each ignores the
+        other's key.
+        */
+        String predicate = " predicate {type:\"minecraft:entity_properties\","
+            + "condition:\"minecraft:entity_properties\",entity:\"this\","
             + "predicate:{flags:{is_sneaking:true}}}";
 
         String crouched = agent.mustCall("set-stance", Map.of("bot", BotWorld.BOT, "sneak", true));

@@ -18,6 +18,11 @@
 # behind these three is each repository's own release, and a bot older than this server reports
 # fewer tools rather than failing, so if you move one of them, move the others.
 #
+# The two bots are not on one Minecraft version: bot-fabric is built for 26.3, and azalea has no
+# release past 26.1.2. A client joins only a server of its own protocol, so `bot` and the azalea
+# services below need a 26.1.2 server and `bot-fabric` a 26.3 one; pointed at the same server, one
+# of them is turned away at the login.
+#
 # Nothing here may use `:latest`: it moves with every push to main, so the deployment would change
 # under you between two `up`s, and the catalogue the server ships has to be the one the bots were
 # built against -- a mismatch is not a loud failure, it disables the mismatched tools at the
@@ -26,7 +31,7 @@ name: mc-agents
 
 services:
   mcp-server:
-    image: junhyung.cloud/mc-agents/mcp-server:0.74.0
+    image: junhyung.cloud/mc-agents/mcp-server:0.75.0
     restart: unless-stopped
     # Only the MCP port is published, and only on loopback.
     #
@@ -92,7 +97,7 @@ services:
   # The real client: screenshots, dialogs, anything the catalogue marks fabric-only. One service
   # and not a scalable one, because of the volume below.
   bot-fabric:
-    image: junhyung.cloud/mc-agents/bot-fabric:0.77.0-mc26.1.2
+    image: junhyung.cloud/mc-agents/bot-fabric:0.79.0-mc26.3
     restart: unless-stopped
     depends_on:
       - mcp-server

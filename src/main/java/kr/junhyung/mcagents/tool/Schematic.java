@@ -24,9 +24,9 @@ import kr.junhyung.mcagents.schem.Nbt;
 public final class Schematic {
 
     /** What the game calls its world format, by the version a bot reports; the newest is the fallback. */
-    static final Map<String, Integer> DATA_VERSIONS = Map.of("26.1.2", 4790);
+    static final Map<String, Integer> DATA_VERSIONS = Map.of("26.1.2", 4790, "26.3", 5023);
 
-    static final int LATEST_DATA_VERSION = 4790;
+    static final int LATEST_DATA_VERSION = 5023;
 
     private static final String VANILLA = "minecraft:";
 

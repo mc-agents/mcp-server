@@ -54,10 +54,14 @@ final class PagedMenu implements Listener {
     }
 
     private static Component title(int page) {
-        return Component.text()
-            .append(Component.text("\uE000").font(BACKGROUND))
-            .append(Component.text(page + "/" + PAGES).font(PAGE))
-            .build();
+        /*
+        Not Component.text().build(): Adventure 5 on 26.3 changed what the builder's build() returns,
+        so a jar compiled against one version fails on the other with NoSuchMethodError, and this jar
+        goes on both.
+        */
+        return Component.textOfChildren(
+            Component.text("\uE000").font(BACKGROUND),
+            Component.text(page + "/" + PAGES).font(PAGE));
     }
 
     /** A button whose name is empty rather than absent, which is how a menu hides an item's own. */

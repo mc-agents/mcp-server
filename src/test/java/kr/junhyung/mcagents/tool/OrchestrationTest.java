@@ -11,6 +11,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -49,6 +50,7 @@ class OrchestrationTest {
 
         private final List<String> declared = new ArrayList<>();
         private final List<String> released = new ArrayList<>();
+        private final Map<String, String> versions = new HashMap<>();
         private String failure;
         private Duration age = Duration.ofMinutes(10);
 
@@ -67,6 +69,7 @@ class OrchestrationTest {
                 return false;
             }
             declared.add(name);
+            versions.put(name, minecraftVersion);
             return true;
         }
 
@@ -221,5 +224,17 @@ class OrchestrationTest {
                 Map.of("name", "qa-shared-1", "host", "paper.mc-agents.svc", "kind", "azalea"));
 
         assertTrue(cluster.released.isEmpty(), cluster.released::toString);
+    }
+
+    /** An azalea bot asked to be the version fabric is built for has no image to start from. */
+    @Test
+    void aBotStartedWithoutAVersionIsTheOneItsKindIsBuiltFor() {
+        cluster.failure = "image not found";
+
+        orchestration.call(catalog.get("join-server"), Map.of("name", "qa-fab-1", "host", "paper.mc-agents.svc"));
+        orchestration.call(catalog.get("join-server"),
+                Map.of("name", "qa-aza-1", "host", "paper.mc-agents.svc", "kind", "azalea"));
+
+        assertEquals(Map.of("qa-fab-1", "26.3", "qa-aza-1", "26.1.2"), cluster.versions);
     }
 }

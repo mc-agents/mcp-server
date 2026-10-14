@@ -55,8 +55,11 @@ summon text_display 3 -58 3 {Tags:["mcagents"],billboard:"center",text:{text:"Ho
 # below and dry, the pool being further along the negative axes.
 kill @e[type=item_display,tag=mcagents]
 summon item_display 3 -58 -3 {Tags:["mcagents"],item:{id:"minecraft:paper",count:1,components:{"minecraft:custom_name":"Probe Chair","minecraft:item_model":"hyperfarm:furniture/chair"}}}
+# The block state is spelled twice: 26.3 reads id and properties, 26.1.2 reads Name and Properties,
+# and each ignores the other's keys. A fabric world is 26.3 and an azalea world 26.1.2, and the
+# stairs have to be stairs in both.
 kill @e[type=block_display,tag=mcagents]
-summon block_display 4 -60 -3 {Tags:["mcagents"],block_state:{Name:"minecraft:oak_stairs",Properties:{facing:"east",half:"bottom",shape:"straight",waterlogged:"false"}}}
+summon block_display 4 -60 -3 {Tags:["mcagents"],block_state:{id:"minecraft:oak_stairs",properties:{facing:"east",half:"bottom",shape:"straight",waterlogged:"false"},Name:"minecraft:oak_stairs",Properties:{facing:"east",half:"bottom",shape:"straight",waterlogged:"false"}}}
 
 # --- an entity to find and interact with: find-entity, attack-entity, interact-entity ---
 kill @e[type=cow,tag=mcagents]

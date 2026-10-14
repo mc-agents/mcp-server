@@ -1,6 +1,9 @@
-# The test server the cluster's bots join: Paper at the one version both kinds are built for, with
+# The test server the cluster's bots join: Paper at the version the fabric bot is built for, with
 # the fixture datapack that the end-to-end suite reads. It matches e2e/BotWorld so that what a case
 # proves there is what an agent sees here.
+#
+# An azalea bot cannot join it. azalea has no release past 26.1.2, a client joins only a server of
+# its own protocol, and this is 26.3; one Paper cannot be both, so the cluster tests fabric.
 #
 # /data is a claim so a restart keeps the world and the fixture that `make fixture` copied in; an
 # emptyDir would hand back a blank flat world that every reading tool answers "nothing" about.
@@ -39,7 +42,7 @@ spec:
           env:
             - { name: EULA, value: "TRUE" }
             - { name: TYPE, value: PAPER }
-            - { name: VERSION, value: "26.1.2" }
+            - { name: VERSION, value: "26.3" }
             # Bots authenticate offline; an online-mode server turns every one of them away.
             - { name: ONLINE_MODE, value: "FALSE" }
             - { name: MODE, value: creative }
@@ -51,7 +54,7 @@ spec:
             - { name: MEMORY, value: 2G }
             # FastAsyncWorldEdit, pinned to a build that says it supports this Minecraft version, for
             # the tools that drive it. The image fetches it from Modrinth when the pod starts.
-            - { name: MODRINTH_PROJECTS, value: "fastasyncworldedit:2.15.4" }
+            - { name: MODRINTH_PROJECTS, value: "fastasyncworldedit:2.16.1" }
             - name: RCON_CMDS_STARTUP
               value: |-
                 difficulty peaceful

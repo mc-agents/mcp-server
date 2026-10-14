@@ -27,7 +27,7 @@ conversation on the action bar: jump turns the page, hotbar slot 0 or 1 answers 
 Scenario: farmer-talk
 Goal:     an action-bar conversation -- the answer picked with a hotbar key is the one the server records
 Server:   paper.mc-agents.svc:25565
-Bots:     qa-talk-1 (azalea) under test; qa-obs-1 (azalea) observer
+Bots:     qa-talk-1 (fabric) under test; qa-obs-1 (fabric) observer
 Setup (observer):
   tp qa-talk-1 2 -60 0
   tag qa-talk-1 list                   -> "qa-talk-1 has no tags"

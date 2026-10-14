@@ -33,8 +33,11 @@ docker compose down                    # keeps the Minecraft assets; `down -v` d
 | | |
 | --- | --- |
 | `mcp-server` | `/mcp` on `127.0.0.1:3000`, and the bot link on `8765`, which is not published |
-| `bot` | A headless azalea bot. The scalable one: `--scale bot=N` |
-| `bot-fabric` | One real Minecraft client, for screenshots, dialogs and the rest of the fabric-only tools |
+| `bot` | A headless azalea bot, for Minecraft 26.1.2. The scalable one: `--scale bot=N` |
+| `bot-fabric` | One real Minecraft client, for 26.3: screenshots, dialogs and the rest of the fabric-only tools |
+
+The two are on different Minecraft versions, because azalea has no release past 26.1.2, and a bot
+joins only a server of its own version. Which one you use is decided by the server you have.
 
 The Minecraft server is not here, and that is the point of this file rather than an omission from
 it: the server you want a bot in is the one you already have. `join-server` is what tells a bot

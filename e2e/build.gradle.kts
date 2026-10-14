@@ -46,13 +46,19 @@ tasks.test {
     /* Which bot to drive. CI passes the tag it has just published. */
     systemProperty("e2e.bot.image", providers.gradleProperty("e2e.bot.image")
         .orElse(providers.environmentVariable("E2E_BOT_IMAGE"))
-        .getOrElse("bot-fabric:arm64-mc26.1.2"))
-    systemProperty("e2e.bot.kind", providers.gradleProperty("e2e.bot.kind")
+        .getOrElse("bot-fabric:arm64-mc26.3"))
+    val botKind = providers.gradleProperty("e2e.bot.kind")
         .orElse(providers.environmentVariable("E2E_BOT_KIND"))
-        .getOrElse("fabric"))
+        .getOrElse("fabric")
+    systemProperty("e2e.bot.kind", botKind)
+    /*
+    The server is the bot's version and not the other way round: a client joins only a server of its
+    own protocol. The two kinds are on different versions -- azalea has no release past 26.1.2 -- so
+    asking for an azalea run without naming a version starts the server that bot can join.
+    */
     systemProperty("e2e.minecraft.version", providers.gradleProperty("e2e.minecraft.version")
         .orElse(providers.environmentVariable("E2E_MINECRAFT_VERSION"))
-        .getOrElse("26.1.2"))
+        .getOrElse(if (botKind == "azalea") "26.1.2" else "26.3"))
     /*
     What goes in front of the Paper image's Docker Hub name, as "junhyung.cloud/docker-hub/". Empty
     is Docker Hub itself, so a laptop needs no login; CI sets the registry's proxy cache, which does.

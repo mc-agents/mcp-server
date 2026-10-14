@@ -74,7 +74,7 @@ caps = [
 ]
 send(sock, {
     "t": "hello", "protocols": [CATALOG["protocol"]], "botName": NAME, "kind": KIND,
-    "agentVersion": "0.0.1", "mcVersion": "26.1.2", "catalogVersion": CATALOG["catalogVersion"],
+    "agentVersion": "0.0.1", "mcVersion": "26.3", "catalogVersion": CATALOG["catalogVersion"],
     "capabilities": caps, "features": ["blob", "eventFold"],
 })
 
@@ -99,7 +99,7 @@ while True:
         state["username"] = msg["username"]
         status(sock, "connecting")
         chat(sock, "%s joined the game" % msg["username"])
-        status(sock, "ready", mcVersion="26.1.2", serverBrand="Paper", gameMode="survival",
+        status(sock, "ready", mcVersion="26.3", serverBrand="Paper", gameMode="survival",
                dimension="minecraft:overworld",
                position={"x": 8.5, "y": 65.0, "z": -12.5}, health=20.0, food=20.0)
         send(sock, {"t": "result", "id": msg["id"], "ok": True, "text": "joined", "elapsedMs": 900})
@@ -118,7 +118,7 @@ while True:
             chat(sock, "Unknown command. Type /help for a list.")
         elif msg["tool"] == "switch-server":
             state["address"] = "%s:25565" % msg["args"]["target"]
-            status(sock, "ready", mcVersion="26.1.2", serverBrand="Paper", gameMode="survival",
+            status(sock, "ready", mcVersion="26.3", serverBrand="Paper", gameMode="survival",
                    dimension="minecraft:overworld",
                    position={"x": 0.5, "y": 70.0, "z": 0.5}, health=20.0, food=20.0)
             send(sock, {"t": "result", "id": msg["id"], "ok": True,

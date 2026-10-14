@@ -2,6 +2,6 @@
   "pack": {
     "description": "mc-agents: everything the reading tools are supposed to be able to read",
     "min_format": [101, 1],
-    "max_format": 101
+    "max_format": 121
   }
 }

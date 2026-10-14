@@ -3818,7 +3818,7 @@
             ]
           },
           "minecraftVersion": {
-            "description": "Minecraft version for a bot that has to be started. Both kinds are built for one version. (default: 26.1.2)",
+            "description": "Minecraft version for a bot that has to be started. A fabric bot is built for 26.3 and an azalea bot for 26.1.2. (default: the version its kind is built for)",
             "type": "string",
             "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"
           },
@@ -11156,5 +11156,5 @@
       }
     }
   ],
-  "catalogHash": "sha256:3438d8bb451ca779ed5aed82193153913bf5f7f131d02677f91d4b5bb9c44155"
+  "catalogHash": "sha256:6467644c3aabb44f95e7299709d9157d8851acb10841d0ef69ecf0d675350437"
 }

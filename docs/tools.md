@@ -1057,7 +1057,7 @@ Send a bot into a Minecraft server and wait until it has spawned. Bots authentic
 | `username` | string | no | In-game username (default: the bot name) |  |
 | `owner` | string | no | Free-form label recording who asked for this bot. Omitted when not given. |  |
 | `kind` | string: `fabric`, `azalea` | no | Which kind of bot to start when none by this name is running. "fabric" is a real Minecraft client: every tool, a screenshot, dialogs, books and the creative inventory, at about 1.7GiB and a minute and a half to link. "azalea" is a headless client in a few megabytes that joins in under a second, for many bots at once or a fast loop, and runs only the tools whose descriptions do not say otherwise. (default: fabric) |  |
-| `minecraftVersion` | string | no | Minecraft version for a bot that has to be started. Both kinds are built for one version. (default: 26.1.2) | matching `^[0-9]+\.[0-9]+(\.[0-9]+)?$` |
+| `minecraftVersion` | string | no | Minecraft version for a bot that has to be started. A fabric bot is built for 26.3 and an azalea bot for 26.1.2. (default: the version its kind is built for) | matching `^[0-9]+\.[0-9]+(\.[0-9]+)?$` |
 | `timeoutMs` | integer | no | How long to wait for the spawn once the bot is linked (default: 180000). A join the server holds in configuration past it -- a plugin waiting on a resource pack, a transfer that never comes -- fails as a spawn that never came, and the bot leaves that connection | 1000 to 600000 |
 
 ### leave-server

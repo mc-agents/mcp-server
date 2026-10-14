@@ -34,8 +34,8 @@ final class BotWorld implements AutoCloseable {
     private static final String FIXTURE = "mcagents";
     private static final String SERVER_ALIAS = "paper";
 
-    /** The FastAsyncWorldEdit build that supports the Minecraft version the fixture runs. */
-    private static final String FAWE_VERSION = "2.15.4";
+    /** The FastAsyncWorldEdit build that supports both Minecraft versions the fixture runs on. */
+    private static final String FAWE_VERSION = "2.16.1";
     private static final int MC_PORT = 25565;
 
     /** Boot, world generation and a datapack. Slow the first time an image is pulled. */

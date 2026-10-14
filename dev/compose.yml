@@ -12,6 +12,9 @@
 # is enough to move a bot between two of them. A real deployment uses modern forwarding and a
 # shared secret, and none of that changes what the tool does.
 #
+# MC_VERSION is the backends' version, and it has to be the bot's: 26.3 for a fabric bot, 26.1.2 for
+# an azalea one, which has no release past it and cannot join a newer server.
+#
 # HUB_PREFIX goes in front of both Docker Hub image names, as "junhyung.cloud/docker-hub/", for a
 # machine that pulls through the registry's proxy cache. Empty is Docker Hub itself, with no login.
 name: mc-agents-proxy-dev
@@ -45,7 +48,7 @@ services:
     environment: &backend-env
       EULA: "TRUE"
       TYPE: PAPER
-      VERSION: "${MC_VERSION:-26.1.2}"
+      VERSION: "${MC_VERSION:-26.3}"
       ONLINE_MODE: "FALSE"
       MODE: creative
       LEVEL_TYPE: minecraft:flat
