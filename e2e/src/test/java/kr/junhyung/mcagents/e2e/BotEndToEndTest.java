@@ -54,6 +54,7 @@ class BotEndToEndTest {
 
     /** How long a bot container may take to dial in and be accepted. */
     private static final Duration LINK = Duration.ofMinutes(3);
+    private static final Duration WORLD_ON_SCREEN = Duration.ofMinutes(1);
 
     private Server server;
     private BotWorld world;
@@ -104,6 +105,7 @@ class BotEndToEndTest {
             agent.mustCall("join-server", Map.of(
                 "bot", BotWorld.BOT, "host", world.minecraftHost(), "port", world.minecraftPort()));
             agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+            awaitTheWorldOnScreen();
         } catch (RuntimeException failed) {
             throw new IllegalStateException(failed.getMessage() + "\n" + world.logs(LOG_TAIL), failed);
         }
@@ -4083,6 +4085,27 @@ class BotEndToEndTest {
         agent.mustCall("join-server", Map.of(
             "bot", BotWorld.BOT, "host", world.minecraftHost(), "port", world.minecraftPort()));
         agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 20));
+        awaitTheWorldOnScreen();
+    }
+
+    /**
+     * Wait for the client to stop showing the world loading in. A join answers once the bot is in
+     * the world, and the screen that covers it while the chunks arrive can stay up for seconds on a
+     * loaded runner; the first case after it found that screen in front of the inventory it tried
+     * to open. The screen does not close on Escape, so close-window names it for as long as it is
+     * up, and a bot with no screens to show says nothing of it.
+     */
+    private void awaitTheWorldOnScreen() {
+        Instant deadline = Instant.now().plus(WORLD_ON_SCREEN);
+
+        while (agent.runs("close-window")
+                && agent.call("close-window", Map.of("bot", BotWorld.BOT)).contains("LevelLoadingScreen")) {
+            if (Instant.now().isAfter(deadline)) {
+                throw new IllegalStateException("the world was still loading in after " + WORLD_ON_SCREEN
+                    + "\n" + world.logs(LOG_TAIL));
+            }
+            sleep(500);
+        }
     }
 
     /**
