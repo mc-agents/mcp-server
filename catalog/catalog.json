@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "5.11.0",
+  "catalogVersion": "5.12.0",
   "protocol": 1,
   "tools": [
     {
@@ -445,6 +445,397 @@
         "additionalProperties": false
       },
       "wireSchemaHash": "sha256:129f1a323b4b58b410c8e4ae2857cf7c63294809cead493121856292daaf4a89"
+    },
+    {
+      "name": "click-dialog-body",
+      "group": "screen",
+      "description": "Press a piece of the open dialog's body with the mouse: a run of text with a click event on it, which is how a dialog without buttons draws its tabs, its close mark and its rows. Name it by the index read-dialog-body gave it, by a point in GUI units, or by part of its text. The cursor is moved there and the button pressed through the client's own mouse handling, so which piece the press lands on and what it sends are what a player's click gets; a press on a point that lands on nothing is still made, and says so. Answers with what was under the cursor and what the screen became within two seconds: a dialog the server sent in its place, the dialog closed, or nothing changed. A piece whose click would open a URL or a file, or copy to the clipboard, is refused. While the client is loading resources -- a pack applied or taken away -- nothing on screen takes the mouse, so it waits for that to finish first.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": true,
+      "readOnly": false,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 45000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "index": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The index read-dialog-body gave the piece"
+          },
+          "x": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "A point to put the cursor on instead, in GUI units as read-dialog-body gives them; needs y"
+          },
+          "y": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The point's y; needs x"
+          },
+          "match": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Part of the piece's text instead, glyphs included. An exact match is taken first"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "The index read-dialog-body gave the piece",
+            "default": null
+          },
+          "x": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "A point to put the cursor on instead, in GUI units as read-dialog-body gives them; needs y",
+            "default": null
+          },
+          "y": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "The point's y; needs x",
+            "default": null
+          },
+          "match": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "description": "Part of the piece's text instead, glyphs included. An exact match is taken first",
+            "default": null
+          }
+        },
+        "required": [
+          "index",
+          "match",
+          "x",
+          "y"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:63d14de8c55fdda2de5137e2d13016e3c6d3849da3b58e9dbbaa51d46e5cf4a7",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "point": {
+            "description": "Where the cursor was pressed, in GUI units",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y"
+            ],
+            "additionalProperties": false
+          },
+          "piece": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "index": {
+                "description": "Where the piece stands in the body, in the body's own order. It does not move when the body is scrolled",
+                "type": "integer"
+              },
+              "type": {
+                "description": "'text' for a run of text on one line, 'item' for an item the dialog shows",
+                "type": "string",
+                "enum": [
+                  "text",
+                  "item"
+                ]
+              },
+              "text": {
+                "description": "The run's text with its glyphs left in, or an item's name",
+                "type": "string"
+              },
+              "component": {
+                "description": "The run as a component, as Minecraft's own JSON, with its font and without its click and hover events. A dialog drawn in the resource pack's glyphs is read from this",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              },
+              "rect": {
+                "description": "The box the piece's glyphs cover, in GUI units. Pieces can overlap, and a glyph can hang outside the widget it belongs to",
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "integer"
+                  },
+                  "y": {
+                    "type": "integer"
+                  },
+                  "width": {
+                    "type": "integer"
+                  },
+                  "height": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "height",
+                  "width",
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              "point": {
+                "description": "Where a cursor reaches the piece, as the client's hit test finds it: a press there lands on this piece and hovering there shows its tooltip. Null when no point does, and blocked says why",
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "x": {
+                    "type": "integer"
+                  },
+                  "y": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              "blocked": {
+                "description": "Null when point is set. 'empty': the run draws nothing a cursor could rest on. 'scrolled': it is out of the body's view. 'outside': every glyph is drawn outside the widget that takes the press. 'covered': a piece drawn after it takes every point of it",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  null,
+                  "empty",
+                  "scrolled",
+                  "outside",
+                  "covered"
+                ]
+              },
+              "click": {
+                "description": "What pressing the piece sends, null when it carries no click event",
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "action": {
+                    "description": "The click event's action as Minecraft names it: run_command, custom, show_dialog, suggest_command, change_page, open_url, open_file, copy_to_clipboard",
+                    "type": "string"
+                  },
+                  "value": {
+                    "description": "What the action carries: the command, the custom action's id followed by its payload, the dialog's id or 'inline', the URL",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "action",
+                  "value"
+                ],
+                "additionalProperties": false
+              },
+              "hover": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "lines": {
+                    "description": "Plain text of each line, in the order drawn",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "lineComponents": {
+                    "description": "The components the lines were written as, as Minecraft's own JSON, in the same order as lines. Read by position, so a shorter list simply leaves the rest read the way lines already were.",
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "lines"
+                ],
+                "additionalProperties": false,
+                "description": "The lines hovering the piece draws, wrapped as the client wraps them, null when it shows no tooltip. An item shows its own tooltip only when the dialog says so"
+              },
+              "item": {
+                "description": "The item an item piece draws, null for a run of text",
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "type": "integer"
+                  },
+                  "label": {
+                    "description": "The custom name the server gave it, if any",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lore": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "labelComponent": {
+                    "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                    "type": [
+                      "object",
+                      "array",
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "loreComponents": {
+                    "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "count",
+                  "name"
+                ]
+              },
+              "showTooltip": {
+                "description": "Whether hovering an item shows its tooltip, as the dialog says; null for a run of text",
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "blocked",
+              "click",
+              "component",
+              "hover",
+              "index",
+              "item",
+              "point",
+              "rect",
+              "showTooltip",
+              "text",
+              "type"
+            ],
+            "description": "The piece the press landed on, read before pressing, null when it landed on nothing that carries a click"
+          },
+          "outcome": {
+            "description": "What the screen became. 'replaced': a dialog came in place of this one. 'closed': no screen is open. 'unchanged': the same dialog is still up. 'waiting': the client is waiting for the server's answer. 'other': another screen opened, named by screenAfter",
+            "type": "string",
+            "enum": [
+              "replaced",
+              "closed",
+              "unchanged",
+              "waiting",
+              "other"
+            ]
+          },
+          "screenAfter": {
+            "description": "The class of the screen open at the end, null when none is",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dialogAfter": {
+            "description": "The dialog that came in place of this one, null unless outcome is 'replaced'",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "titleComponent": {
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "title"
+            ]
+          },
+          "confirmed": {
+            "description": "The client's own confirmation the press raised and the button that accepted it, null when there was none",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "button": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "button",
+              "title"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "confirmed",
+          "dialogAfter",
+          "outcome",
+          "piece",
+          "point",
+          "screenAfter"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "click-slot",
@@ -3300,6 +3691,421 @@
       "wireSchemaHash": "sha256:53f2f7218c621e697a8255ddfc89d4ee5bf1bfcc803e70b31e40cb93a5b5840d"
     },
     {
+      "name": "hover-dialog-body",
+      "group": "screen",
+      "description": "Hover the cursor over a piece of the open dialog's body and capture the frame with its tooltip drawn, the way a player sees it: a run of text with a hover event, or an item that shows its tooltip. Named the way click-dialog-body names one. The tooltip's lines come back as text beside the image, fonts and glyphs included, so a tooltip with the pack's icons in it can be checked both ways. While the client is loading resources -- a pack applied or taken away -- nothing on screen takes the mouse, so it waits for that to finish first.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": true,
+      "readOnly": false,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 45000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "index": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The index read-dialog-body gave the piece"
+          },
+          "x": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "A point to put the cursor on instead, in GUI units as read-dialog-body gives them; needs y"
+          },
+          "y": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The point's y; needs x"
+          },
+          "match": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Part of the piece's text instead, glyphs included. An exact match is taken first"
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 256,
+            "maximum": 1920,
+            "description": "Image width (default: 854)"
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 144,
+            "maximum": 1080,
+            "description": "Image height (default: 480)"
+          },
+          "image": {
+            "type": "boolean",
+            "description": "Also capture the frame (default: true). false answers with the tooltip's lines only, which is cheaper when only the words are in question"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "The index read-dialog-body gave the piece",
+            "default": null
+          },
+          "x": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "A point to put the cursor on instead, in GUI units as read-dialog-body gives them; needs y",
+            "default": null
+          },
+          "y": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "The point's y; needs x",
+            "default": null
+          },
+          "match": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "description": "Part of the piece's text instead, glyphs included. An exact match is taken first",
+            "default": null
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 256,
+            "maximum": 1920,
+            "description": "Image width (default: 854)",
+            "default": 854
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 144,
+            "maximum": 1080,
+            "description": "Image height (default: 480)",
+            "default": 480
+          },
+          "image": {
+            "type": "boolean",
+            "description": "Also capture the frame (default: true). false answers with the tooltip's lines only, which is cheaper when only the words are in question",
+            "default": true
+          }
+        },
+        "required": [
+          "height",
+          "image",
+          "index",
+          "match",
+          "width",
+          "x",
+          "y"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:10b2ab5554c3ccc06ee0de4017ab7098f9ae568713b5bcffd14222cd5029be88",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "point": {
+            "description": "Where the cursor rested, in GUI units",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y"
+            ],
+            "additionalProperties": false
+          },
+          "piece": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "index": {
+                "description": "Where the piece stands in the body, in the body's own order. It does not move when the body is scrolled",
+                "type": "integer"
+              },
+              "type": {
+                "description": "'text' for a run of text on one line, 'item' for an item the dialog shows",
+                "type": "string",
+                "enum": [
+                  "text",
+                  "item"
+                ]
+              },
+              "text": {
+                "description": "The run's text with its glyphs left in, or an item's name",
+                "type": "string"
+              },
+              "component": {
+                "description": "The run as a component, as Minecraft's own JSON, with its font and without its click and hover events. A dialog drawn in the resource pack's glyphs is read from this",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              },
+              "rect": {
+                "description": "The box the piece's glyphs cover, in GUI units. Pieces can overlap, and a glyph can hang outside the widget it belongs to",
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "integer"
+                  },
+                  "y": {
+                    "type": "integer"
+                  },
+                  "width": {
+                    "type": "integer"
+                  },
+                  "height": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "height",
+                  "width",
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              "point": {
+                "description": "Where a cursor reaches the piece, as the client's hit test finds it: a press there lands on this piece and hovering there shows its tooltip. Null when no point does, and blocked says why",
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "x": {
+                    "type": "integer"
+                  },
+                  "y": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              "blocked": {
+                "description": "Null when point is set. 'empty': the run draws nothing a cursor could rest on. 'scrolled': it is out of the body's view. 'outside': every glyph is drawn outside the widget that takes the press. 'covered': a piece drawn after it takes every point of it",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  null,
+                  "empty",
+                  "scrolled",
+                  "outside",
+                  "covered"
+                ]
+              },
+              "click": {
+                "description": "What pressing the piece sends, null when it carries no click event",
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "action": {
+                    "description": "The click event's action as Minecraft names it: run_command, custom, show_dialog, suggest_command, change_page, open_url, open_file, copy_to_clipboard",
+                    "type": "string"
+                  },
+                  "value": {
+                    "description": "What the action carries: the command, the custom action's id followed by its payload, the dialog's id or 'inline', the URL",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "action",
+                  "value"
+                ],
+                "additionalProperties": false
+              },
+              "hover": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "lines": {
+                    "description": "Plain text of each line, in the order drawn",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "lineComponents": {
+                    "description": "The components the lines were written as, as Minecraft's own JSON, in the same order as lines. Read by position, so a shorter list simply leaves the rest read the way lines already were.",
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "lines"
+                ],
+                "additionalProperties": false,
+                "description": "The lines hovering the piece draws, wrapped as the client wraps them, null when it shows no tooltip. An item shows its own tooltip only when the dialog says so"
+              },
+              "item": {
+                "description": "The item an item piece draws, null for a run of text",
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "type": "integer"
+                  },
+                  "label": {
+                    "description": "The custom name the server gave it, if any",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lore": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "labelComponent": {
+                    "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                    "type": [
+                      "object",
+                      "array",
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "loreComponents": {
+                    "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "count",
+                  "name"
+                ]
+              },
+              "showTooltip": {
+                "description": "Whether hovering an item shows its tooltip, as the dialog says; null for a run of text",
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "blocked",
+              "click",
+              "component",
+              "hover",
+              "index",
+              "item",
+              "point",
+              "rect",
+              "showTooltip",
+              "text",
+              "type"
+            ],
+            "description": "The piece under the cursor, null when it rested on nothing that shows a tooltip"
+          },
+          "hovered": {
+            "description": "Whether the piece's widget took the hover in a frame. False means the frame shows no tooltip even though the piece has one",
+            "type": "boolean"
+          },
+          "tooltip": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "lines": {
+                "description": "Plain text of each line, in the order drawn",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "lineComponents": {
+                "description": "The components the lines were written as, as Minecraft's own JSON, in the same order as lines. Read by position, so a shorter list simply leaves the rest read the way lines already were.",
+                "type": "array"
+              }
+            },
+            "required": [
+              "lines"
+            ],
+            "additionalProperties": false,
+            "description": "The tooltip's lines as the frame draws them, null when nothing under the cursor shows one"
+          },
+          "frame": {
+            "description": "The size of the frame attached beside the text, null when image was false and none was captured. The renderer never sees the image itself, so this is what says one is attached",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "width": {
+                "type": "integer"
+              },
+              "height": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "height",
+              "width"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "frame",
+          "hovered",
+          "piece",
+          "point",
+          "tooltip"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "hover-slot",
       "group": "slot",
       "description": "Hover the cursor over one slot of the open window and capture the frame with its tooltip drawn, the way a player sees it. The tooltip's lines come back as text beside the image, fonts and glyphs included, so a name or lore drawn in the resource pack's own font can be checked both ways. read-window shows a slot's label and lore; this shows the whole tooltip the client builds -- display name, enchantments, attributes, hidden lines -- and how it is drawn.",
@@ -5091,7 +5897,7 @@
     {
       "name": "press-dialog-button",
       "group": "screen",
-      "description": "Press a button on the dialog the server has opened. Identify it by its label. Reading a dialog is not enough to carry a conversation forward; this is what answers it.",
+      "description": "Press a button on the dialog the server has opened. Identify it by its label. Reading a dialog is not enough to carry a conversation forward; this is what answers it. A dialog whose body is the menu, with no buttons below it, is pressed with click-dialog-body.",
       "route": "rpc",
       "kinds": [
         "fabric",
@@ -6333,7 +7139,7 @@
     {
       "name": "read-dialog",
       "group": "hud",
-      "description": "Read the dialogs the server has opened on screen, with their title, body, the buttons they offer and what each input holds, and the point at which each was closed again. A dialog comes again with the new values when set-dialog-input changes one. press-dialog-button presses them. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
+      "description": "Read the dialogs the server has opened on screen, with their title, body, the buttons they offer and what each input holds, and the point at which each was closed again. A dialog comes again with the new values when set-dialog-input changes one. press-dialog-button presses them. read-dialog-body says where on the screen the open one's body can be pressed or hovered. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
       "route": "local",
       "kinds": [
         "fabric",
@@ -6359,6 +7165,336 @@
             "maximum": 200
           }
         },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "read-dialog-body",
+      "group": "screen",
+      "description": "List what can be pressed or hovered in the body of the open dialog: every run of text that carries a click or hover event, and every item, each with an index, the box it covers in GUI units, and the point a cursor reaches it at. The point is checked against the client's own hit test, so where pieces overlap, where negative spacing pulls one back over another, or where a glyph hangs outside its widget, it is a point a player's click would land on -- and a piece no point reaches says why instead. A dialog drawn in the resource pack's glyphs has no labels to press by; click-dialog-body and hover-dialog-body take the index or the point from here. read-dialog reads the words; this says where they are on the screen now. Answers that no dialog is open rather than failing.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": false,
+      "untrusted": true,
+      "readOnly": true,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 5000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "screen": {
+            "description": "The class of the screen that is open, null when none is",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dialog": {
+            "description": "The dialog's body, null when the open screen is not a dialog",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "titleComponent": {
+                "description": "The title as Minecraft's own JSON",
+                "type": [
+                  "object",
+                  "array",
+                  "string",
+                  "null"
+                ]
+              },
+              "gui": {
+                "description": "The screen's size in GUI units, which every box and point is in",
+                "type": "object",
+                "properties": {
+                  "width": {
+                    "type": "integer"
+                  },
+                  "height": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "height",
+                  "width"
+                ],
+                "additionalProperties": false
+              },
+              "body": {
+                "description": "The part of the screen the body is shown in, and how far it is scrolled. A piece outside it is scrolled out of view",
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "integer"
+                  },
+                  "y": {
+                    "type": "integer"
+                  },
+                  "width": {
+                    "type": "integer"
+                  },
+                  "height": {
+                    "type": "integer"
+                  },
+                  "scroll": {
+                    "type": "number"
+                  },
+                  "maxScroll": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "height",
+                  "maxScroll",
+                  "scroll",
+                  "width",
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              "pieces": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "index": {
+                      "description": "Where the piece stands in the body, in the body's own order. It does not move when the body is scrolled",
+                      "type": "integer"
+                    },
+                    "type": {
+                      "description": "'text' for a run of text on one line, 'item' for an item the dialog shows",
+                      "type": "string",
+                      "enum": [
+                        "text",
+                        "item"
+                      ]
+                    },
+                    "text": {
+                      "description": "The run's text with its glyphs left in, or an item's name",
+                      "type": "string"
+                    },
+                    "component": {
+                      "description": "The run as a component, as Minecraft's own JSON, with its font and without its click and hover events. A dialog drawn in the resource pack's glyphs is read from this",
+                      "type": [
+                        "object",
+                        "array",
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "rect": {
+                      "description": "The box the piece's glyphs cover, in GUI units. Pieces can overlap, and a glyph can hang outside the widget it belongs to",
+                      "type": "object",
+                      "properties": {
+                        "x": {
+                          "type": "integer"
+                        },
+                        "y": {
+                          "type": "integer"
+                        },
+                        "width": {
+                          "type": "integer"
+                        },
+                        "height": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "height",
+                        "width",
+                        "x",
+                        "y"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "point": {
+                      "description": "Where a cursor reaches the piece, as the client's hit test finds it: a press there lands on this piece and hovering there shows its tooltip. Null when no point does, and blocked says why",
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "x": {
+                          "type": "integer"
+                        },
+                        "y": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "x",
+                        "y"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "blocked": {
+                      "description": "Null when point is set. 'empty': the run draws nothing a cursor could rest on. 'scrolled': it is out of the body's view. 'outside': every glyph is drawn outside the widget that takes the press. 'covered': a piece drawn after it takes every point of it",
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        null,
+                        "empty",
+                        "scrolled",
+                        "outside",
+                        "covered"
+                      ]
+                    },
+                    "click": {
+                      "description": "What pressing the piece sends, null when it carries no click event",
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "action": {
+                          "description": "The click event's action as Minecraft names it: run_command, custom, show_dialog, suggest_command, change_page, open_url, open_file, copy_to_clipboard",
+                          "type": "string"
+                        },
+                        "value": {
+                          "description": "What the action carries: the command, the custom action's id followed by its payload, the dialog's id or 'inline', the URL",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "action",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "hover": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "lines": {
+                          "description": "Plain text of each line, in the order drawn",
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "lineComponents": {
+                          "description": "The components the lines were written as, as Minecraft's own JSON, in the same order as lines. Read by position, so a shorter list simply leaves the rest read the way lines already were.",
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "lines"
+                      ],
+                      "additionalProperties": false,
+                      "description": "The lines hovering the piece draws, wrapped as the client wraps them, null when it shows no tooltip. An item shows its own tooltip only when the dialog says so"
+                    },
+                    "item": {
+                      "description": "The item an item piece draws, null for a run of text",
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "label": {
+                          "description": "The custom name the server gave it, if any",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "lore": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "labelComponent": {
+                          "description": "The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.",
+                          "type": [
+                            "object",
+                            "array",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "loreComponents": {
+                          "description": "The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.",
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "name"
+                      ]
+                    },
+                    "showTooltip": {
+                      "description": "Whether hovering an item shows its tooltip, as the dialog says; null for a run of text",
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "blocked",
+                    "click",
+                    "component",
+                    "hover",
+                    "index",
+                    "item",
+                    "point",
+                    "rect",
+                    "showTooltip",
+                    "text",
+                    "type"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "body",
+              "gui",
+              "pieces",
+              "title"
+            ]
+          }
+        },
+        "required": [
+          "dialog",
+          "screen"
+        ],
         "additionalProperties": false
       }
     },
@@ -10247,6 +11383,219 @@
       "wireSchemaHash": "sha256:be71408a791259c0ae552a277f45f615cc325b030818c35a16b91fc042505a26"
     },
     {
+      "name": "use-mouse",
+      "group": "screen",
+      "description": "Move the mouse to a point of whatever screen is open, in GUI units, optionally press a button or turn the wheel there, and capture the frame. Everything goes in through the client's own mouse handling, so the screen hovers, scrolls and takes the press as it does for a player. For a screen the other tools have no words for, and for scrolling a dialog whose body is longer than the screen. The cursor stays where it was put, so a later screenshot shows what it rests on. A screen has to be open: without one a press would swing or use what the bot holds. While the client is loading resources -- a pack applied or taken away -- nothing on screen takes the mouse, so it waits for that to finish first.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": true,
+      "readOnly": false,
+      "structured": true,
+      "needsWorld": true,
+      "defaultDeadlineMs": 45000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected.",
+            "type": "string"
+          },
+          "x": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "X in GUI units, as read-dialog-body gives them"
+          },
+          "y": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Y in GUI units"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "move",
+              "left",
+              "right",
+              "scroll"
+            ],
+            "description": "What to do once the cursor is there (default: 'move'): 'left' or 'right' presses and releases that button, 'scroll' turns the wheel by scroll notches"
+          },
+          "scroll": {
+            "type": "integer",
+            "minimum": -50,
+            "maximum": 50,
+            "description": "Notches to turn the wheel when action is 'scroll' (default: -1). Negative scrolls down, further into a list or a dialog's body; positive scrolls back up"
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 256,
+            "maximum": 1920,
+            "description": "Image width (default: 854)"
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 144,
+            "maximum": 1080,
+            "description": "Image height (default: 480)"
+          },
+          "image": {
+            "type": "boolean",
+            "description": "Also capture the frame (default: true)"
+          }
+        },
+        "required": [
+          "x",
+          "y"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "X in GUI units, as read-dialog-body gives them"
+          },
+          "y": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Y in GUI units"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "move",
+              "left",
+              "right",
+              "scroll"
+            ],
+            "description": "What to do once the cursor is there (default: 'move'): 'left' or 'right' presses and releases that button, 'scroll' turns the wheel by scroll notches",
+            "default": "move"
+          },
+          "scroll": {
+            "type": "integer",
+            "minimum": -50,
+            "maximum": 50,
+            "description": "Notches to turn the wheel when action is 'scroll' (default: -1). Negative scrolls down, further into a list or a dialog's body; positive scrolls back up",
+            "default": -1
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 256,
+            "maximum": 1920,
+            "description": "Image width (default: 854)",
+            "default": 854
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 144,
+            "maximum": 1080,
+            "description": "Image height (default: 480)",
+            "default": 480
+          },
+          "image": {
+            "type": "boolean",
+            "description": "Also capture the frame (default: true)",
+            "default": true
+          }
+        },
+        "required": [
+          "action",
+          "height",
+          "image",
+          "scroll",
+          "width",
+          "x",
+          "y"
+        ],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:835e02921ba87307abee3773525d518a37560d1a7767fc94a5bb97fac1f29160",
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "point": {
+            "description": "Where the cursor was put, in GUI units",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y"
+            ],
+            "additionalProperties": false
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "move",
+              "left",
+              "right",
+              "scroll"
+            ]
+          },
+          "scroll": {
+            "description": "The notches turned, null unless action was 'scroll'",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "screenBefore": {
+            "description": "The class of the screen the mouse acted on",
+            "type": "string"
+          },
+          "screenAfter": {
+            "description": "The class of the screen open afterwards, null when none is",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "frame": {
+            "description": "The size of the frame attached beside the text, null when image was false and none was captured. The renderer never sees the image itself, so this is what says one is attached",
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "width": {
+                "type": "integer"
+              },
+              "height": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "height",
+              "width"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "action",
+          "frame",
+          "point",
+          "screenAfter",
+          "screenBefore",
+          "scroll"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "verify-region",
       "group": "region",
       "description": "Ask WorldEdit what is in a box: //size and //distr over the same selection build-region sets, as a table of block, count and share. Needs WorldEdit or FastAsyncWorldEdit on the server. Holds the bot for the whole run, so another build-region or verify-region on the same bot is refused while this one is going: a player has one WorldEdit selection, and two of these interleaving their //pos1 and //pos2 would each measure the box the other selected. The call is read-only all the same -- what it claims is the bot's selection, not the world -- which is why it is not marked exclusive. read-region reads the same box straight from the client with no plugin at all, and is the one to reach for when the plugin is absent or when where the blocks sit matters as much as how many there are.",
@@ -11156,5 +12505,5 @@
       }
     }
   ],
-  "catalogHash": "sha256:6467644c3aabb44f95e7299709d9157d8851acb10841d0ef69ecf0d675350437"
+  "catalogHash": "sha256:73e51efd2137bad4fd8961a4e2477e9404d111a0e09e439e8908780e8d4af705"
 }

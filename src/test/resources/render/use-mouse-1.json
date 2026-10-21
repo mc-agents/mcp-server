@@ -1,0 +1,19 @@
+{
+  "tool": "use-mouse",
+  "note": "the wheel turned down over a dialog's body",
+  "data": {
+    "point": {
+      "x": 213,
+      "y": 120
+    },
+    "action": "scroll",
+    "scroll": -3,
+    "screenBefore": "MultiButtonDialogScreen",
+    "screenAfter": "MultiButtonDialogScreen",
+    "frame": {
+      "width": 854,
+      "height": 480
+    }
+  },
+  "text": "Turned the wheel 3 notches down at 213,120 on MultiButtonDialogScreen. The 854x480 frame is attached."
+}

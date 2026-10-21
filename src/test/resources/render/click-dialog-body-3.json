@@ -1,0 +1,45 @@
+{
+  "tool": "click-dialog-body",
+  "note": "a command the client wanted confirmed, accepted, and the dialog closing for good",
+  "data": {
+    "point": {
+      "x": 180,
+      "y": 48
+    },
+    "piece": {
+      "index": 1,
+      "type": "text",
+      "text": "Swap",
+      "component": {
+        "text": "Swap",
+        "color": "gold"
+      },
+      "rect": {
+        "x": 170,
+        "y": 44,
+        "width": 21,
+        "height": 9
+      },
+      "point": {
+        "x": 180,
+        "y": 48
+      },
+      "blocked": null,
+      "click": {
+        "action": "run_command",
+        "value": "/quest swap"
+      },
+      "hover": null,
+      "item": null,
+      "showTooltip": null
+    },
+    "outcome": "closed",
+    "screenAfter": null,
+    "dialogAfter": null,
+    "confirmed": {
+      "button": "Run Command",
+      "title": "Confirm Command Execution"
+    }
+  },
+  "text": "Pressed #1 \"Swap\" at 180,48, which sends run_command /quest swap. The client asked to confirm it (Confirm Command Execution) and \"Run Command\" accepted. The dialog closed, and nothing came in its place within two seconds."
+}

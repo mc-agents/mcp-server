@@ -1,0 +1,16 @@
+{
+  "tool": "click-dialog-body",
+  "note": "a point on nothing that carries a click, and the dialog staying as it was",
+  "data": {
+    "point": {
+      "x": 300,
+      "y": 120
+    },
+    "piece": null,
+    "outcome": "unchanged",
+    "screenAfter": "MultiButtonDialogScreen",
+    "dialogAfter": null,
+    "confirmed": null
+  },
+  "text": "Pressed 300,120, where nothing carries a click. Two seconds later the same dialog is still up: nothing on screen answered the press."
+}

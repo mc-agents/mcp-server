@@ -2,7 +2,7 @@
 
 <!-- Rendered from catalog/catalog.json by ./gradlew renderToolReference. Edit the catalogue, not this page. -->
 
-Catalogue 5.11.0, 102 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
+Catalogue 5.12.0, 106 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
 
 Every tool but [`list-bots`](#list-bots), [`ping-server`](#ping-server), [`wait-for-server`](#wait-for-server) takes `bot`, the name given to join-server, which may be left out while exactly one bot is connected; it is not repeated below. A tool marked **fabric only** is one the headless kind of bot does not run. **Exclusive** means one call at a time on a bot, since two walks or two clicks at once would fight over the same body. **Untrusted** means the answer carries content the server did not write -- chat, item names, signs -- and is marked as data rather than instructions. **Read-only** means the call changes nothing in the game or on the server, which is what an MCP client's `readOnlyHint` approves without asking; **destructive** is the `destructiveHint`, for a call that removes something or runs with the bot's permissions. A tool that **needs a world** is refused while the bot is on a title or disconnected screen. The deadline is how long the server waits for the bot before giving the call up; a tool with a `timeoutMs` argument sets its own inside that.
 
@@ -11,7 +11,7 @@ Every tool but [`list-bots`](#list-bots), [`ping-server`](#ping-server), [`wait-
 | [world](#world) | [`activate-block`](#activate-block), [`attack-entity`](#attack-entity), [`fish`](#fish), [`interact-entity`](#interact-entity), [`use-held-item`](#use-held-item) |
 | [region](#region) | [`build-region`](#build-region), [`import-region`](#import-region), [`photograph-region`](#photograph-region), [`learn-custom-blocks`](#learn-custom-blocks), [`list-regions`](#list-regions), [`read-region`](#read-region), [`read-selection`](#read-selection), [`show-region`](#show-region), [`measure-room`](#measure-room), [`verify-region`](#verify-region), [`write-region`](#write-region) |
 | [crafting](#crafting) | [`can-craft`](#can-craft), [`craft-item`](#craft-item), [`get-recipe`](#get-recipe), [`list-recipes`](#list-recipes) |
-| [screen](#screen) | [`click-chat`](#click-chat), [`press-dialog-button`](#press-dialog-button), [`read-book`](#read-book), [`screenshot`](#screenshot), [`set-dialog-input`](#set-dialog-input), [`type-text`](#type-text) |
+| [screen](#screen) | [`click-chat`](#click-chat), [`click-dialog-body`](#click-dialog-body), [`hover-dialog-body`](#hover-dialog-body), [`press-dialog-button`](#press-dialog-button), [`read-book`](#read-book), [`read-dialog-body`](#read-dialog-body), [`screenshot`](#screenshot), [`set-dialog-input`](#set-dialog-input), [`type-text`](#type-text), [`use-mouse`](#use-mouse) |
 | [slot](#slot) | [`click-slot`](#click-slot), [`drag-slots`](#drag-slots), [`drop-held-item`](#drop-held-item), [`hover-slot`](#hover-slot), [`select-bundle-item`](#select-bundle-item) |
 | [window](#window) | [`close-window`](#close-window), [`open-container`](#open-container), [`open-inventory`](#open-inventory), [`press-container-button`](#press-container-button), [`read-container-options`](#read-container-options), [`read-trades`](#read-trades), [`read-window`](#read-window), [`select-trade`](#select-trade), [`set-beacon-effects`](#set-beacon-effects), [`wait-for-window`](#wait-for-window) |
 | [server](#server) | [`complete-command`](#complete-command), [`get-world-state`](#get-world-state), [`run-command`](#run-command), [`switch-server`](#switch-server), [`wait-ticks`](#wait-ticks) |
@@ -416,11 +416,123 @@ Press something a server wrote in chat: a quest's choices, a shop's items, a men
 | --- | --- | --- | --- | --- |
 | `match` | string | yes | Text of the clickable part to press, for example "[Accept]" |  |
 
+### click-dialog-body
+
+*fabric only · deadline 45s · exclusive · untrusted · needs a world · the bot answers*
+
+Press a piece of the open dialog's body with the mouse: a run of text with a click event on it, which is how a dialog without buttons draws its tabs, its close mark and its rows. Name it by the index read-dialog-body gave it, by a point in GUI units, or by part of its text. The cursor is moved there and the button pressed through the client's own mouse handling, so which piece the press lands on and what it sends are what a player's click gets; a press on a point that lands on nothing is still made, and says so. Answers with what was under the cursor and what the screen became within two seconds: a dialog the server sent in its place, the dialog closed, or nothing changed. A piece whose click would open a URL or a file, or copy to the clipboard, is refused. While the client is loading resources -- a pack applied or taken away -- nothing on screen takes the mouse, so it waits for that to finish first.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `index` | integer | no | The index read-dialog-body gave the piece | at least 0 |
+| `x` | integer | no | A point to put the cursor on instead, in GUI units as read-dialog-body gives them; needs y | at least 0 |
+| `y` | integer | no | The point's y; needs x | at least 0 |
+| `match` | string | no | Part of the piece's text instead, glyphs included. An exact match is taken first |  |
+
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
+
+- `point` (object) -- Where the cursor was pressed, in GUI units
+  - `x` (integer)
+  - `y` (integer)
+- `piece` (object or null) -- The piece the press landed on, read before pressing, null when it landed on nothing that carries a click
+  - `index` (integer) -- Where the piece stands in the body, in the body's own order. It does not move when the body is scrolled
+  - `type` (string: `text`, `item`) -- 'text' for a run of text on one line, 'item' for an item the dialog shows
+  - `text` (string) -- The run's text with its glyphs left in, or an item's name
+  - `component` (object or array or string or null) -- The run as a component, as Minecraft's own JSON, with its font and without its click and hover events. A dialog drawn in the resource pack's glyphs is read from this
+  - `rect` (object) -- The box the piece's glyphs cover, in GUI units. Pieces can overlap, and a glyph can hang outside the widget it belongs to
+    - `x` (integer)
+    - `y` (integer)
+    - `width` (integer)
+    - `height` (integer)
+  - `point` (object or null) -- Where a cursor reaches the piece, as the client's hit test finds it: a press there lands on this piece and hovering there shows its tooltip. Null when no point does, and blocked says why
+    - `x` (integer)
+    - `y` (integer)
+  - `blocked` (string or null: `null`, `empty`, `scrolled`, `outside`, `covered`) -- Null when point is set. 'empty': the run draws nothing a cursor could rest on. 'scrolled': it is out of the body's view. 'outside': every glyph is drawn outside the widget that takes the press. 'covered': a piece drawn after it takes every point of it
+  - `click` (object or null) -- What pressing the piece sends, null when it carries no click event
+    - `action` (string) -- The click event's action as Minecraft names it: run_command, custom, show_dialog, suggest_command, change_page, open_url, open_file, copy_to_clipboard
+    - `value` (string) -- What the action carries: the command, the custom action's id followed by its payload, the dialog's id or 'inline', the URL
+  - `hover` (object or null) -- The lines hovering the piece draws, wrapped as the client wraps them, null when it shows no tooltip. An item shows its own tooltip only when the dialog says so
+    - `lines[]` (string) -- Plain text of each line, in the order drawn
+    - `lineComponents[]` (array) -- The components the lines were written as, as Minecraft's own JSON, in the same order as lines. Read by position, so a shorter list simply leaves the rest read the way lines already were.
+  - `item` (object or null) -- The item an item piece draws, null for a run of text
+    - `name` (string)
+    - `count` (integer)
+    - `label` (string or null) -- The custom name the server gave it, if any
+    - `lore[]` (string)
+    - `labelComponent` (object or array or string or null) -- The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.
+    - `loreComponents[]` (array) -- The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.
+  - `showTooltip` (boolean or null) -- Whether hovering an item shows its tooltip, as the dialog says; null for a run of text
+- `outcome` (string: `replaced`, `closed`, `unchanged`, `waiting`, `other`) -- What the screen became. 'replaced': a dialog came in place of this one. 'closed': no screen is open. 'unchanged': the same dialog is still up. 'waiting': the client is waiting for the server's answer. 'other': another screen opened, named by screenAfter
+- `screenAfter` (string or null) -- The class of the screen open at the end, null when none is
+- `dialogAfter` (object or null) -- The dialog that came in place of this one, null unless outcome is 'replaced'
+  - `title` (string)
+  - `titleComponent` (object or array or string or null)
+- `confirmed` (object or null) -- The client's own confirmation the press raised and the button that accepted it, null when there was none
+  - `button` (string)
+  - `title` (string)
+
+### hover-dialog-body
+
+*fabric only · deadline 45s · exclusive · untrusted · needs a world · the bot answers*
+
+Hover the cursor over a piece of the open dialog's body and capture the frame with its tooltip drawn, the way a player sees it: a run of text with a hover event, or an item that shows its tooltip. Named the way click-dialog-body names one. The tooltip's lines come back as text beside the image, fonts and glyphs included, so a tooltip with the pack's icons in it can be checked both ways. While the client is loading resources -- a pack applied or taken away -- nothing on screen takes the mouse, so it waits for that to finish first.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `index` | integer | no | The index read-dialog-body gave the piece | at least 0 |
+| `x` | integer | no | A point to put the cursor on instead, in GUI units as read-dialog-body gives them; needs y | at least 0 |
+| `y` | integer | no | The point's y; needs x | at least 0 |
+| `match` | string | no | Part of the piece's text instead, glyphs included. An exact match is taken first |  |
+| `width` | integer | no | Image width (default: 854) | 256 to 1920 |
+| `height` | integer | no | Image height (default: 480) | 144 to 1080 |
+| `image` | boolean | no | Also capture the frame (default: true). false answers with the tooltip's lines only, which is cheaper when only the words are in question |  |
+
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
+
+- `point` (object) -- Where the cursor rested, in GUI units
+  - `x` (integer)
+  - `y` (integer)
+- `piece` (object or null) -- The piece under the cursor, null when it rested on nothing that shows a tooltip
+  - `index` (integer) -- Where the piece stands in the body, in the body's own order. It does not move when the body is scrolled
+  - `type` (string: `text`, `item`) -- 'text' for a run of text on one line, 'item' for an item the dialog shows
+  - `text` (string) -- The run's text with its glyphs left in, or an item's name
+  - `component` (object or array or string or null) -- The run as a component, as Minecraft's own JSON, with its font and without its click and hover events. A dialog drawn in the resource pack's glyphs is read from this
+  - `rect` (object) -- The box the piece's glyphs cover, in GUI units. Pieces can overlap, and a glyph can hang outside the widget it belongs to
+    - `x` (integer)
+    - `y` (integer)
+    - `width` (integer)
+    - `height` (integer)
+  - `point` (object or null) -- Where a cursor reaches the piece, as the client's hit test finds it: a press there lands on this piece and hovering there shows its tooltip. Null when no point does, and blocked says why
+    - `x` (integer)
+    - `y` (integer)
+  - `blocked` (string or null: `null`, `empty`, `scrolled`, `outside`, `covered`) -- Null when point is set. 'empty': the run draws nothing a cursor could rest on. 'scrolled': it is out of the body's view. 'outside': every glyph is drawn outside the widget that takes the press. 'covered': a piece drawn after it takes every point of it
+  - `click` (object or null) -- What pressing the piece sends, null when it carries no click event
+    - `action` (string) -- The click event's action as Minecraft names it: run_command, custom, show_dialog, suggest_command, change_page, open_url, open_file, copy_to_clipboard
+    - `value` (string) -- What the action carries: the command, the custom action's id followed by its payload, the dialog's id or 'inline', the URL
+  - `hover` (object or null) -- The lines hovering the piece draws, wrapped as the client wraps them, null when it shows no tooltip. An item shows its own tooltip only when the dialog says so
+    - `lines[]` (string) -- Plain text of each line, in the order drawn
+    - `lineComponents[]` (array) -- The components the lines were written as, as Minecraft's own JSON, in the same order as lines. Read by position, so a shorter list simply leaves the rest read the way lines already were.
+  - `item` (object or null) -- The item an item piece draws, null for a run of text
+    - `name` (string)
+    - `count` (integer)
+    - `label` (string or null) -- The custom name the server gave it, if any
+    - `lore[]` (string)
+    - `labelComponent` (object or array or string or null) -- The component the custom name was written as, as Minecraft's own JSON. A plugin draws a screen out of custom-named items and writes those names in the resource pack's own glyphs, so the flattening is done from this when it is here and the rule lives in one place instead of once per kind of bot. Null when the item has no custom name.
+    - `loreComponents[]` (array) -- The components the lore lines were written as, in the same order as lore. Read by position, so a shorter list simply leaves the rest read the way lore already was.
+  - `showTooltip` (boolean or null) -- Whether hovering an item shows its tooltip, as the dialog says; null for a run of text
+- `hovered` (boolean) -- Whether the piece's widget took the hover in a frame. False means the frame shows no tooltip even though the piece has one
+- `tooltip` (object or null) -- The tooltip's lines as the frame draws them, null when nothing under the cursor shows one
+  - `lines[]` (string) -- Plain text of each line, in the order drawn
+  - `lineComponents[]` (array) -- The components the lines were written as, as Minecraft's own JSON, in the same order as lines. Read by position, so a shorter list simply leaves the rest read the way lines already were.
+- `frame` (object or null) -- The size of the frame attached beside the text, null when image was false and none was captured. The renderer never sees the image itself, so this is what says one is attached
+  - `width` (integer)
+  - `height` (integer)
+
 ### press-dialog-button
 
 *fabric and azalea · deadline 10s · exclusive · needs a world · the bot answers*
 
-Press a button on the dialog the server has opened. Identify it by its label. Reading a dialog is not enough to carry a conversation forward; this is what answers it.
+Press a button on the dialog the server has opened. Identify it by its label. Reading a dialog is not enough to carry a conversation forward; this is what answers it. A dialog whose body is the menu, with no buttons below it, is pressed with click-dialog-body.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
@@ -443,6 +555,43 @@ The bot answers with a DTO the server renders into the text (see [bot-protocol.m
 - `page` (integer) -- The page the client is showing, counting from 1
 - `pages[]` (string) -- Every page, in order
 - `pageComponents` (array or null) -- The components the pages were written as, in the same order. Null from a bot built before they were sent
+
+### read-dialog-body
+
+*fabric only · deadline 5s · untrusted · read-only · needs a world · the bot answers*
+
+List what can be pressed or hovered in the body of the open dialog: every run of text that carries a click or hover event, and every item, each with an index, the box it covers in GUI units, and the point a cursor reaches it at. The point is checked against the client's own hit test, so where pieces overlap, where negative spacing pulls one back over another, or where a glyph hangs outside its widget, it is a point a player's click would land on -- and a piece no point reaches says why instead. A dialog drawn in the resource pack's glyphs has no labels to press by; click-dialog-body and hover-dialog-body take the index or the point from here. read-dialog reads the words; this says where they are on the screen now. Answers that no dialog is open rather than failing.
+
+No arguments beyond `bot`.
+
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
+
+- `screen` (string or null) -- The class of the screen that is open, null when none is
+- `dialog` (object or null) -- The dialog's body, null when the open screen is not a dialog
+  - `title` (string)
+  - `titleComponent` (object or array or string or null) -- The title as Minecraft's own JSON
+  - `gui` (object) -- The screen's size in GUI units, which every box and point is in
+    - `width` (integer)
+    - `height` (integer)
+  - `body` (object) -- The part of the screen the body is shown in, and how far it is scrolled. A piece outside it is scrolled out of view
+    - `x` (integer)
+    - `y` (integer)
+    - `width` (integer)
+    - `height` (integer)
+    - `scroll` (number)
+    - `maxScroll` (integer)
+  - `pieces[]` (object)
+    - `index` (integer) -- Where the piece stands in the body, in the body's own order. It does not move when the body is scrolled
+    - `type` (string: `text`, `item`) -- 'text' for a run of text on one line, 'item' for an item the dialog shows
+    - `text` (string) -- The run's text with its glyphs left in, or an item's name
+    - `component` (object or array or string or null) -- The run as a component, as Minecraft's own JSON, with its font and without its click and hover events. A dialog drawn in the resource pack's glyphs is read from this
+    - `rect` (object) -- The box the piece's glyphs cover, in GUI units. Pieces can overlap, and a glyph can hang outside the widget it belongs to
+    - `point` (object or null) -- Where a cursor reaches the piece, as the client's hit test finds it: a press there lands on this piece and hovering there shows its tooltip. Null when no point does, and blocked says why
+    - `blocked` (string or null: `null`, `empty`, `scrolled`, `outside`, `covered`) -- Null when point is set. 'empty': the run draws nothing a cursor could rest on. 'scrolled': it is out of the body's view. 'outside': every glyph is drawn outside the widget that takes the press. 'covered': a piece drawn after it takes every point of it
+    - `click` (object or null) -- What pressing the piece sends, null when it carries no click event
+    - `hover` (object or null) -- The lines hovering the piece draws, wrapped as the client wraps them, null when it shows no tooltip. An item shows its own tooltip only when the dialog says so
+    - `item` (object or null) -- The item an item piece draws, null for a run of text
+    - `showTooltip` (boolean or null) -- Whether hovering an item shows its tooltip, as the dialog says; null for a run of text
 
 ### screenshot
 
@@ -489,6 +638,35 @@ Type into a text field on the screen that is open: a dialog's input, an anvil's 
 | `text` | string | yes | Text to type. A newline starts the next line in a multi-line field and on a sign; a one-line field refuses it. |  |
 | `field` | string | no | Which field to type into, by its label. A number, as a string, e.g. "2", picks by position; on a sign editor it picks the line, 1 to 4, and in a book it picks the page, which is created if the book does not reach it yet. Omit it when the screen has exactly one field. |  |
 | `replace` | boolean | no | Clear the field first, rather than typing onto the end of what is already there (default: true) |  |
+
+### use-mouse
+
+*fabric only · deadline 45s · exclusive · untrusted · needs a world · the bot answers*
+
+Move the mouse to a point of whatever screen is open, in GUI units, optionally press a button or turn the wheel there, and capture the frame. Everything goes in through the client's own mouse handling, so the screen hovers, scrolls and takes the press as it does for a player. For a screen the other tools have no words for, and for scrolling a dialog whose body is longer than the screen. The cursor stays where it was put, so a later screenshot shows what it rests on. A screen has to be open: without one a press would swing or use what the bot holds. While the client is loading resources -- a pack applied or taken away -- nothing on screen takes the mouse, so it waits for that to finish first.
+
+| Argument | Type | Required | What it is | Limits |
+| --- | --- | --- | --- | --- |
+| `x` | integer | yes | X in GUI units, as read-dialog-body gives them | at least 0 |
+| `y` | integer | yes | Y in GUI units | at least 0 |
+| `action` | string: `move`, `left`, `right`, `scroll` | no | What to do once the cursor is there (default: 'move'): 'left' or 'right' presses and releases that button, 'scroll' turns the wheel by scroll notches |  |
+| `scroll` | integer | no | Notches to turn the wheel when action is 'scroll' (default: -1). Negative scrolls down, further into a list or a dialog's body; positive scrolls back up | -50 to 50 |
+| `width` | integer | no | Image width (default: 854) | 256 to 1920 |
+| `height` | integer | no | Image height (default: 480) | 144 to 1080 |
+| `image` | boolean | no | Also capture the frame (default: true) |  |
+
+The bot answers with a DTO the server renders into the text (see [bot-protocol.md](bot-protocol.md), Structured results), shaped:
+
+- `point` (object) -- Where the cursor was put, in GUI units
+  - `x` (integer)
+  - `y` (integer)
+- `action` (string: `move`, `left`, `right`, `scroll`)
+- `scroll` (integer or null) -- The notches turned, null unless action was 'scroll'
+- `screenBefore` (string) -- The class of the screen the mouse acted on
+- `screenAfter` (string or null) -- The class of the screen open afterwards, null when none is
+- `frame` (object or null) -- The size of the frame attached beside the text, null when image was false and none was captured. The renderer never sees the image itself, so this is what says one is attached
+  - `width` (integer)
+  - `height` (integer)
 
 ## slot
 
@@ -1706,7 +1884,7 @@ The bot answers with a DTO the server renders into the text (see [bot-protocol.m
 
 *fabric and azalea · deadline 5s · untrusted · read-only · the server answers from what it holds*
 
-Read the dialogs the server has opened on screen, with their title, body, the buttons they offer and what each input holds, and the point at which each was closed again. A dialog comes again with the new values when set-dialog-input changes one. press-dialog-button presses them. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by " | ", each tagged with the font that names it.
+Read the dialogs the server has opened on screen, with their title, body, the buttons they offer and what each input holds, and the point at which each was closed again. A dialog comes again with the new values when set-dialog-input changes one. press-dialog-button presses them. read-dialog-body says where on the screen the open one's body can be pressed or hovered. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by " | ", each tagged with the font that names it.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |

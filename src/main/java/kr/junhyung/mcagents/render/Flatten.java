@@ -26,7 +26,7 @@ public final class Flatten {
      * character class matches code points, so the supplementary planes are named as such: a class
      * of surrogates never met a paired character and left every plane-15 glyph in place.
      */
-    private static final Pattern GLYPHS = Pattern.compile("[\\uE000-\\uF8FF\\x{F0000}-\\x{10FFFF}]");
+    static final Pattern GLYPHS = Pattern.compile("[\\uE000-\\uF8FF\\x{F0000}-\\x{10FFFF}]");
 
     private static final Pattern COLOUR_CODES = Pattern.compile("§[0-9a-fk-or]", Pattern.CASE_INSENSITIVE);
 

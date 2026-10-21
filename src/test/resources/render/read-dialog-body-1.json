@@ -1,0 +1,185 @@
+{
+  "tool": "read-dialog-body",
+  "note": "a quest board drawn in glyphs: a tab, a label, a close mark the tab's spacing covers, an item, and a row scrolled out of view",
+  "data": {
+    "screen": "MultiButtonDialogScreen",
+    "dialog": {
+      "title": "Daily quests",
+      "titleComponent": {
+        "text": "Daily quests"
+      },
+      "gui": {
+        "width": 427,
+        "height": 240
+      },
+      "body": {
+        "x": 4,
+        "y": 33,
+        "width": 419,
+        "height": 174,
+        "scroll": 0.0,
+        "maxScroll": 46
+      },
+      "pieces": [
+        {
+          "index": 0,
+          "type": "text",
+          "text": "\ue101",
+          "component": {
+            "text": "\ue101",
+            "font": "hyperfarm:vellum"
+          },
+          "rect": {
+            "x": 100,
+            "y": 40,
+            "width": 48,
+            "height": 16
+          },
+          "point": {
+            "x": 124,
+            "y": 48
+          },
+          "blocked": null,
+          "click": {
+            "action": "custom",
+            "value": "paper:click_callback 7f3e9a12"
+          },
+          "hover": {
+            "lines": [
+              "Daily"
+            ],
+            "lineComponents": [
+              {
+                "text": "Daily"
+              }
+            ]
+          },
+          "item": null,
+          "showTooltip": null
+        },
+        {
+          "index": 1,
+          "type": "text",
+          "text": "Swap",
+          "component": {
+            "text": "Swap",
+            "color": "gold"
+          },
+          "rect": {
+            "x": 170,
+            "y": 44,
+            "width": 21,
+            "height": 9
+          },
+          "point": {
+            "x": 180,
+            "y": 48
+          },
+          "blocked": null,
+          "click": {
+            "action": "run_command",
+            "value": "/quest swap"
+          },
+          "hover": null,
+          "item": null,
+          "showTooltip": null
+        },
+        {
+          "index": 2,
+          "type": "text",
+          "text": "\ue102",
+          "component": {
+            "text": "\ue102",
+            "font": "hyperfarm:vellum"
+          },
+          "rect": {
+            "x": 396,
+            "y": 36,
+            "width": 16,
+            "height": 16
+          },
+          "point": null,
+          "blocked": "covered",
+          "click": {
+            "action": "custom",
+            "value": "paper:click_callback 0c4d"
+          },
+          "hover": null,
+          "item": null,
+          "showTooltip": null
+        },
+        {
+          "index": 3,
+          "type": "item",
+          "text": "Gold Coin",
+          "component": {
+            "text": "Gold Coin"
+          },
+          "rect": {
+            "x": 120,
+            "y": 180,
+            "width": 16,
+            "height": 16
+          },
+          "point": {
+            "x": 128,
+            "y": 188
+          },
+          "blocked": null,
+          "click": null,
+          "hover": {
+            "lines": [
+              "Gold Coin",
+              "x12"
+            ],
+            "lineComponents": [
+              {
+                "text": "Gold Coin",
+                "italic": true
+              },
+              {
+                "text": "x12",
+                "color": "gray"
+              }
+            ]
+          },
+          "item": {
+            "name": "gold_nugget",
+            "count": 12,
+            "label": "Gold Coin",
+            "lore": [],
+            "labelComponent": {
+              "text": "Gold Coin"
+            },
+            "loreComponents": []
+          },
+          "showTooltip": true
+        },
+        {
+          "index": 4,
+          "type": "text",
+          "text": "Claim",
+          "component": {
+            "text": "Claim"
+          },
+          "rect": {
+            "x": 190,
+            "y": 230,
+            "width": 25,
+            "height": 9
+          },
+          "point": null,
+          "blocked": "scrolled",
+          "click": {
+            "action": "run_command",
+            "value": "/quest claim"
+          },
+          "hover": null,
+          "item": null,
+          "showTooltip": null
+        }
+      ]
+    }
+  },
+  "text": "Dialog \"Daily quests\": 5 pieces of its body can be pressed or hovered. The screen is 427x240 in GUI units, and the body shows 4,33 to 423,207, scrolled 0 of 46 (use-mouse scrolls it).\n  #0 \"<U+E101>\" in font vellum covers 100,40 48x16, reached at 124,48; click: custom paper:click_callback 7f3e9a12; hover: \"Daily\"\n  #1 \"Swap\" covers 170,44 21x9, reached at 180,48; click: run_command /quest swap\n  #2 \"<U+E102>\" in font vellum covers 396,36 16x16, unreachable: a piece drawn after it takes every point of it; click: custom paper:click_callback 0c4d\n  #3 item Gold Coin [gold_nugget] x12 covers 120,180 16x16, reached at 128,188; hover: \"Gold Coin\" / \"x12\"\n  #4 \"Claim\" covers 190,230 25x9, unreachable: it is scrolled out of the body's view; click: run_command /quest claim"
+}

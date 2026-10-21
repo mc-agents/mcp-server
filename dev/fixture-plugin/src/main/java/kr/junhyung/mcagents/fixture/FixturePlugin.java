@@ -23,6 +23,8 @@ public final class FixturePlugin extends JavaPlugin {
 
     private static final long PLING_AFTER_TICKS = 40;
 
+    private OverlapDialog overlap;
+
     @Override
     public void onEnable() {
         Scores scores = new Scores(Bukkit.getScoreboardManager().getMainScoreboard());
@@ -33,6 +35,9 @@ public final class FixturePlugin extends JavaPlugin {
         PagedMenu paged = new PagedMenu();
         CooldownMenu cooldown = new CooldownMenu(scores);
         Gate gate = new Gate();
+        BoardDialog board = new BoardDialog(scores);
+        ButtonsMenu buttons = new ButtonsMenu(scores);
+        overlap = new OverlapDialog(scores);
 
         getServer().getPluginManager().registerEvents(new InputRecorder(scores, conversation), this);
         getServer().getPluginManager().registerEvents(new FishingBite(this, scores), this);
@@ -42,6 +47,8 @@ public final class FixturePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(paged, this);
         getServer().getPluginManager().registerEvents(cooldown, this);
         getServer().getPluginManager().registerEvents(gate, this);
+        getServer().getPluginManager().registerEvents(buttons, this);
+        getServer().getPluginManager().registerEvents(overlap, this);
 
         PluginCommand command = getCommand("fixture");
         if (command != null) {
@@ -77,6 +84,10 @@ public final class FixturePlugin extends JavaPlugin {
                     case "shop" -> shop.open(sender, player);
                     case "paged" -> paged.open(sender, player);
                     case "cooldown" -> cooldown.open(sender, player);
+                    case "board" -> board.open(sender, player);
+                    case "overlap" -> overlap.open(sender, player);
+                    case "unpack" -> overlap.unpack(sender, player);
+                    case "buttons" -> buttons.open(sender, player);
                     /*
                     hyperfarm's gathering fever: a sound played at the player rather than at a place, which
                     goes out as a packet of its own. Later than the command, so a press can be waiting.
@@ -103,6 +114,13 @@ public final class FixturePlugin extends JavaPlugin {
                 }
                 return true;
             });
+        }
+    }
+
+    @Override
+    public void onDisable() {
+        if (overlap != null) {
+            overlap.stop();
         }
     }
 

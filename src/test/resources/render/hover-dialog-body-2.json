@@ -1,0 +1,15 @@
+{
+  "tool": "hover-dialog-body",
+  "note": "a point on nothing with a tooltip, words only",
+  "data": {
+    "point": {
+      "x": 10,
+      "y": 10
+    },
+    "piece": null,
+    "hovered": false,
+    "tooltip": null,
+    "frame": null
+  },
+  "text": "Hovered 10,10, where nothing shows a tooltip."
+}

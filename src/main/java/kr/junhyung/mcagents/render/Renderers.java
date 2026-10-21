@@ -36,6 +36,7 @@ public final class Renderers {
 
     private static final Map<String, Entry<?>> BY_TOOL = Map.ofEntries(
         Map.entry("can-craft", entry(CanCraftRenderer.View.class, new CanCraftRenderer())),
+        Map.entry("click-dialog-body", entry(ClickedDialogBodyRenderer.View.class, new ClickedDialogBodyRenderer())),
         Map.entry("click-slot", entry(ClickedSlotRenderer.View.class, new ClickedSlotRenderer())),
         Map.entry("close-window", entry(ClosedWindowRenderer.View.class, new ClosedWindowRenderer())),
         Map.entry("complete-command", entry(CompletionsRenderer.View.class, new CompletionsRenderer())),
@@ -50,6 +51,7 @@ public final class Renderers {
         Map.entry("get-recipe", entry(RecipeListRenderer.View.class, new RecipeListRenderer())),
         Map.entry("get-target-block", entry(TargetRenderer.View.class, new TargetRenderer())),
         Map.entry("get-world-state", entry(WorldStateRenderer.View.class, new WorldStateRenderer())),
+        Map.entry("hover-dialog-body", entry(HoveredDialogBodyRenderer.View.class, new HoveredDialogBodyRenderer())),
         Map.entry("hover-slot", entry(HoveredSlotRenderer.View.class, new HoveredSlotRenderer())),
         Map.entry("list-inventory", entry(InventoryRenderer.View.class, new InventoryRenderer())),
         Map.entry("list-recipes", entry(RecipeListRenderer.View.class, new RecipeListRenderer())),
@@ -60,6 +62,7 @@ public final class Renderers {
         Map.entry("read-book", entry(BookRenderer.View.class, new BookRenderer())),
         Map.entry("read-container-options", entry(ContainerOptionsRenderer.View.class, new ContainerOptionsRenderer())),
         Map.entry("read-boss-bars", entry(BossBarsRenderer.View.class, new BossBarsRenderer())),
+        Map.entry("read-dialog-body", entry(DialogBodyRenderer.View.class, new DialogBodyRenderer())),
         Map.entry("read-displays", entry(DisplaysRenderer.View.class, new DisplaysRenderer())),
         Map.entry("read-player-list", entry(PlayerListRenderer.View.class, new PlayerListRenderer())),
         Map.entry("read-region", entry(RegionRenderer.View.class, new RegionRenderer())),
@@ -71,6 +74,7 @@ public final class Renderers {
         Map.entry("run-inputs", entry(RanInputsRenderer.View.class, new RanInputsRenderer())),
         Map.entry("select-trade", entry(SelectedTradeRenderer.View.class, new SelectedTradeRenderer())),
         Map.entry("set-dialog-input", entry(DialogInputRenderer.View.class, new DialogInputRenderer())),
+        Map.entry("use-mouse", entry(UsedMouseRenderer.View.class, new UsedMouseRenderer())),
         Map.entry("wait-for-window", entry(AwaitedWindowRenderer.View.class, new AwaitedWindowRenderer())));
 
     private Renderers() {}

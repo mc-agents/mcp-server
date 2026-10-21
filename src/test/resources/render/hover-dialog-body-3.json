@@ -1,0 +1,79 @@
+{
+  "tool": "hover-dialog-body",
+  "note": "an item whose widget never took the hover",
+  "data": {
+    "point": {
+      "x": 128,
+      "y": 188
+    },
+    "piece": {
+      "index": 3,
+      "type": "item",
+      "text": "Gold Coin",
+      "component": {
+        "text": "Gold Coin"
+      },
+      "rect": {
+        "x": 120,
+        "y": 180,
+        "width": 16,
+        "height": 16
+      },
+      "point": {
+        "x": 128,
+        "y": 188
+      },
+      "blocked": null,
+      "click": null,
+      "hover": {
+        "lines": [
+          "Gold Coin",
+          "x12"
+        ],
+        "lineComponents": [
+          {
+            "text": "Gold Coin",
+            "italic": true
+          },
+          {
+            "text": "x12",
+            "color": "gray"
+          }
+        ]
+      },
+      "item": {
+        "name": "gold_nugget",
+        "count": 12,
+        "label": "Gold Coin",
+        "lore": [],
+        "labelComponent": {
+          "text": "Gold Coin"
+        },
+        "loreComponents": []
+      },
+      "showTooltip": true
+    },
+    "hovered": false,
+    "tooltip": {
+      "lines": [
+        "Gold Coin",
+        "x12"
+      ],
+      "lineComponents": [
+        {
+          "text": "Gold Coin",
+          "italic": true
+        },
+        {
+          "text": "x12",
+          "color": "gray"
+        }
+      ]
+    },
+    "frame": {
+      "width": 854,
+      "height": 480
+    }
+  },
+  "text": "Hovered #3 item Gold Coin [gold_nugget] x12 at 128,188, but its widget never took the hover, so no tooltip is drawn. Its lines would read:\n  \"Gold Coin\"\n  \"x12\"\nThe 854x480 frame is attached."
+}

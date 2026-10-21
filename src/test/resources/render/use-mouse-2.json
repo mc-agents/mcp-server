@@ -1,0 +1,16 @@
+{
+  "tool": "use-mouse",
+  "note": "a press that closed the screen, words only",
+  "data": {
+    "point": {
+      "x": 400,
+      "y": 20
+    },
+    "action": "left",
+    "scroll": null,
+    "screenBefore": "BookViewScreen",
+    "screenAfter": null,
+    "frame": null
+  },
+  "text": "Pressed the left button at 400,20 on BookViewScreen. No screen is open now."
+}

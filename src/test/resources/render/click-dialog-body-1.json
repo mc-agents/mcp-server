@@ -1,0 +1,56 @@
+{
+  "tool": "click-dialog-body",
+  "note": "a tab pressed, and the server sending the next page in its place",
+  "data": {
+    "point": {
+      "x": 124,
+      "y": 48
+    },
+    "piece": {
+      "index": 0,
+      "type": "text",
+      "text": "\ue101",
+      "component": {
+        "text": "\ue101",
+        "font": "hyperfarm:vellum"
+      },
+      "rect": {
+        "x": 100,
+        "y": 40,
+        "width": 48,
+        "height": 16
+      },
+      "point": {
+        "x": 124,
+        "y": 48
+      },
+      "blocked": null,
+      "click": {
+        "action": "custom",
+        "value": "paper:click_callback 7f3e9a12"
+      },
+      "hover": {
+        "lines": [
+          "Daily"
+        ],
+        "lineComponents": [
+          {
+            "text": "Daily"
+          }
+        ]
+      },
+      "item": null,
+      "showTooltip": null
+    },
+    "outcome": "replaced",
+    "screenAfter": "MultiButtonDialogScreen",
+    "dialogAfter": {
+      "title": "Weekly quests",
+      "titleComponent": {
+        "text": "Weekly quests"
+      }
+    },
+    "confirmed": null
+  },
+  "text": "Pressed #0 \"<U+E101>\" in font vellum at 124,48, which sends custom paper:click_callback 7f3e9a12. The server answered with dialog \"Weekly quests\" in its place."
+}

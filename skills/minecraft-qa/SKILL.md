@@ -45,8 +45,10 @@ other kind fails with a message naming the kind that has it.
   51 seconds from the call to the spawn; a machine without a cached client or a fast CPU takes
   longer. Needed for `screenshot` and anything you must *see* -- a resource-pack HUD, a model, an
   overlapping layout -- and for dialog controls (`set-dialog-input`, `press-dialog-button`,
-  `type-text`), the creative inventory (`open-inventory`), `pick-block`, `fish`, block entities,
-  display text, toasts, effects, advancements and statistics.
+  `type-text`), a dialog whose body is the menu (`read-dialog-body`, `click-dialog-body`,
+  `hover-dialog-body`), the mouse on any screen (`use-mouse`), the creative inventory
+  (`open-inventory`), `pick-block`, `fish`, block entities, display text, toasts, effects,
+  advancements and statistics.
 - **azalea**: headless, a few MB, joins in seconds. Use it for many bots at once, for fast loops,
   and for everything else: movement, entities, windows and clicks, trades, crafting, books,
   scoreboard, boss bars, chat, action bar and titles, reading dialogs, `press-input`, `run-command`.

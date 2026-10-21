@@ -2413,6 +2413,193 @@ class BotEndToEndTest {
 
         assertTrue(refused.contains("No window is open"), refused);
     }
+
+    /**
+     * A dialog whose body is the whole menu has no button to press by label: its tabs, its close
+     * mark and its rows are runs of text with a callback on them. Each is listed with the point a
+     * cursor reaches it at, the glyph-only close mark named by its code point, and the item beside
+     * them.
+     */
+    @Test
+    void aDialogsBodyIsListedWithWhereEachPieceIsReached() {
+        agent.requires("read-dialog-body");
+        world.run("fixture board " + BotWorld.BOT);
+        agent.mustCall("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Board 1", "timeoutMs", 10000));
+
+        String body = agent.mustCall("read-dialog-body", Map.of("bot", BotWorld.BOT));
+        world.run("dialog clear " + BotWorld.BOT);
+
+        assertTrue(body.startsWith("Dialog \"Board 1\": 6 pieces of its body can be pressed or hovered."), body);
+        assertTrue(Pattern.compile("\n  #0 \"\\[One\\]\" covers \\d+,\\d+ \\d+x\\d+, reached at \\d+,\\d+; click: \\S+ .*; hover: \"Page one\"")
+            .matcher(body).find(), body);
+        assertTrue(body.contains("\n  #2 \"<U+E101>\""), body);
+        assertTrue(body.contains("\n  #4 \"[?]\""), body);
+        assertTrue(body.contains("hover: \"<U+E010> 120\" / \"<U+E011> 3\""), body);
+        assertTrue(Pattern.compile("\n  #5 item diamond x3 covers \\d+,\\d+ 16x16, reached at \\d+,\\d+; hover: \"Diamond\"")
+            .matcher(body).find(), body);
+    }
+
+    /**
+     * A press goes in through the client's mouse, so what it lands on and what it sends are what a
+     * player's click gets, and the answer is what the server did about it: the next page in place of
+     * this one, the board closed, or nothing at all for a point on nothing. The server's own count
+     * says the callback reached it.
+     */
+    @Test
+    void aDialogsBodyIsPressedTheWayAPlayerPressesIt() {
+        agent.requires("click-dialog-body");
+        forget("fx_board");
+        world.run("fixture board " + BotWorld.BOT);
+        agent.mustCall("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Board 1", "timeoutMs", 10000));
+
+        String tab = agent.mustCall("click-dialog-body", Map.of("bot", BotWorld.BOT, "index", 1));
+        String count = agent.mustCall("click-dialog-body", Map.of("bot", BotWorld.BOT, "match", "count"));
+        String nothing = agent.mustCall("click-dialog-body", Map.of("bot", BotWorld.BOT, "x", 2, "y", 2));
+        String hoverOnly = agent.refusal("click-dialog-body", Map.of("bot", BotWorld.BOT, "index", 4));
+        String closed = agent.mustCall("click-dialog-body", Map.of("bot", BotWorld.BOT, "index", 2));
+        int counted = counted("fx_board");
+        world.run("dialog clear " + BotWorld.BOT);
+
+        assertTrue(tab.startsWith("Pressed #1 \"[Two]\" at "), tab);
+        assertTrue(tab.contains("The server answered with dialog \"Board 2\" in its place."), tab);
+        assertTrue(count.contains("The server answered with dialog \"Board 2\" in its place."), count);
+        assertEquals(1, counted, "the server never heard the press on Count: " + count);
+        assertTrue(nothing.startsWith("Pressed 2,2, where nothing carries a click. Two seconds later the same dialog"
+            + " is still up: nothing on screen answered the press."), nothing);
+        assertTrue(hoverOnly.contains("carries no click event"), hoverOnly);
+        assertTrue(closed.contains("The dialog closed, and nothing came in its place within two seconds."), closed);
+    }
+
+    /**
+     * A tooltip in a dialog's body is a hover event on a run, and the pack prices things in it with
+     * icon glyphs; the lines name them where they stand. An item in the body shows its own.
+     */
+    @Test
+    void aDialogsBodyShowsItsTooltipsWhereTheyAreHovered() {
+        agent.requires("hover-dialog-body");
+        world.run("fixture board " + BotWorld.BOT);
+        agent.mustCall("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Board 1", "timeoutMs", 10000));
+
+        Agent.Answer priced = agent.answer("hover-dialog-body", Map.of("bot", BotWorld.BOT, "match", "[?]"));
+        Agent.Answer item = agent.answer("hover-dialog-body", Map.of("bot", BotWorld.BOT, "index", 5, "image", false));
+        world.run("dialog clear " + BotWorld.BOT);
+
+        assertTrue(priced.text().startsWith("Hovered #4 \"[?]\" at "), priced.text());
+        assertTrue(priced.text().contains("\n  \"<U+E010> 120\"\n  \"<U+E011> 3\"\n"
+            + "The 854x480 frame attached shows it drawn."), priced.text());
+        assertEquals(1, priced.images(), priced.text());
+        assertDrawn(priced.frame(), 854, 480);
+        assertTrue(item.text().startsWith("Hovered #5 item diamond x3 at "), item.text());
+        assertTrue(item.text().contains("\n  \"Diamond\""), item.text());
+        assertEquals(0, item.images(), item.text());
+    }
+
+    /**
+     * A resource pack positions a dialog's body with negative spacing and glyphs bigger than their
+     * line, and that is where a press misses: a tile drawn exactly over another takes every press
+     * meant for the one under it, and a tile pushed below its line is outside the widget a press on
+     * it would go to. Both are said instead of given a point, the covered one is refused rather than
+     * pressed into the one on top, and the server's counts say the press went to the tile that was
+     * hit. The last row is below the body's view until the wheel scrolls it there.
+     */
+    @Test
+    void aPressThatAPackMakesMissIsSaidAndAScrolledRowIsReachedByTheWheel() {
+        agent.requires("read-dialog-body", "click-dialog-body", "use-mouse");
+        forget("fx_overlap", "fx_overlap_under", "fx_overlap_low", "fx_overlap_bottom");
+        world.run("fixture overlap " + BotWorld.BOT);
+        try {
+            agent.mustCall("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Overlap", "timeoutMs", 60000));
+
+            String body = agent.mustCall("read-dialog-body", Map.of("bot", BotWorld.BOT));
+            String covered = agent.refusal("click-dialog-body", Map.of("bot", BotWorld.BOT, "index", 0));
+            String low = agent.refusal("click-dialog-body", Map.of("bot", BotWorld.BOT, "index", 2));
+            String over = agent.mustCall("click-dialog-body", Map.of("bot", BotWorld.BOT, "index", 1));
+
+            Matcher view = Pattern.compile("the body shows (\\d+),(\\d+) to (\\d+),(\\d+), scrolled 0 of \\d+").matcher(body);
+            assertTrue(view.find(), body);
+            int x = (Integer.parseInt(view.group(1)) + Integer.parseInt(view.group(3))) / 2;
+            int y = (Integer.parseInt(view.group(2)) + Integer.parseInt(view.group(4))) / 2;
+            String turned = agent.mustCall("use-mouse", Map.of("bot", BotWorld.BOT, "x", x, "y", y,
+                "action", "scroll", "scroll", -30, "image", false));
+            String scrolled = agent.mustCall("read-dialog-body", Map.of("bot", BotWorld.BOT));
+            String bottom = agent.mustCall("click-dialog-body", Map.of("bot", BotWorld.BOT, "match", "Bottom"));
+
+            assertTrue(body.contains("\n  #0 \"<U+E200>\" in font board covers "), body);
+            assertTrue(body.contains("unreachable: a piece drawn after it takes every point of it"), body);
+            assertTrue(Pattern.compile("\n  #1 \"<U\\+E200>\" in font board covers .*, reached at").matcher(body).find(), body);
+            assertTrue(Pattern.compile("\n  #2 \"<U\\+E201>\" in font board covers .*, unreachable: every glyph of it is drawn"
+                + " outside the widget that takes the press").matcher(body).find(), body);
+            assertTrue(Pattern.compile("\n  #3 \"Bottom\" covers .*, unreachable: it is scrolled out of the body's view")
+                .matcher(body).find(), body);
+            assertTrue(covered.contains("a piece drawn after it takes every point of it"), covered);
+            assertTrue(low.contains("drawn outside the widget"), low);
+            assertTrue(over.contains("The server answered with dialog \"Overlap\" in its place."), over);
+            assertTrue(turned.startsWith("Turned the wheel 30 notches down at " + x + "," + y), turned);
+            assertTrue(Pattern.compile("scrolled [1-9]\\d* of \\d+").matcher(scrolled).find(), scrolled);
+            assertTrue(Pattern.compile("\n  #3 \"Bottom\" covers .*, reached at").matcher(scrolled).find(), scrolled);
+            assertTrue(bottom.contains("The server answered with dialog \"Overlap\" in its place."), bottom);
+            assertEquals(1, counted("fx_overlap"), over);
+            assertEquals(0, counted("fx_overlap_under"), "the press meant for the covered tile reached it: " + over);
+            assertEquals(0, counted("fx_overlap_low"), low);
+            assertEquals(1, counted("fx_overlap_bottom"), bottom);
+        } finally {
+            world.run("dialog clear " + BotWorld.BOT);
+            world.run("fixture unpack " + BotWorld.BOT);
+        }
+    }
+
+    /**
+     * A menu that does one thing on a left click and another on a right one, pressed with each
+     * mouse button at the middle slot of a one-row chest: 427x240 in GUI units at the suite's
+     * 854x480 puts the chest's 176x132 at 125,54, and slot 4 at 80,18 inside it.
+     */
+    @Test
+    void eachMouseButtonReachesAMenuAsItself() {
+        agent.requires("use-mouse", "close-window");
+        forget("fx_menu_left", "fx_menu_right");
+        world.run("fixture buttons " + BotWorld.BOT);
+        agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "titlePattern", "^Buttons$", "timeoutMs", 10000));
+
+        Agent.Answer right = agent.answer("use-mouse", Map.of("bot", BotWorld.BOT, "x", 213, "y", 80, "action", "right"));
+        String left = agent.mustCall("use-mouse", Map.of("bot", BotWorld.BOT, "x", 213, "y", 80, "action", "left", "image", false));
+        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+
+        int rights = counted("fx_menu_right");
+        int lefts = counted("fx_menu_left");
+
+        assertTrue(right.text().startsWith("Pressed the right button at 213,80 on ContainerScreen."), right.text());
+        assertEquals(1, right.images(), right.text());
+        assertTrue(left.startsWith("Pressed the left button at 213,80 on ContainerScreen."), left);
+        assertEquals("1 right, 1 left", rights + " right, " + lefts + " left");
+    }
+
+    /**
+     * The mouse on its own, for what the dialog tools do not cover: a press at a point read off the
+     * body turns the page as a press by index does, and with no screen open there is nothing for it
+     * to act on.
+     */
+    @Test
+    void theMouseActsOnWhateverScreenIsOpen() {
+        agent.requires("use-mouse", "read-dialog-body");
+        world.run("fixture board " + BotWorld.BOT);
+        agent.mustCall("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Board 1", "timeoutMs", 10000));
+        Matcher two = Pattern.compile("#1 \"\\[Two\\]\" covers .*, reached at (\\d+),(\\d+)")
+            .matcher(agent.mustCall("read-dialog-body", Map.of("bot", BotWorld.BOT)));
+        assertTrue(two.find(), "the board has no reachable [Two]");
+
+        Agent.Answer pressed = agent.answer("use-mouse", Map.of("bot", BotWorld.BOT,
+            "x", Integer.parseInt(two.group(1)), "y", Integer.parseInt(two.group(2)), "action", "left"));
+        String turned = agent.call("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Board 2", "timeoutMs", 10000));
+        world.run("dialog clear " + BotWorld.BOT);
+        agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
+        String refused = agent.refusal("use-mouse", Map.of("bot", BotWorld.BOT, "x", 10, "y", 10, "action", "left"));
+
+        assertTrue(pressed.text().startsWith("Pressed the left button at " + two.group(1) + "," + two.group(2)
+            + " on SimpleDialogScreen."), pressed.text());
+        assertEquals(1, pressed.images(), pressed.text());
+        assertTrue(turned.contains("Board 2"), "the press at the point did not turn the page: " + turned);
+        assertTrue(refused.contains("no screen is open"), refused);
+    }
     /**
      * A quest shows its progress on the action bar, and a HUD is written in pieces: an icon glyph in
      * the pack's own font with the labels after it. Sent after the waits start, so what they match

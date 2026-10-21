@@ -1,0 +1,25 @@
+{
+  "tool": "read-dialog-body",
+  "note": "a dialog whose body is plain text with nothing to press",
+  "data": {
+    "screen": "NoticeDialogScreen",
+    "dialog": {
+      "title": "Notice",
+      "titleComponent": "Notice",
+      "gui": {
+        "width": 427,
+        "height": 240
+      },
+      "body": {
+        "x": 4,
+        "y": 33,
+        "width": 419,
+        "height": 40,
+        "scroll": 0.0,
+        "maxScroll": 0
+      },
+      "pieces": []
+    }
+  },
+  "text": "Dialog \"Notice\" has nothing in its body that can be pressed or hovered. The screen is 427x240 in GUI units."
+}

@@ -1,0 +1,104 @@
+{
+  "tool": "hover-dialog-body",
+  "note": "a reward chest whose tooltip prices it in the pack's gold and diamond icons",
+  "data": {
+    "point": {
+      "x": 220,
+      "y": 102
+    },
+    "piece": {
+      "index": 1,
+      "type": "text",
+      "text": "\ue120 Reward",
+      "component": {
+        "text": "\ue120 Reward",
+        "font": "hyperfarm:vellum"
+      },
+      "rect": {
+        "x": 200,
+        "y": 90,
+        "width": 40,
+        "height": 24
+      },
+      "point": {
+        "x": 220,
+        "y": 102
+      },
+      "blocked": null,
+      "click": {
+        "action": "custom",
+        "value": "paper:click_callback 51aa"
+      },
+      "hover": {
+        "lines": [
+          "Streak reward",
+          "\ue010 120  \ue011 3"
+        ],
+        "lineComponents": [
+          {
+            "text": "Streak reward",
+            "color": "yellow"
+          },
+          {
+            "text": "",
+            "extra": [
+              {
+                "text": "\ue010",
+                "font": "hyperfarm:icons"
+              },
+              {
+                "text": " 120  "
+              },
+              {
+                "text": "\ue011",
+                "font": "hyperfarm:icons"
+              },
+              {
+                "text": " 3"
+              }
+            ]
+          }
+        ]
+      },
+      "item": null,
+      "showTooltip": null
+    },
+    "hovered": true,
+    "tooltip": {
+      "lines": [
+        "Streak reward",
+        "\ue010 120  \ue011 3"
+      ],
+      "lineComponents": [
+        {
+          "text": "Streak reward",
+          "color": "yellow"
+        },
+        {
+          "text": "",
+          "extra": [
+            {
+              "text": "\ue010",
+              "font": "hyperfarm:icons"
+            },
+            {
+              "text": " 120  "
+            },
+            {
+              "text": "\ue011",
+              "font": "hyperfarm:icons"
+            },
+            {
+              "text": " 3"
+            }
+          ]
+        }
+      ]
+    },
+    "frame": {
+      "width": 854,
+      "height": 480
+    }
+  },
+  "text": "Hovered #1 \"<U+E120> Reward\" in font vellum at 220,102. Its tooltip reads:\n  \"Streak reward\"\n  \"<U+E010> 120  <U+E011> 3\" in font icons\nThe 854x480 frame attached shows it drawn."
+}

@@ -1,0 +1,9 @@
+{
+  "tool": "read-dialog-body",
+  "note": "no dialog is open, which is a state and not a failure",
+  "data": {
+    "screen": "ChatScreen",
+    "dialog": null
+  },
+  "text": "No dialog is open; the screen is ChatScreen."
+}
