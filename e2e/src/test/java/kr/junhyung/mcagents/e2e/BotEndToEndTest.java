@@ -2415,6 +2415,25 @@ class BotEndToEndTest {
     }
 
     /**
+     * The mouse tools shipped in the server before the bot that answers them, so a case that uses
+     * one asks the bot first, before it opens anything it would have to clean up after: a dialog or
+     * a menu left up by a case that could not finish is in front of every case after it. The
+     * probes press and hover nothing, because no dialog is open once it is cleared.
+     */
+    private void requiresTheMouseTools(String... tools) {
+        world.run("dialog clear " + BotWorld.BOT);
+        for (String tool : tools) {
+            agent.requiresOffered(tool, switch (tool) {
+                case "read-dialog-body" -> Map.of("bot", BotWorld.BOT);
+                case "click-dialog-body" -> Map.of("bot", BotWorld.BOT, "index", 0);
+                case "hover-dialog-body" -> Map.of("bot", BotWorld.BOT, "index", 0, "image", false);
+                case "use-mouse" -> Map.of("bot", BotWorld.BOT, "x", 0, "y", 0, "image", false);
+                default -> throw new IllegalArgumentException(tool);
+            });
+        }
+    }
+
+    /**
      * A dialog whose body is the whole menu has no button to press by label: its tabs, its close
      * mark and its rows are runs of text with a callback on them. Each is listed with the point a
      * cursor reaches it at, the glyph-only close mark named by its code point, and the item beside
@@ -2422,12 +2441,15 @@ class BotEndToEndTest {
      */
     @Test
     void aDialogsBodyIsListedWithWhereEachPieceIsReached() {
-        agent.requires("read-dialog-body");
+        requiresTheMouseTools("read-dialog-body");
         world.run("fixture board " + BotWorld.BOT);
-        agent.mustCall("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Board 1", "timeoutMs", 10000));
-
-        String body = agent.mustCall("read-dialog-body", Map.of("bot", BotWorld.BOT));
-        world.run("dialog clear " + BotWorld.BOT);
+        String body;
+        try {
+            agent.mustCall("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Board 1", "timeoutMs", 10000));
+            body = agent.mustCall("read-dialog-body", Map.of("bot", BotWorld.BOT));
+        } finally {
+            world.run("dialog clear " + BotWorld.BOT);
+        }
 
         assertTrue(body.startsWith("Dialog \"Board 1\": 6 pieces of its body can be pressed or hovered."), body);
         assertTrue(Pattern.compile("\n  #0 \"\\[One\\]\" covers \\d+,\\d+ \\d+x\\d+, reached at \\d+,\\d+; click: \\S+ .*; hover: \"Page one\"")
@@ -2447,18 +2469,25 @@ class BotEndToEndTest {
      */
     @Test
     void aDialogsBodyIsPressedTheWayAPlayerPressesIt() {
-        agent.requires("click-dialog-body");
+        requiresTheMouseTools("click-dialog-body");
         forget("fx_board");
         world.run("fixture board " + BotWorld.BOT);
-        agent.mustCall("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Board 1", "timeoutMs", 10000));
-
-        String tab = agent.mustCall("click-dialog-body", Map.of("bot", BotWorld.BOT, "index", 1));
-        String count = agent.mustCall("click-dialog-body", Map.of("bot", BotWorld.BOT, "match", "count"));
-        String nothing = agent.mustCall("click-dialog-body", Map.of("bot", BotWorld.BOT, "x", 2, "y", 2));
-        String hoverOnly = agent.refusal("click-dialog-body", Map.of("bot", BotWorld.BOT, "index", 4));
-        String closed = agent.mustCall("click-dialog-body", Map.of("bot", BotWorld.BOT, "index", 2));
+        String tab;
+        String count;
+        String nothing;
+        String hoverOnly;
+        String closed;
+        try {
+            agent.mustCall("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Board 1", "timeoutMs", 10000));
+            tab = agent.mustCall("click-dialog-body", Map.of("bot", BotWorld.BOT, "index", 1));
+            count = agent.mustCall("click-dialog-body", Map.of("bot", BotWorld.BOT, "match", "count"));
+            nothing = agent.mustCall("click-dialog-body", Map.of("bot", BotWorld.BOT, "x", 2, "y", 2));
+            hoverOnly = agent.refusal("click-dialog-body", Map.of("bot", BotWorld.BOT, "index", 4));
+            closed = agent.mustCall("click-dialog-body", Map.of("bot", BotWorld.BOT, "index", 2));
+        } finally {
+            world.run("dialog clear " + BotWorld.BOT);
+        }
         int counted = counted("fx_board");
-        world.run("dialog clear " + BotWorld.BOT);
 
         assertTrue(tab.startsWith("Pressed #1 \"[Two]\" at "), tab);
         assertTrue(tab.contains("The server answered with dialog \"Board 2\" in its place."), tab);
@@ -2476,13 +2505,17 @@ class BotEndToEndTest {
      */
     @Test
     void aDialogsBodyShowsItsTooltipsWhereTheyAreHovered() {
-        agent.requires("hover-dialog-body");
+        requiresTheMouseTools("hover-dialog-body");
         world.run("fixture board " + BotWorld.BOT);
-        agent.mustCall("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Board 1", "timeoutMs", 10000));
-
-        Agent.Answer priced = agent.answer("hover-dialog-body", Map.of("bot", BotWorld.BOT, "match", "[?]"));
-        Agent.Answer item = agent.answer("hover-dialog-body", Map.of("bot", BotWorld.BOT, "index", 5, "image", false));
-        world.run("dialog clear " + BotWorld.BOT);
+        Agent.Answer priced;
+        Agent.Answer item;
+        try {
+            agent.mustCall("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Board 1", "timeoutMs", 10000));
+            priced = agent.answer("hover-dialog-body", Map.of("bot", BotWorld.BOT, "match", "[?]"));
+            item = agent.answer("hover-dialog-body", Map.of("bot", BotWorld.BOT, "index", 5, "image", false));
+        } finally {
+            world.run("dialog clear " + BotWorld.BOT);
+        }
 
         assertTrue(priced.text().startsWith("Hovered #4 \"[?]\" at "), priced.text());
         assertTrue(priced.text().contains("\n  \"<U+E010> 120\"\n  \"<U+E011> 3\"\n"
@@ -2501,10 +2534,14 @@ class BotEndToEndTest {
      * it would go to. Both are said instead of given a point, the covered one is refused rather than
      * pressed into the one on top, and the server's counts say the press went to the tile that was
      * hit. The last row is below the body's view until the wheel scrolls it there.
+     *
+     * <p>The pack stays on the bot afterwards. It adds a font of its own and changes nothing else
+     * drawn, and taking it away reloads every resource, during which the client drops the next
+     * case's input.
      */
     @Test
     void aPressThatAPackMakesMissIsSaidAndAScrolledRowIsReachedByTheWheel() {
-        agent.requires("read-dialog-body", "click-dialog-body", "use-mouse");
+        requiresTheMouseTools("read-dialog-body", "click-dialog-body", "use-mouse");
         forget("fx_overlap", "fx_overlap_under", "fx_overlap_low", "fx_overlap_bottom");
         world.run("fixture overlap " + BotWorld.BOT);
         try {
@@ -2544,7 +2581,6 @@ class BotEndToEndTest {
             assertEquals(1, counted("fx_overlap_bottom"), bottom);
         } finally {
             world.run("dialog clear " + BotWorld.BOT);
-            world.run("fixture unpack " + BotWorld.BOT);
         }
     }
 
@@ -2555,14 +2591,19 @@ class BotEndToEndTest {
      */
     @Test
     void eachMouseButtonReachesAMenuAsItself() {
-        agent.requires("use-mouse", "close-window");
+        agent.requires("close-window");
+        requiresTheMouseTools("use-mouse");
         forget("fx_menu_left", "fx_menu_right");
         world.run("fixture buttons " + BotWorld.BOT);
-        agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "titlePattern", "^Buttons$", "timeoutMs", 10000));
-
-        Agent.Answer right = agent.answer("use-mouse", Map.of("bot", BotWorld.BOT, "x", 213, "y", 80, "action", "right"));
-        String left = agent.mustCall("use-mouse", Map.of("bot", BotWorld.BOT, "x", 213, "y", 80, "action", "left", "image", false));
-        agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        Agent.Answer right;
+        String left;
+        try {
+            agent.mustCall("wait-for-window", Map.of("bot", BotWorld.BOT, "titlePattern", "^Buttons$", "timeoutMs", 10000));
+            right = agent.answer("use-mouse", Map.of("bot", BotWorld.BOT, "x", 213, "y", 80, "action", "right"));
+            left = agent.mustCall("use-mouse", Map.of("bot", BotWorld.BOT, "x", 213, "y", 80, "action", "left", "image", false));
+        } finally {
+            agent.call("close-window", Map.of("bot", BotWorld.BOT));
+        }
 
         int rights = counted("fx_menu_right");
         int lefts = counted("fx_menu_left");
@@ -2580,17 +2621,22 @@ class BotEndToEndTest {
      */
     @Test
     void theMouseActsOnWhateverScreenIsOpen() {
-        agent.requires("use-mouse", "read-dialog-body");
+        requiresTheMouseTools("use-mouse", "read-dialog-body");
         world.run("fixture board " + BotWorld.BOT);
-        agent.mustCall("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Board 1", "timeoutMs", 10000));
-        Matcher two = Pattern.compile("#1 \"\\[Two\\]\" covers .*, reached at (\\d+),(\\d+)")
-            .matcher(agent.mustCall("read-dialog-body", Map.of("bot", BotWorld.BOT)));
-        assertTrue(two.find(), "the board has no reachable [Two]");
-
-        Agent.Answer pressed = agent.answer("use-mouse", Map.of("bot", BotWorld.BOT,
-            "x", Integer.parseInt(two.group(1)), "y", Integer.parseInt(two.group(2)), "action", "left"));
-        String turned = agent.call("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Board 2", "timeoutMs", 10000));
-        world.run("dialog clear " + BotWorld.BOT);
+        Matcher two;
+        Agent.Answer pressed;
+        String turned;
+        try {
+            agent.mustCall("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Board 1", "timeoutMs", 10000));
+            two = Pattern.compile("#1 \"\\[Two\\]\" covers .*, reached at (\\d+),(\\d+)")
+                .matcher(agent.mustCall("read-dialog-body", Map.of("bot", BotWorld.BOT)));
+            assertTrue(two.find(), "the board has no reachable [Two]");
+            pressed = agent.answer("use-mouse", Map.of("bot", BotWorld.BOT,
+                "x", Integer.parseInt(two.group(1)), "y", Integer.parseInt(two.group(2)), "action", "left"));
+            turned = agent.call("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Board 2", "timeoutMs", 10000));
+        } finally {
+            world.run("dialog clear " + BotWorld.BOT);
+        }
         agent.mustCall("wait-ticks", Map.of("bot", BotWorld.BOT, "ticks", 5));
         String refused = agent.refusal("use-mouse", Map.of("bot", BotWorld.BOT, "x", 10, "y", 10, "action", "left"));
 
