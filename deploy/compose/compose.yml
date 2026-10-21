@@ -31,7 +31,7 @@ name: mc-agents
 
 services:
   mcp-server:
-    image: junhyung.cloud/mc-agents/mcp-server:0.75.0
+    image: junhyung.cloud/mc-agents/mcp-server:0.76.0
     restart: unless-stopped
     # Only the MCP port is published, and only on loopback.
     #
@@ -97,7 +97,7 @@ services:
   # The real client: screenshots, dialogs, anything the catalogue marks fabric-only. One service
   # and not a scalable one, because of the volume below.
   bot-fabric:
-    image: junhyung.cloud/mc-agents/bot-fabric:0.79.0-mc26.3
+    image: junhyung.cloud/mc-agents/bot-fabric:0.80.0-mc26.3
     restart: unless-stopped
     depends_on:
       - mcp-server
