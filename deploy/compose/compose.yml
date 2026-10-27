@@ -31,7 +31,7 @@ name: mc-agents
 
 services:
   mcp-server:
-    image: junhyung.cloud/mc-agents/mcp-server:0.76.0
+    image: junhyung.cloud/mc-agents/mcp-server:0.77.0
     restart: unless-stopped
     # Only the MCP port is published, and only on loopback.
     #
@@ -74,7 +74,7 @@ services:
   # The headless kind, and the one worth scaling: `--scale bot=4` joins four. azalea needs no
   # volume, no client jar and no X server, and links in about a second.
   bot:
-    image: junhyung.cloud/mc-agents/bot-azalea:0.28.0-mc26.1.2
+    image: junhyung.cloud/mc-agents/bot-azalea:0.29.0-mc26.1.2
     restart: unless-stopped
     # Nothing to wait for beyond the container: a bot that dials before the link port is accepting
     # backs off and redials by itself. `up` returning does not mean an agent can call yet.
@@ -97,7 +97,7 @@ services:
   # The real client: screenshots, dialogs, anything the catalogue marks fabric-only. One service
   # and not a scalable one, because of the volume below.
   bot-fabric:
-    image: junhyung.cloud/mc-agents/bot-fabric:0.80.1-mc26.3
+    image: junhyung.cloud/mc-agents/bot-fabric:0.81.0-mc26.3
     restart: unless-stopped
     depends_on:
       - mcp-server
@@ -144,7 +144,7 @@ services:
   # not to this file, so check them against the README of the tag you pinned.
   #
   # bot-login:
-  #   image: junhyung.cloud/mc-agents/bot-azalea:0.28.0-mc26.1.2
+  #   image: junhyung.cloud/mc-agents/bot-azalea:0.29.0-mc26.1.2
   #   profiles: ["login"]
   #   command: ["login"]
   #   # The cache is the whole point of the volume: without it every recreate is another login.
@@ -161,7 +161,7 @@ services:
   #   tty: true
   #
   # bot-alice:
-  #   image: junhyung.cloud/mc-agents/bot-azalea:0.28.0-mc26.1.2
+  #   image: junhyung.cloud/mc-agents/bot-azalea:0.29.0-mc26.1.2
   #   restart: unless-stopped
   #   depends_on:
   #     - mcp-server
