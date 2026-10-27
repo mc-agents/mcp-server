@@ -410,7 +410,7 @@ The bot answers with a DTO the server renders into the text (see [bot-protocol.m
 
 *fabric and azalea · deadline 10s · exclusive · needs a world · the bot answers*
 
-Press something a server wrote in chat: a quest's choices, a shop's items, a menu. Matches the text of the clickable part -- "[Accept]" -- exactly first, then by substring, newest line first. Only clicks that run a command or open a dialog can be pressed; one that would open a URL or a file is refused.
+Press something a server wrote in chat: a quest's choices, a shop's items, a menu. Matches the text of the clickable part -- "[Accept]" -- exactly first, then by substring, newest line first. Clicks that run a command, open a dialog or send the server a plugin's custom action are pressed, and the answer names a custom one's id; one that would open a URL or a file, or copy to the clipboard, is refused. What a custom action opens is the server's answer and can come after this returns: wait-for-dialog for it.
 
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |

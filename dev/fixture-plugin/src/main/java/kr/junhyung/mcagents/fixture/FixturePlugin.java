@@ -37,6 +37,7 @@ public final class FixturePlugin extends JavaPlugin {
         Gate gate = new Gate();
         BoardDialog board = new BoardDialog(scores);
         ButtonsMenu buttons = new ButtonsMenu(scores);
+        ReportLine report = new ReportLine(scores);
         overlap = new OverlapDialog(scores);
 
         getServer().getPluginManager().registerEvents(new InputRecorder(scores, conversation), this);
@@ -49,6 +50,7 @@ public final class FixturePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(gate, this);
         getServer().getPluginManager().registerEvents(buttons, this);
         getServer().getPluginManager().registerEvents(overlap, this);
+        getServer().getPluginManager().registerEvents(report, this);
 
         PluginCommand command = getCommand("fixture");
         if (command != null) {
@@ -88,6 +90,7 @@ public final class FixturePlugin extends JavaPlugin {
                     case "overlap" -> overlap.open(sender, player);
                     case "unpack" -> overlap.unpack(sender, player);
                     case "buttons" -> buttons.open(sender, player);
+                    case "report" -> report.send(sender, player);
                     /*
                     hyperfarm's gathering fever: a sound played at the player rather than at a place, which
                     goes out as a packet of its own. Later than the command, so a press can be waiting.

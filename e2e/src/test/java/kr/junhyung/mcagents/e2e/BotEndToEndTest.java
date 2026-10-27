@@ -630,6 +630,32 @@ class BotEndToEndTest {
     }
 
     /**
+     * hyperfarm reports a chat line through a custom click on the whole line, whose payload names the
+     * message, and answers it with a dialog. Both kinds of bot refused the click as one that leaves
+     * the game, so the report screen could not be reached at all. The server's own count says the
+     * payload came back as it was written.
+     */
+    @Test
+    void aPluginsCustomClickInChatReachesTheServerWithItsPayload() {
+        forget("fx_report", "fx_report_mangled");
+        world.run("fixture report " + BotWorld.BOT);
+        agent.mustCall("wait-for-chat", Map.of("bot", BotWorld.BOT, "pattern", "selling wheat", "timeoutMs", 10000));
+        String clicked;
+        String dialog;
+        try {
+            clicked = agent.call("click-chat", Map.of("bot", BotWorld.BOT, "match", "selling wheat"));
+            dialog = agent.call("wait-for-dialog", Map.of("bot", BotWorld.BOT, "pattern", "Report chat", "timeoutMs", 10000));
+        } finally {
+            world.run("dialog clear " + BotWorld.BOT);
+        }
+
+        assertTrue(clicked.startsWith("clicked \"<Steve> anyone selling wheat?\" (custom mcagents:report)"), clicked);
+        assertEquals(0, counted("fx_report_mangled"), "the server got the click with a payload it never wrote");
+        assertEquals(1, counted("fx_report"), "the server never heard the click: " + clicked);
+        assertTrue(dialog.contains("Report chat"), dialog);
+    }
+
+    /**
      * A quest counts up on the sidebar, on a boss bar or in the inventory, and nothing pushes any
      * of those: the bot holds them and answers when asked. The waits poll, so an agent writes one
      * call rather than a loop -- and a loop written by an agent is a loop that either polls too
