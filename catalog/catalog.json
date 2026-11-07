@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "5.12.0",
+  "catalogVersion": "5.13.0",
   "protocol": 1,
   "tools": [
     {
@@ -6315,6 +6315,39 @@
       }
     },
     {
+      "name": "press-quick-actions",
+      "group": "screen",
+      "description": "Press the quick actions key, G unless rebound, the way a player does: the client opens the dialog the server put in its minecraft:quick_actions tag, or the list of them when it put several. A server that put none has nothing for this key to open, and that is refused by name. The screen it opened is named in the answer; read it with read-dialog or read-dialog-body. The key goes to the game only while no window is open, and waits out a loading overlay, as a player's does.",
+      "route": "rpc",
+      "kinds": [
+        "fabric"
+      ],
+      "exclusive": true,
+      "untrusted": false,
+      "readOnly": false,
+      "structured": false,
+      "needsWorld": true,
+      "defaultDeadlineMs": 45000,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": "string",
+            "description": "Bot name given to join-server. Optional while exactly one bot is connected."
+          }
+        },
+        "additionalProperties": false
+      },
+      "wireSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "wireSchemaHash": "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"
+    },
+    {
       "name": "read-action-bar",
       "group": "hud",
       "description": "Read the action bar text above the hotbar, which servers use for live status. Repeats are collapsed, so each line is a change. A HUD drawn in custom fonts arrives as several pieces separated by \" | \", each tagged with the font that names it.",
@@ -12505,5 +12538,5 @@
       }
     }
   ],
-  "catalogHash": "sha256:d5c497d68f0eaefa7fe814e92f3dacc4c11a55eee4812d38d85cd046a1d3fe4f"
+  "catalogHash": "sha256:2d85e88bdfe87c68864de8dcd444728412a9dc0d92b5c6fdedac2e81b59192e2"
 }

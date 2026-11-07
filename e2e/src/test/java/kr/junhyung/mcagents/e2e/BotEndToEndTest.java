@@ -656,6 +656,49 @@ class BotEndToEndTest {
     }
 
     /**
+     * The quick actions key opens what the server put in a tag, which is the client's own decision
+     * and tells the server nothing. A server that put nothing there leaves the key doing nothing,
+     * and that is the answer rather than a press that looks like it worked. A tag follows a reload,
+     * so the client has to be reading it now and not as it was at the join.
+     */
+    @Test
+    void theQuickActionsKeyOpensWhatTheServerDeclaredAndSaysWhenItDeclaredNothing() {
+        agent.requiresOffered("press-quick-actions", Map.of("bot", BotWorld.BOT));
+        String opened;
+        String listed;
+        String underTheDialog;
+        String nothing;
+        try {
+            opened = pressQuickActionsUntil(answer -> answer.startsWith("pressed"));
+            listed = agent.call("read-dialog", Map.of("bot", BotWorld.BOT, "count", 1));
+            underTheDialog = agent.refusal("press-quick-actions", Map.of("bot", BotWorld.BOT));
+            world.run("datapack disable \"file/fixture-quick-actions\"");
+            nothing = pressQuickActionsUntil(answer -> answer.contains("minecraft:quick_actions"));
+        } finally {
+            world.run("datapack enable \"file/fixture-quick-actions\"");
+            pressQuickActionsUntil(answer -> answer.startsWith("pressed"));
+            world.run("dialog clear " + BotWorld.BOT);
+        }
+
+        assertTrue(opened.startsWith("pressed quick actions, and MultiButtonDialogScreen opened."), opened);
+        assertTrue(listed.contains("Bot check"), listed);
+        assertTrue(underTheDialog.contains("a window is open"), underTheDialog);
+        assertTrue(nothing.contains("put no dialog in its minecraft:quick_actions tag"), nothing);
+    }
+
+    /** A dialog left up takes the key, and a reload takes a moment to reach the client. */
+    private String pressQuickActionsUntil(java.util.function.Predicate<String> expected) {
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(20));
+        String answer;
+        do {
+            world.run("dialog clear " + BotWorld.BOT);
+            sleep(200);
+            answer = agent.call("press-quick-actions", Map.of("bot", BotWorld.BOT));
+        } while (!expected.test(answer) && Instant.now().isBefore(deadline));
+        return answer;
+    }
+
+    /**
      * A quest counts up on the sidebar, on a boss bar or in the inventory, and nothing pushes any
      * of those: the bot holds them and answers when asked. The waits poll, so an agent writes one
      * call rather than a loop -- and a loop written by an agent is a loop that either polls too

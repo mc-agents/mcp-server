@@ -100,8 +100,9 @@ final class BotWorld implements AutoCloseable {
             straight into the world makes Docker create the world directory owned by root, and the
             server then cannot take its own session lock and exits.
             */
-            .withEnv("DATAPACKS", "/fixture")
+            .withEnv("DATAPACKS", "/fixture,/fixture-quick-actions")
             .withFileSystemBind(fixture.toString(), "/fixture", BindMode.READ_ONLY)
+            .withFileSystemBind(fixture.resolveSibling("fixture-quick-actions").toString(), "/fixture-quick-actions", BindMode.READ_ONLY)
             /* Copied into the server's plugins by the image at start, for the same ownership reason. */
             .withFileSystemBind(fixturePlugin.toString(), "/plugins/mcagents-fixture.jar", BindMode.READ_ONLY)
             /*

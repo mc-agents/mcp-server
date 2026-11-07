@@ -1,0 +1,7 @@
+{
+  "pack": {
+    "description": "mc-agents: a server's quick actions, in a pack of their own so a case can take them away",
+    "min_format": [101, 1],
+    "max_format": 121
+  }
+}

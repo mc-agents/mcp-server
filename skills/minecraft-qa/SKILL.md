@@ -46,7 +46,8 @@ other kind fails with a message naming the kind that has it.
   longer. Needed for `screenshot` and anything you must *see* -- a resource-pack HUD, a model, an
   overlapping layout -- and for dialog controls (`set-dialog-input`, `press-dialog-button`,
   `type-text`), a dialog whose body is the menu (`read-dialog-body`, `click-dialog-body`,
-  `hover-dialog-body`), the mouse on any screen (`use-mouse`), the creative inventory
+  `hover-dialog-body`), the mouse on any screen (`use-mouse`), the G key's quick actions
+  (`press-quick-actions`), the creative inventory
   (`open-inventory`), `pick-block`, `fish`, block entities, display text, toasts, effects,
   advancements and statistics.
 - **azalea**: headless, a few MB, joins in seconds. Use it for many bots at once, for fast loops,

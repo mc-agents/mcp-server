@@ -2,7 +2,7 @@
 
 <!-- Rendered from catalog/catalog.json by ./gradlew renderToolReference. Edit the catalogue, not this page. -->
 
-Catalogue 5.12.0, 106 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
+Catalogue 5.13.0, 107 tools. This is what `tools/list` offers an MCP client, one section a tool, with the arguments as the client sends them. What a bot receives is the catalogue's `wireSchema`, which drops `bot` and fills every default in; the [bot protocol](bot-protocol.md) covers that side.
 
 Every tool but [`list-bots`](#list-bots), [`ping-server`](#ping-server), [`wait-for-server`](#wait-for-server) takes `bot`, the name given to join-server, which may be left out while exactly one bot is connected; it is not repeated below. A tool marked **fabric only** is one the headless kind of bot does not run. **Exclusive** means one call at a time on a bot, since two walks or two clicks at once would fight over the same body. **Untrusted** means the answer carries content the server did not write -- chat, item names, signs -- and is marked as data rather than instructions. **Read-only** means the call changes nothing in the game or on the server, which is what an MCP client's `readOnlyHint` approves without asking; **destructive** is the `destructiveHint`, for a call that removes something or runs with the bot's permissions. A tool that **needs a world** is refused while the bot is on a title or disconnected screen. The deadline is how long the server waits for the bot before giving the call up; a tool with a `timeoutMs` argument sets its own inside that.
 
@@ -11,7 +11,7 @@ Every tool but [`list-bots`](#list-bots), [`ping-server`](#ping-server), [`wait-
 | [world](#world) | [`activate-block`](#activate-block), [`attack-entity`](#attack-entity), [`fish`](#fish), [`interact-entity`](#interact-entity), [`use-held-item`](#use-held-item) |
 | [region](#region) | [`build-region`](#build-region), [`import-region`](#import-region), [`photograph-region`](#photograph-region), [`learn-custom-blocks`](#learn-custom-blocks), [`list-regions`](#list-regions), [`read-region`](#read-region), [`read-selection`](#read-selection), [`show-region`](#show-region), [`measure-room`](#measure-room), [`verify-region`](#verify-region), [`write-region`](#write-region) |
 | [crafting](#crafting) | [`can-craft`](#can-craft), [`craft-item`](#craft-item), [`get-recipe`](#get-recipe), [`list-recipes`](#list-recipes) |
-| [screen](#screen) | [`click-chat`](#click-chat), [`click-dialog-body`](#click-dialog-body), [`hover-dialog-body`](#hover-dialog-body), [`press-dialog-button`](#press-dialog-button), [`read-book`](#read-book), [`read-dialog-body`](#read-dialog-body), [`screenshot`](#screenshot), [`set-dialog-input`](#set-dialog-input), [`type-text`](#type-text), [`use-mouse`](#use-mouse) |
+| [screen](#screen) | [`click-chat`](#click-chat), [`click-dialog-body`](#click-dialog-body), [`hover-dialog-body`](#hover-dialog-body), [`press-dialog-button`](#press-dialog-button), [`press-quick-actions`](#press-quick-actions), [`read-book`](#read-book), [`read-dialog-body`](#read-dialog-body), [`screenshot`](#screenshot), [`set-dialog-input`](#set-dialog-input), [`type-text`](#type-text), [`use-mouse`](#use-mouse) |
 | [slot](#slot) | [`click-slot`](#click-slot), [`drag-slots`](#drag-slots), [`drop-held-item`](#drop-held-item), [`hover-slot`](#hover-slot), [`select-bundle-item`](#select-bundle-item) |
 | [window](#window) | [`close-window`](#close-window), [`open-container`](#open-container), [`open-inventory`](#open-inventory), [`press-container-button`](#press-container-button), [`read-container-options`](#read-container-options), [`read-trades`](#read-trades), [`read-window`](#read-window), [`select-trade`](#select-trade), [`set-beacon-effects`](#set-beacon-effects), [`wait-for-window`](#wait-for-window) |
 | [server](#server) | [`complete-command`](#complete-command), [`get-world-state`](#get-world-state), [`run-command`](#run-command), [`switch-server`](#switch-server), [`wait-ticks`](#wait-ticks) |
@@ -537,6 +537,14 @@ Press a button on the dialog the server has opened. Identify it by its label. Re
 | Argument | Type | Required | What it is | Limits |
 | --- | --- | --- | --- | --- |
 | `label` | string | yes | Button label, or part of it |  |
+
+### press-quick-actions
+
+*fabric only · deadline 45s · exclusive · needs a world · the bot answers*
+
+Press the quick actions key, G unless rebound, the way a player does: the client opens the dialog the server put in its minecraft:quick_actions tag, or the list of them when it put several. A server that put none has nothing for this key to open, and that is refused by name. The screen it opened is named in the answer; read it with read-dialog or read-dialog-body. The key goes to the game only while no window is open, and waits out a loading overlay, as a player's does.
+
+No arguments beyond `bot`.
 
 ### read-book
 
