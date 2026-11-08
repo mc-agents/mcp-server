@@ -10,6 +10,7 @@ import kr.junhyung.mcagents.bot.BotLinkServer;
 import kr.junhyung.mcagents.bot.BotProvisioner;
 import jakarta.servlet.Filter;
 import kr.junhyung.mcagents.http.BearerTokenFilter;
+import kr.junhyung.mcagents.http.ListeningStreams;
 import kr.junhyung.mcagents.bot.BotRegistry;
 import kr.junhyung.mcagents.catalog.Catalog;
 import java.net.InetAddress;
@@ -120,6 +121,11 @@ public class Wiring {
                 .sessionIdleTimeout(sessionIdleTimeout)
                 .maxSessions(maxSessions)
                 .build();
+    }
+
+    @Bean
+    public ListeningStreams listeningStreams(WebMvcStreamableServerTransportProvider transport) {
+        return new ListeningStreams(transport);
     }
 
     /*
